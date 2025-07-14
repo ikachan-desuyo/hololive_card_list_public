@@ -5,26 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ホロライブカード管理</title>
   <style>
-    body { font-family: sans-serif; margin: 10px; font-size: 15px; transition: background 0.3s, color 0.3s; }
+    body {
+      font-family: sans-serif;
+      margin: 10px;
+      font-size: 15px;
+      transition: background 0.3s, color 0.3s;
+    }
     h2 { text-align: center; margin-bottom: 10px; }
-    table { border-collapse: collapse; width: 100%; table-layout: auto; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: auto;
+    }
     th, td {
-      border: 1px solid #ccc; padding: 8px; text-align: left;
-      font-size: 15px; word-wrap: break-word; white-space: normal;
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 15px;
+      word-wrap: break-word;
+      white-space: normal;
+      text-align: left;
     }
     th { background-color: #fff; }
-    .controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    select, input[type="text"], textarea, button { font-size: 1em; margin: 5px 0; }
-    input[type="number"] { width: 70px; font-size: 1em; }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    select, input[type="text"], textarea, button {
+      font-size: 1em;
+      margin: 5px 0;
+    }
+    input[type="number"] { width: 70px; }
     img { width: 60px; border-radius: 4px; }
+    td:nth-child(6) { min-width: 140px; } /* ← 収録商品列を広めに */
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
     tr[data-rarity="RR"]  { background-color: #e6f5ff; }
     tr[data-rarity="R"]   { background-color: #f9fff0; }
     tr[data-rarity="U"]   { background-color: #f3f3f3; }
     tr[data-rarity="C"]   { background-color: #fff; }
-    .dark { background-color: #222; color: #eee; }
+    .dark {
+      background-color: #222;
+      color: #eee;
+    }
     .dark table, .dark th, .dark td { border-color: #666; }
-    .dark input, .dark select, .dark button, .dark textarea { background-color: #333; color: #eee; }
+    .dark input, .dark select, .dark button, .dark textarea {
+      background-color: #333;
+      color: #eee;
+    }
     .dark th { background-color: #fff; }
     .dark #cardTable td, .dark #cardTable th { color: #111; }
     @media (max-width: 600px) {
@@ -40,24 +68,9 @@
   <div class="controls">
     <button onclick="toggleDarkMode()">🌗 モード切替</button>
     <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-    <select id="rarityFilter" onchange="renderTable()">
-      <option value="">レアリティ</option>
-      <option value="OSR">OSR</option>
-      <option value="RR">RR</option>
-      <option value="R">R</option>
-      <option value="U">U</option>
-      <option value="C">C</option>
-    </select>
-    <select id="bloomFilter" onchange="renderTable()">
-      <option value="">Bloom</option>
-      <option value="Debut">Debut</option>
-      <option value="1st">1st</option>
-      <option value="2nd">2nd</option>
-      <option value="-">-</option>
-    </select>
-    <select id="productFilter" onchange="renderTable()">
-      <option value="">収録商品</option>
-    </select>
+    <select id="rarityFilter" onchange="renderTable()"></select>
+    <select id="bloomFilter" onchange="renderTable()"></select>
+    <select id="productFilter" onchange="renderTable()"></select>
     <label><input type="checkbox" id="ownedFilter" onchange="renderTable()"> 所持ありのみ</label>
   </div>
 
@@ -82,15 +95,41 @@
   <script>
     let cards = [];
 
-    function setupProductFilter() {
-      const products = [...new Set(cards.map(c => c.product))].sort();
-      const select = document.getElementById("productFilter");
-      select.innerHTML = '<option value="">収録商品</option>';
-      products.forEach(p => {
+    function setupFilters() {
+      const raritySet = new Set();
+      const bloomSet = new Set();
+      const productSet = new Set();
+      cards.forEach(c => {
+        raritySet.add(c.rarity);
+        bloomSet.add(c.bloom);
+        productSet.add(c.product);
+      });
+
+      const rarity = document.getElementById("rarityFilter");
+      rarity.innerHTML = '<option value="">レアリティ</option>';
+      [...raritySet].sort().forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = r;
+        opt.textContent = r;
+        rarity.appendChild(opt);
+      });
+
+      const bloom = document.getElementById("bloomFilter");
+      bloom.innerHTML = '<option value="">Bloom</option>';
+      [...bloomSet].sort().forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b;
+        opt.textContent = b;
+        bloom.appendChild(opt);
+      });
+
+      const product = document.getElementById("productFilter");
+      product.innerHTML = '<option value="">収録商品</option>';
+      [...productSet].sort().forEach(p => {
         const opt = document.createElement("option");
         opt.value = p;
         opt.textContent = p;
-        select.appendChild(opt);
+        product.appendChild(opt);
       });
     }
 
@@ -181,7 +220,7 @@
         document.body.classList.add("dark");
       }
 
-      fetch("json_file/card_data.json") // ← 仮パス。必要に応じて修正してください
+      fetch("json_file/card_data.json") // ← Tsubasa環境に合わせてパス調整してね
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData).map(([key, card]) => ({
@@ -195,7 +234,7 @@
             url: `https://hololive-official-cardgame.com/cardlist/?id=${card.id}`,
             owned: parseInt(localStorage.getItem("count_" + card.id) ?? "0")
           }));
-          setupProductFilter();
+          setupFilters();
           renderTable();
         })
         .catch(() => alert("JSONファイルの読み込みに失敗しました"));
