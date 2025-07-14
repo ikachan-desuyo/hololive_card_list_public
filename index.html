@@ -83,6 +83,17 @@
     .dark #cardTable td, .dark #cardTable th {
       color: #111;
     }
+    td:nth-child(2),  /* 名前 */
+    td:nth-child(3),  /* 番号 */
+    td.rarity,        /* レア */
+    td:nth-child(5),  /* Bloom */
+    td:nth-child(6)   /* HP */
+    {
+      white-space: nowrap;
+    }
+    input[type="number"] {
+      width: 40px;
+    }
     @media (max-width: 600px) {
       body {
         font-size: 16px;
@@ -96,7 +107,7 @@
         width: 45px;
       }
       input[type="number"] {
-        width: 50px;
+        width: 36px;
       }
     }
   </style>
