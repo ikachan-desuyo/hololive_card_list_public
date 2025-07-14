@@ -12,11 +12,14 @@
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
     }
-    h2 { text-align: center; margin-bottom: 10px; }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
     table {
       border-collapse: collapse;
       width: 100%;
-      table-layout: fixed;
+      table-layout: auto;
       max-width: 100%;
     }
     th, td {
@@ -26,13 +29,17 @@
       text-align: left;
       word-break: break-word;
     }
-    th { background-color: #fff; }
+    th {
+      background-color: #fff;
+    }
     td.rarity, th.rarity {
       font-size: 13px;
       width: 40px;
       text-align: center;
     }
-    td:nth-child(7) { min-width: 140px; }
+    td:nth-child(7) {
+      min-width: 140px;
+    }
     .controls {
       display: flex;
       flex-direction: column;
@@ -46,28 +53,51 @@
       padding: 6px;
       border-radius: 4px;
     }
-    input[type="number"] { width: 60px; }
+    input[type="number"] {
+      width: 60px;
+    }
     img {
       width: 60px;
       border-radius: 4px;
       cursor: zoom-in;
     }
+    tr[data-rarity="OSR"] { background-color: #ffe5f0; }
+    tr[data-rarity="RR"]  { background-color: #e6f5ff; }
+    tr[data-rarity="R"]   { background-color: #f9fff0; }
+    tr[data-rarity="U"]   { background-color: #f3f3f3; }
+    tr[data-rarity="C"]   { background-color: #fff; }
     .dark {
       background-color: #222;
       color: #eee;
     }
-    .dark table, .dark th, .dark td { border-color: #666; }
+    .dark table, .dark th, .dark td {
+      border-color: #666;
+    }
     .dark input, .dark select, .dark button, .dark textarea {
       background-color: #333;
       color: #eee;
     }
-    .dark th { background-color: #fff; }
-    .dark #cardTable td, .dark #cardTable th { color: #111; }
+    .dark th {
+      background-color: #fff;
+    }
+    .dark #cardTable td, .dark #cardTable th {
+      color: #111;
+    }
     @media (max-width: 600px) {
-      body { font-size: 16px; padding: 6px; }
-      th, td { font-size: 14px; padding: 6px; }
-      img { width: 45px; }
-      input[type="number"] { width: 50px; }
+      body {
+        font-size: 16px;
+        padding: 6px;
+      }
+      th, td {
+        font-size: 14px;
+        padding: 6px;
+      }
+      img {
+        width: 45px;
+      }
+      input[type="number"] {
+        width: 50px;
+      }
     }
   </style>
 </head>
@@ -87,7 +117,14 @@
   <table id="cardTable">
     <thead>
       <tr>
-        <th>画像</th><th>番号</th><th>名前</th><th class="rarity">レア</th><th>Bloom</th><th>HP</th><th>収録</th><th>枚数</th>
+        <th>画像</th>
+        <th>名前</th>
+        <th>番号</th>
+        <th class="rarity">レア</th>
+        <th>Bloom</th>
+        <th>HP</th>
+        <th>収録</th>
+        <th>枚数</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -99,7 +136,6 @@
     <button onclick="importCSV()">📥 CSVインポート</button>
     <button onclick="exportCSV()">📤 所持CSVをコピー</button>
   </div>
-
   <div id="imageModal" onclick="hideImageModal()" style="
     display:none;
     position:fixed;
@@ -164,8 +200,8 @@
         row.setAttribute("data-rarity", card.rarity);
         row.innerHTML = `
           <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-          <td>${card.id}</td>
           <td>${card.name}</td>
+          <td>${card.id}</td>
           <td class="rarity">${card.rarity}</td>
           <td>${card.bloom}</td>
           <td>${card.hp}</td>
@@ -235,7 +271,7 @@
         document.body.classList.add("dark");
       }
 
-      fetch("json_file/card_data.json") // ← JSONパスはTsubasaの環境に合わせてね
+      fetch("json_file/card_data.json")
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData).map(([key, card]) => ({
