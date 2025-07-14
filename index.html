@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ホロライブカード管理</title>
   <style>
     body {
@@ -26,6 +26,8 @@
       text-align: left;
     }
     th { background-color: #fff; }
+    td:nth-child(6) { min-width: 140px; }
+    td.rarity { font-size: 13px; color: #555; }
     .controls {
       display: flex;
       flex-direction: column;
@@ -35,10 +37,12 @@
     select, input[type="text"], textarea, button {
       font-size: 1em;
       margin: 5px 0;
+      max-width: 300px;
+      padding: 6px;
+      border-radius: 4px;
     }
-    input[type="number"] { width: 70px; }
+    input[type="number"] { width: 60px; }
     img { width: 60px; border-radius: 4px; }
-    td:nth-child(6) { min-width: 140px; } /* ← 収録商品列を広めに */
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
     tr[data-rarity="RR"]  { background-color: #e6f5ff; }
     tr[data-rarity="R"]   { background-color: #f9fff0; }
@@ -79,7 +83,7 @@
   <table id="cardTable">
     <thead>
       <tr>
-        <th>画像</th><th>名前</th><th>レア</th><th>Bloom</th><th>HP</th><th>収録</th><th>枚数</th>
+        <th>画像</th><th>名前＋枚数</th><th>レア</th><th>Bloom</th><th>HP</th><th>収録</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -96,41 +100,27 @@
     let cards = [];
 
     function setupFilters() {
-      const raritySet = new Set();
-      const bloomSet = new Set();
-      const productSet = new Set();
+      const raritySet = new Set(), bloomSet = new Set(), productSet = new Set();
       cards.forEach(c => {
         raritySet.add(c.rarity);
         bloomSet.add(c.bloom);
         productSet.add(c.product);
       });
 
-      const rarity = document.getElementById("rarityFilter");
-      rarity.innerHTML = '<option value="">レアリティ</option>';
-      [...raritySet].sort().forEach(r => {
-        const opt = document.createElement("option");
-        opt.value = r;
-        opt.textContent = r;
-        rarity.appendChild(opt);
-      });
+      function populate(id, items, label) {
+        const select = document.getElementById(id);
+        select.innerHTML = `<option value="">${label}</option>`;
+        [...items].sort().forEach(val => {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val;
+          select.appendChild(opt);
+        });
+      }
 
-      const bloom = document.getElementById("bloomFilter");
-      bloom.innerHTML = '<option value="">Bloom</option>';
-      [...bloomSet].sort().forEach(b => {
-        const opt = document.createElement("option");
-        opt.value = b;
-        opt.textContent = b;
-        bloom.appendChild(opt);
-      });
-
-      const product = document.getElementById("productFilter");
-      product.innerHTML = '<option value="">収録商品</option>';
-      [...productSet].sort().forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = p;
-        product.appendChild(opt);
-      });
+      populate("rarityFilter", raritySet, "レアリティ");
+      populate("bloomFilter", bloomSet, "Bloom");
+      populate("productFilter", productSet, "収録商品");
     }
 
     function renderTable() {
@@ -142,8 +132,7 @@
 
       const tbody = document.querySelector("#cardTable tbody");
       tbody.innerHTML = "";
-      let shown = 0;
-      let ownedCount = 0;
+      let shown = 0, ownedCount = 0;
 
       cards.forEach(card => {
         const count = card.owned;
@@ -153,19 +142,17 @@
         if (product && !card.product.toLowerCase().includes(product)) return;
         if (ownedOnly && (!count || count === 0)) return;
 
-        shown++;
-        ownedCount += parseInt(count || 0);
+        shown++; ownedCount += parseInt(count || 0);
 
         const row = document.createElement("tr");
         row.setAttribute("data-rarity", card.rarity);
         row.innerHTML = `
           <td><a href="${card.url}" target="_blank"><img src="${card.image}" alt="${card.name}"></a></td>
-          <td>${card.name}</td>
-          <td>${card.rarity}</td>
+          <td>${card.name}<br><input type="number" min="0" value="${count}" onchange="updateOwned('${card.id}', this.value)"></td>
+          <td class="rarity">${card.rarity}</td>
           <td>${card.bloom}</td>
           <td>${card.hp}</td>
           <td>${card.product}</td>
-          <td><input type="number" min="0" value="${count}" onchange="updateOwned('${card.id}', this.value)"></td>
         `;
         tbody.appendChild(row);
       });
@@ -181,9 +168,10 @@
       renderTable();
     }
 
-    function updateCountDisplay(totalCards, ownedCards) {
-      const percent = totalCards > 0 ? Math.round((ownedCards / totalCards) * 100) : 0;
-      document.getElementById("countDisplay").textContent = `所持枚数：${ownedCards} / 表示：${totalCards}（平均 ${percent}%）`;
+    function updateCountDisplay(total, owned) {
+      const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+      document.getElementById("countDisplay").textContent =
+        `所持枚数：${owned} / 表示：${total}（平均 ${percent}%）`;
     }
 
     function toggleDarkMode() {
@@ -192,9 +180,8 @@
     }
 
     function importCSV() {
-      const input = document.getElementById("csvInput").value;
-      const lines = input.trim().split("\n");
-      lines.forEach(line => {
+      const input = document.getElementById("csvInput").value.trim().split("\n");
+      input.forEach(line => {
         const [id, count] = line.split(",");
         const num = Math.max(0, parseInt(count) || 0);
         localStorage.setItem("count_" + id, JSON.stringify(num));
@@ -220,7 +207,7 @@
         document.body.classList.add("dark");
       }
 
-      fetch("json_file/card_data.json") // ← Tsubasa環境に合わせてパス調整してね
+      fetch("json_file/card_data.json") // ← Tsubasaの環境に合わせてパス変更
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData).map(([key, card]) => ({
