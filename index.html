@@ -12,10 +12,7 @@
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
+    h2 { text-align: center; margin-bottom: 10px; }
     table {
       border-collapse: collapse;
       width: 100%;
@@ -29,16 +26,26 @@
       text-align: left;
       word-break: break-word;
     }
-    th {
-      background-color: #fff;
+    td:nth-child(2), td:nth-child(3), td.rarity,
+    td:nth-child(5), td:nth-child(6) {
+      white-space: nowrap;
     }
     td.rarity, th.rarity {
       font-size: 13px;
       width: 40px;
       text-align: center;
     }
-    td:nth-child(7) {
-      min-width: 140px;
+    td:nth-child(7) { min-width: 140px; }
+    input[type="number"] { width: 40px; }
+    @media (max-width: 600px) {
+      input[type="number"] { width: 36px; }
+    }
+    img {
+      width: 60px;
+      border-radius: 4px;
+      cursor: zoom-in;
+      background-color: #fff;
+      border: 1px solid #ddd;
     }
     .controls {
       display: flex;
@@ -53,71 +60,33 @@
       padding: 6px;
       border-radius: 4px;
     }
-    input[type="number"] {
-      width: 60px;
-    }
-    img {
-      width: 60px;
-      border-radius: 4px;
-      cursor: zoom-in;
-    }
-    tr[data-rarity="C"]   { background-color: #ffffff; }   /* Common */
-    tr[data-rarity="OC"]  { background-color: #f4f4f4; }   /* Original Common */
-    tr[data-rarity="OSR"] { background-color: #ffe5f0; }   /* Original Super Rare */
-    tr[data-rarity="OUR"] { background-color: #ffece0; }   /* Original Ultra Rare */
-    tr[data-rarity="P"]   { background-color: #fff9e6; }   /* Promo */
-    tr[data-rarity="R"]   { background-color: #f9fff0; }   /* Rare */
-    tr[data-rarity="RR"]  { background-color: #e6f5ff; }   /* Double Rare */
-    tr[data-rarity="S"]   { background-color: #fff3ff; }   /* Special */
-    tr[data-rarity="SEC"] { background-color: #fdfdce; }   /* Secret */
-    tr[data-rarity="SR"]  { background-color: #fff6e6; }   /* Super Rare */
-    tr[data-rarity="SY"]  { background-color: #f0fffc; }   /* System? (仮色) */
-    tr[data-rarity="U"]   { background-color: #f3f3f3; }   /* Uncommon */
-    tr[data-rarity="UR"]  { background-color: #ffe8f8; }   /* Ultra Rare */
     .dark {
       background-color: #222;
       color: #eee;
     }
-    .dark table, .dark th, .dark td {
-      border-color: #666;
-    }
+    .dark table, .dark th, .dark td { border-color: #666; }
     .dark input, .dark select, .dark button, .dark textarea {
       background-color: #333;
       color: #eee;
     }
-    .dark th {
-      background-color: #fff;
-    }
-    .dark #cardTable td, .dark #cardTable th {
-      color: #111;
-    }
-    td:nth-child(2),  /* 名前 */
-    td:nth-child(3),  /* 番号 */
-    td.rarity,        /* レア */
-    td:nth-child(5),  /* Bloom */
-    td:nth-child(6)   /* HP */
-    {
-      white-space: nowrap;
-    }
-    input[type="number"] {
-      width: 40px;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 16px;
-        padding: 6px;
-      }
-      th, td {
-        font-size: 14px;
-        padding: 6px;
-      }
-      img {
-        width: 45px;
-      }
-      input[type="number"] {
-        width: 36px;
-      }
-    }
+    .dark th { background-color: #fff; }
+    .dark #cardTable td, .dark #cardTable th { color: #111; }
+    .dark tr[data-rarity] td { color: #000; }
+
+    /* レアリティ背景色（13種） */
+    tr[data-rarity="C"]   { background-color: #ffffff; }
+    tr[data-rarity="OC"]  { background-color: #f4f4f4; }
+    tr[data-rarity="OSR"] { background-color: #ffe5f0; }
+    tr[data-rarity="OUR"] { background-color: #ffece0; }
+    tr[data-rarity="P"]   { background-color: #fff9e6; }
+    tr[data-rarity="R"]   { background-color: #f9fff0; }
+    tr[data-rarity="RR"]  { background-color: #e6f5ff; }
+    tr[data-rarity="S"]   { background-color: #fff3ff; }
+    tr[data-rarity="SEC"] { background-color: #fdfdce; }
+    tr[data-rarity="SR"]  { background-color: #fff6e6; }
+    tr[data-rarity="SY"]  { background-color: #f0fffc; }
+    tr[data-rarity="U"]   { background-color: #f3f3f3; }
+    tr[data-rarity="UR"]  { background-color: #ffe8f8; }
   </style>
 </head>
 <body>
@@ -126,6 +95,7 @@
     <button onclick="toggleDarkMode()">🌗 モード切替</button>
     <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
     <select id="rarityFilter" onchange="renderTable()"></select>
+    <select id="colorFilter" onchange="renderTable()"></select>
     <select id="bloomFilter" onchange="renderTable()"></select>
     <select id="productFilter" onchange="renderTable()"></select>
     <label><input type="checkbox" id="ownedFilter" onchange="renderTable()"> 所持ありのみ</label>
@@ -140,6 +110,7 @@
         <th>名前</th>
         <th>番号</th>
         <th class="rarity">レア</th>
+        <th>色</th>
         <th>Bloom</th>
         <th>HP</th>
         <th>収録</th>
@@ -171,9 +142,11 @@
     let cards = [];
 
     function setupFilters() {
-      const raritySet = new Set(), bloomSet = new Set(), productSet = new Set();
+      const raritySet = new Set(), colorSet = new Set(),
+            bloomSet = new Set(), productSet = new Set();
       cards.forEach(c => {
         raritySet.add(c.rarity);
+        colorSet.add(c.color);
         bloomSet.add(c.bloom);
         productSet.add(c.product);
       });
@@ -190,6 +163,7 @@
       }
 
       populate("rarityFilter", raritySet, "レアリティ");
+      populate("colorFilter", colorSet, "色");
       populate("bloomFilter", bloomSet, "Bloom");
       populate("productFilter", productSet, "収録商品");
     }
@@ -197,6 +171,7 @@
     function renderTable() {
       const keyword = document.getElementById("nameSearch").value.toLowerCase();
       const rarity = document.getElementById("rarityFilter").value;
+      const color = document.getElementById("colorFilter").value;
       const bloom = document.getElementById("bloomFilter").value;
       const product = document.getElementById("productFilter").value.toLowerCase();
       const ownedOnly = document.getElementById("ownedFilter").checked;
@@ -209,6 +184,7 @@
         const count = card.owned;
         if (keyword && !card.name.toLowerCase().includes(keyword)) return;
         if (rarity && card.rarity !== rarity) return;
+        if (color && card.color !== color) return;
         if (bloom && card.bloom !== bloom) return;
         if (product && !card.product.toLowerCase().includes(product)) return;
         if (ownedOnly && (!count || count === 0)) return;
@@ -222,6 +198,7 @@
           <td>${card.name}</td>
           <td>${card.id}</td>
           <td class="rarity">${card.rarity}</td>
+          <td>${card.color}</td>
           <td>${card.bloom}</td>
           <td>${card.hp}</td>
           <td>${card.product}</td>
@@ -294,11 +271,12 @@
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData)
-            .sort(([idA], [idB]) => idA.localeCompare(idB)) // ← ここで番号順にソート
+            .sort(([idA], [idB]) => idA.localeCompare(idB))
             .map(([key, card]) => ({
               id: key,
               name: card.name,
               rarity: card.rarity,
+              color: card.color ?? "-",
               bloom: card.bloom_level ?? "-",
               hp: card.card_type === "ホロメン" ? card.hp : "-",
               product: card.product,
