@@ -293,17 +293,19 @@
       fetch("json_file/card_data.json")
         .then(response => response.json())
         .then(rawData => {
-          cards = Object.entries(rawData).map(([key, card]) => ({
-            id: key,
-            name: card.name,
-            rarity: card.rarity,
-            bloom: card.bloom_level ?? "-",
-            hp: card.card_type === "ホロメン" ? card.hp : "-",
-            product: card.product,
-            image: card.image_url,
-            url: `https://hololive-official-cardgame.com/cardlist/?id=${card.id}`,
-            owned: parseInt(localStorage.getItem("count_" + card.id) ?? "0")
-          }));
+          cards = Object.entries(rawData)
+            .sort(([idA], [idB]) => idA.localeCompare(idB)) // ← ここで番号順にソート
+            .map(([key, card]) => ({
+              id: key,
+              name: card.name,
+              rarity: card.rarity,
+              bloom: card.bloom_level ?? "-",
+              hp: card.card_type === "ホロメン" ? card.hp : "-",
+              product: card.product,
+              image: card.image_url,
+              url: `https://hololive-official-cardgame.com/cardlist/?id=${card.id}`,
+              owned: parseInt(localStorage.getItem("count_" + card.id) ?? "0")
+            }));
           setupFilters();
           renderTable();
         })
