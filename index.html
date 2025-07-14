@@ -18,15 +18,18 @@
     table {
       border-collapse: collapse;
       width: 100%;
-      overflow-x: auto;
-      display: block;
-      white-space: nowrap;
+      table-layout: fixed;
+      word-wrap: break-word;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 6px;
       text-align: left;
       font-size: 0.9em;
+      white-space: normal;
+    }
+    th {
+      background-color: #fff;
     }
     select, input[type="text"], button {
       margin: 5px 5px 10px 0;
@@ -117,7 +120,7 @@
       const keyword = document.getElementById("nameSearch").value.toLowerCase();
       const rarity = document.getElementById("rarityFilter").value;
       const bloom = document.getElementById("bloomFilter").value;
-      const product = document.getElementById("productFilter").value;
+      const product = document.getElementById("productFilter").value.toLowerCase();
       const ownedOnly = document.getElementById("ownedFilter").checked;
 
       const tbody = document.querySelector("#cardTable tbody");
@@ -130,7 +133,7 @@
         if (keyword && !card.name.toLowerCase().includes(keyword)) return;
         if (rarity && card.rarity !== rarity) return;
         if (bloom && card.bloom !== bloom) return;
-        if (product && card.product !== product) return;
+        if (product && !card.product.toLowerCase().includes(product)) return;
         if (ownedOnly && (!count || count === 0)) return;
 
         shown++;
