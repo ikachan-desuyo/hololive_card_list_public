@@ -5,64 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ホロライブカード管理</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 10px;
-      font-size: 15px;
-      transition: background 0.3s, color 0.3s;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      table-layout: auto;
-    }
+    body { font-family: sans-serif; margin: 10px; font-size: 15px; transition: background 0.3s, color 0.3s; }
+    h2 { text-align: center; margin-bottom: 10px; }
+    table { border-collapse: collapse; width: 100%; table-layout: auto; }
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-      font-size: 15px;
-      word-wrap: break-word;
-      white-space: normal;
+      border: 1px solid #ccc; padding: 8px; text-align: left;
+      font-size: 15px; word-wrap: break-word; white-space: normal;
     }
-    th {
-      background-color: #fff;
-    }
-    select, input[type="text"], button {
-      margin: 5px 0;
-      font-size: 1em;
-    }
-    input[type="number"] {
-      width: 70px;
-      font-size: 1em;
-    }
-    img {
-      width: 60px;
-      border-radius: 4px;
-    }
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
+    th { background-color: #fff; }
+    .controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    select, input[type="text"], textarea, button { font-size: 1em; margin: 5px 0; }
+    input[type="number"] { width: 70px; font-size: 1em; }
+    img { width: 60px; border-radius: 4px; }
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
     tr[data-rarity="RR"]  { background-color: #e6f5ff; }
     tr[data-rarity="R"]   { background-color: #f9fff0; }
     tr[data-rarity="U"]   { background-color: #f3f3f3; }
     tr[data-rarity="C"]   { background-color: #fff; }
-    .dark {
-      background-color: #222;
-      color: #eee;
-    }
+    .dark { background-color: #222; color: #eee; }
     .dark table, .dark th, .dark td { border-color: #666; }
-    .dark input, .dark select, .dark button { background-color: #333; color: #eee; }
+    .dark input, .dark select, .dark button, .dark textarea { background-color: #333; color: #eee; }
     .dark th { background-color: #fff; }
     .dark #cardTable td, .dark #cardTable th { color: #111; }
-
     @media (max-width: 600px) {
       body { font-size: 16px; padding: 6px; }
       th, td { font-size: 14px; padding: 6px; }
@@ -107,6 +71,13 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <h3>CSVインポート・エクスポート</h3>
+  <div class="controls">
+    <textarea id="csvInput" rows="4" placeholder="id,枚数 のCSVを貼り付けてください"></textarea>
+    <button onclick="importCSV()">📥 CSVインポート</button>
+    <button onclick="exportCSV()">📤 所持CSVをコピー</button>
+  </div>
 
   <script>
     let cards = [];
@@ -181,12 +152,36 @@
       localStorage.setItem("darkMode", document.body.classList.contains("dark"));
     }
 
+    function importCSV() {
+      const input = document.getElementById("csvInput").value;
+      const lines = input.trim().split("\n");
+      lines.forEach(line => {
+        const [id, count] = line.split(",");
+        const num = Math.max(0, parseInt(count) || 0);
+        localStorage.setItem("count_" + id, JSON.stringify(num));
+        const card = cards.find(c => c.id === id);
+        if (card) card.owned = num;
+      });
+      renderTable();
+      alert("CSVを反映しました！");
+    }
+
+    function exportCSV() {
+      const lines = cards
+        .filter(c => c.owned > 0)
+        .map(c => `${c.id},${c.owned}`);
+      const csv = lines.join("\n");
+      navigator.clipboard.writeText(csv)
+        .then(() => alert("所持CSVをクリップボードにコピーしました！"))
+        .catch(() => alert("コピーに失敗しました"));
+    }
+
     window.onload = () => {
       if (localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark");
       }
 
-      fetch("json_file/card_data.json")
+      fetch("json_file/card_data.json") // ← 仮パス。必要に応じて修正してください
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData).map(([key, card]) => ({
