@@ -10,33 +10,29 @@
       margin: 10px;
       font-size: 15px;
       transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
+    h2 { text-align: center; margin-bottom: 10px; }
     table {
       border-collapse: collapse;
       width: 100%;
-      table-layout: auto;
+      table-layout: fixed;
+      max-width: 100%;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       font-size: 15px;
-      word-wrap: break-word;
-      white-space: normal;
       text-align: left;
+      word-break: break-word;
     }
-    th {
-      background-color: #fff;
-    }
+    th { background-color: #fff; }
     td.rarity, th.rarity {
       font-size: 13px;
       width: 40px;
       text-align: center;
     }
-    td:nth-child(7) { min-width: 140px; } /* 収録列を広めに */
+    td:nth-child(7) { min-width: 140px; }
     .controls {
       display: flex;
       flex-direction: column;
@@ -56,11 +52,6 @@
       border-radius: 4px;
       cursor: zoom-in;
     }
-    tr[data-rarity="OSR"] { background-color: #ffe5f0; }
-    tr[data-rarity="RR"]  { background-color: #e6f5ff; }
-    tr[data-rarity="R"]   { background-color: #f9fff0; }
-    tr[data-rarity="U"]   { background-color: #f3f3f3; }
-    tr[data-rarity="C"]   { background-color: #fff; }
     .dark {
       background-color: #222;
       color: #eee;
@@ -108,6 +99,19 @@
     <button onclick="importCSV()">📥 CSVインポート</button>
     <button onclick="exportCSV()">📤 所持CSVをコピー</button>
   </div>
+
+  <div id="imageModal" onclick="hideImageModal()" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100vw; height:100vh;
+    background:rgba(0,0,0,0.8);
+    text-align:center;
+    z-index:1000;
+    cursor:zoom-out;">
+    <img src="" style="margin-top:5vh; width:100vw; max-height:90vh; object-fit:contain;">
+  </div>
+
   <script>
     let cards = [];
 
@@ -231,7 +235,7 @@
         document.body.classList.add("dark");
       }
 
-      fetch("json_file/card_data.json")
+      fetch("json_file/card_data.json") // ← JSONパスはTsubasaの環境に合わせてね
         .then(response => response.json())
         .then(rawData => {
           cards = Object.entries(rawData).map(([key, card]) => ({
@@ -251,17 +255,5 @@
         .catch(() => alert("JSONファイルの読み込みに失敗しました"));
     };
   </script>
-  <div id="imageModal" onclick="hideImageModal()" style="
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.8);
-  text-align:center;
-  z-index:1000;
-  cursor:zoom-out;
-">
-  <img src="" style="margin-top:50px; max-width:90%; max-height:90%;">
-</div>
 </body>
 </html>
