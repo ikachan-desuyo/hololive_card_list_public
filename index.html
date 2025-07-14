@@ -8,8 +8,7 @@
     body {
       font-family: sans-serif;
       margin: 10px;
-      font-size: 16px;
-      line-height: 1.6;
+      font-size: 15px;
       transition: background 0.3s, color 0.3s;
     }
     h2 {
@@ -20,20 +19,20 @@
       border-collapse: collapse;
       width: 100%;
       table-layout: auto;
-      word-wrap: break-word;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
       font-size: 15px;
+      word-wrap: break-word;
       white-space: normal;
     }
     th {
       background-color: #fff;
     }
     select, input[type="text"], button {
-      margin: 5px 5px 10px 0;
+      margin: 5px 0;
       font-size: 1em;
     }
     input[type="number"] {
@@ -46,8 +45,8 @@
     }
     .controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      flex-direction: column;
+      gap: 8px;
       margin-bottom: 10px;
     }
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
@@ -63,6 +62,13 @@
     .dark input, .dark select, .dark button { background-color: #333; color: #eee; }
     .dark th { background-color: #fff; }
     .dark #cardTable td, .dark #cardTable th { color: #111; }
+
+    @media (max-width: 600px) {
+      body { font-size: 16px; padding: 6px; }
+      th, td { font-size: 14px; padding: 6px; }
+      img { width: 45px; }
+      input[type="number"] { width: 50px; }
+    }
   </style>
 </head>
 <body>
