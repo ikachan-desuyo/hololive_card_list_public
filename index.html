@@ -1,59 +1,98 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ホロライブカード管理</title>
   <style>
-    body { font-family: sans-serif; margin: 1em; transition: background 0.3s, color 0.3s; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 0.95em; }
-    select, input[type="text"], button { margin: 0.5em 0.5em 0.5em 0; }
-    img { width: 60px; border-radius: 4px; }
+    body {
+      font-family: sans-serif;
+      margin: 10px;
+      font-size: 14px;
+      transition: background 0.3s, color 0.3s;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      white-space: nowrap;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+      font-size: 0.9em;
+    }
+    select, input[type="text"], button {
+      margin: 5px 5px 10px 0;
+      font-size: 1em;
+    }
+    input[type="number"] {
+      width: 60px;
+      font-size: 1em;
+    }
+    img {
+      width: 50px;
+      border-radius: 4px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
     tr[data-rarity="RR"]  { background-color: #e6f5ff; }
     tr[data-rarity="R"]   { background-color: #f9fff0; }
     tr[data-rarity="U"]   { background-color: #f3f3f3; }
     tr[data-rarity="C"]   { background-color: #fff; }
-    .dark { background-color: #222; color: #eee; }
+    .dark {
+      background-color: #222;
+      color: #eee;
+    }
     .dark table, .dark th, .dark td { border-color: #666; }
     .dark input, .dark select, .dark button { background-color: #333; color: #eee; }
-    .dark #cardTable th {background-color: #eee;}
-    .dark #cardTable td, .dark #cardTable th { color: #111; } /* JSON表示部分だけ黒に固定 */
+    .dark th { background-color: #fff; }
+    .dark #cardTable td, .dark #cardTable th { color: #111; }
   </style>
 </head>
 <body>
-  <h2>ホロライブカード一覧（所持枚数対応）</h2>
-  <button onclick="toggleDarkMode()">🌗 ダークモード切替</button>
-  <br>
-  <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()">
-  <label>レアリティ:</label>
-  <select id="rarityFilter" onchange="renderTable()">
-    <option value="">すべて</option>
-    <option value="OSR">OSR</option>
-    <option value="RR">RR</option>
-    <option value="R">R</option>
-    <option value="U">U</option>
-    <option value="C">C</option>
-  </select>
-  <label>Bloom:</label>
-  <select id="bloomFilter" onchange="renderTable()">
-    <option value="">すべて</option>
-    <option value="Debut">Debut</option>
-    <option value="1st">1st</option>
-    <option value="2nd">2nd</option>
-    <option value="-">-</option>
-  </select>
-  <label>収録商品:</label>
-  <select id="productFilter" onchange="renderTable()">
-    <option value="">すべて</option>
-  </select>
-  <label><input type="checkbox" id="ownedFilter" onchange="renderTable()"> 所持ありのみ表示</label>
-  <div id="countDisplay" style="margin-top:1em; font-weight:bold;"></div>
+  <h2>ホロライブカード一覧</h2>
+  <div class="controls">
+    <button onclick="toggleDarkMode()">🌗 モード切替</button>
+    <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
+    <select id="rarityFilter" onchange="renderTable()">
+      <option value="">レアリティ</option>
+      <option value="OSR">OSR</option>
+      <option value="RR">RR</option>
+      <option value="R">R</option>
+      <option value="U">U</option>
+      <option value="C">C</option>
+    </select>
+    <select id="bloomFilter" onchange="renderTable()">
+      <option value="">Bloom</option>
+      <option value="Debut">Debut</option>
+      <option value="1st">1st</option>
+      <option value="2nd">2nd</option>
+      <option value="-">-</option>
+    </select>
+    <select id="productFilter" onchange="renderTable()">
+      <option value="">収録商品</option>
+    </select>
+    <label><input type="checkbox" id="ownedFilter" onchange="renderTable()"> 所持ありのみ</label>
+  </div>
+
+  <div id="countDisplay" style="font-weight:bold; margin-bottom:10px;"></div>
 
   <table id="cardTable">
     <thead>
       <tr>
-        <th>画像</th><th>カード名</th><th>レア</th><th>Bloom</th><th>種別</th><th>HP</th><th>収録</th><th>所持枚数</th>
+        <th>画像</th><th>名前</th><th>レア</th><th>Bloom</th><th>HP</th><th>収録</th><th>枚数</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -65,7 +104,7 @@
     function setupProductFilter() {
       const products = [...new Set(cards.map(c => c.product))].sort();
       const select = document.getElementById("productFilter");
-      select.innerHTML = '<option value="">すべて</option>';
+      select.innerHTML = '<option value="">収録商品</option>';
       products.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p;
@@ -104,10 +143,9 @@
           <td>${card.name}</td>
           <td>${card.rarity}</td>
           <td>${card.bloom}</td>
-          <td>${card.type}</td>
           <td>${card.hp}</td>
           <td>${card.product}</td>
-          <td><input type="number" min="0" value="${count}" onchange="updateOwned('${card.id}', this.value)" style="width:50px;"></td>
+          <td><input type="number" min="0" value="${count}" onchange="updateOwned('${card.id}', this.value)"></td>
         `;
         tbody.appendChild(row);
       });
@@ -125,7 +163,7 @@
 
     function updateCountDisplay(totalCards, ownedCards) {
       const percent = totalCards > 0 ? Math.round((ownedCards / totalCards) * 100) : 0;
-      document.getElementById("countDisplay").textContent = `所持枚数：${ownedCards} / 表示カード数：${totalCards}（平均 ${percent}%）`;
+      document.getElementById("countDisplay").textContent = `所持枚数：${ownedCards} / 表示：${totalCards}（平均 ${percent}%）`;
     }
 
     function toggleDarkMode() {
@@ -146,7 +184,6 @@
             name: card.name,
             rarity: card.rarity,
             bloom: card.bloom_level ?? "-",
-            type: card.card_type,
             hp: card.card_type === "ホロメン" ? card.hp : "-",
             product: card.product,
             image: card.image_url,
