@@ -17,15 +17,12 @@
       background: #222;
       color: #eee;
     }
-
     .dark table {
       background: #333;
     }
-
     .dark th, .dark td {
       border-color: #666;
     }
-
     .dark input, .dark select, .dark textarea {
       background: #444;
       color: #eee;
@@ -40,23 +37,6 @@
       overflow-x: hidden;
     }
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .controls button,
-    .controls input,
-    .controls select {
-      font-size: 14px;
-      padding: 6px;
-      min-width: 120px;
-      box-sizing: border-box;
-    }
-
     .top-bar {
       position: sticky;
       top: 0;
@@ -65,7 +45,6 @@
       border-bottom: 1px solid #ccc;
       padding: 10px;
     }
-
     .dark .top-bar {
       background: #222;
       border-color: #444;
@@ -95,9 +74,25 @@
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      justify-content: flex-end;
+      gap: 8px;
       margin-bottom: 10px;
-      align-items: center;
+    }
+    .controls button,
+    .controls input,
+    .controls select {
+      font-size: 14px;
+      padding: 6px;
+      min-width: 120px;
+      box-sizing: border-box;
+    }
+    input[type="text"] {
+      width: 180px;
+    }
+
+    select {
+      font-size: 14px;
+      max-width: 200px;
     }
 
     .filter-group {
@@ -106,55 +101,50 @@
       padding: 10px;
       margin-bottom: 10px;
     }
-
     .dark .filter-group {
       border-color: #666;
     }
-
     .filter-group legend {
       font-weight: bold;
       padding: 0 6px;
     }
-
-    #filtersWrapper {
-      display: none;
-    }
-
     .filter-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 6px;
     }
-
     .filter-row label {
       display: flex;
       align-items: center;
       gap: 4px;
     }
+    #filtersWrapper {
+      display: none;
+    }
 
     table {
       border-collapse: collapse;
+      table-layout: fixed;
       width: 100%;
-      table-layout: auto;
     }
-
     thead {
       position: sticky;
-      top: 0;
+      top: 100px;
       background: #f8f8f8;
-      z-index: 50;
+      z-index: 100;
     }
     .dark thead {
       background: #333;
+      z-index: 100;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       font-size: 14px;
       text-align: left;
       vertical-align: top;
+      word-break: break-word;
     }
     .dark th, .dark td {
       border-color: #666;
@@ -163,11 +153,9 @@
     th:nth-child(2) {
       white-space: nowrap;
     }
-
     td:nth-child(2) {
       min-width: 140px;
       max-width: 180px;
-      word-break: break-word;
     }
 
     td.name-cell .meta {
@@ -184,7 +172,6 @@
     }
 
     td:nth-child(8), th:nth-child(8) {
-      word-break: break-word;
       min-width: 320px;
     }
 
@@ -208,16 +195,20 @@
       border: 1px solid #ddd;
     }
 
-    select {
-      font-size: 15px;
-      padding: 6px;
-      max-width: 240px;
-    }
-
-    input[type="text"] {
-      font-size: 15px;
-      padding: 6px;
-      width: 240px;
+    @media screen and (max-width: 768px) {
+      table {
+        font-size: 12px;
+      }
+      td, th {
+        padding: 4px;
+      }
+      img {
+        width: 40px;
+      }
+      td:nth-child(2), th:nth-child(2),
+      td:nth-child(8), th:nth-child(8) {
+        max-width: 160px;
+      }
     }
   </style>
 </head>
