@@ -13,7 +13,8 @@
       overflow-x: hidden;
     }
     .container {
-      max-width: 1800px; /* 横幅拡張 */
+      max-width: none;
+      width: fit-content;
       margin: 0 auto;
       padding: 10px;
     }
@@ -106,20 +107,6 @@
       background-color: #fff;
       border: 1px solid #ddd;
     }
-    tr[data-rarity="-"]    { background-color: #ffffff; }
-    tr[data-rarity="C"]    { background-color: #ffffff; }
-    tr[data-rarity="OC"]   { background-color: #f4f4f4; }
-    tr[data-rarity="OSR"]  { background-color: #ffe5f0; }
-    tr[data-rarity="OUR"]  { background-color: #ffece0; }
-    tr[data-rarity="P"]    { background-color: #fff9e6; }
-    tr[data-rarity="R"]    { background-color: #f9fff0; }
-    tr[data-rarity="RR"]   { background-color: #e6f5ff; }
-    tr[data-rarity="S"]    { background-color: #fff3ff; }
-    tr[data-rarity="SEC"]  { background-color: #fdfdce; }
-    tr[data-rarity="SR"]   { background-color: #fff6e6; }
-    tr[data-rarity="SY"]   { background-color: #f0fffc; }
-    tr[data-rarity="U"]    { background-color: #f3f3f3; }
-    tr[data-rarity="UR"]   { background-color: #ffe8f8; }
   </style>
 </head>
 <body>
@@ -290,12 +277,12 @@
         cards.forEach(card => {
           const count = card.owned;
 
-          if (
-            ownedStates.length === 1 &&
-            ((ownedStates[0] === "owned" && !count) ||
-             (ownedStates[0] === "unowned" && count))
-          ) return;
-          if (ownedStates.length === 0) return;
+          // 所持状態のOR条件評価
+          const matchOwned =
+            ownedStates.length === 0 ||
+            (ownedStates.includes("owned") && count > 0) ||
+            (ownedStates.includes("unowned") && (!count || count == 0));
+          if (!matchOwned) return;
 
           const match = {
             name: !keyword || card.name.toLowerCase().includes(keyword),
