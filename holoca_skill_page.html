@@ -18,7 +18,7 @@
       margin: 0 auto;
       padding: 10px;
     }
-    .top-nav {
+    .top-bar {
       position: sticky;
       top: 0;
       background: #fff;
@@ -26,7 +26,14 @@
       border-bottom: 1px solid #ccc;
       padding: 10px;
     }
-    .top-nav button {
+    .top-bar .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .top-bar button {
       padding: 6px 10px;
       font-size: 14px;
       cursor: pointer;
@@ -34,7 +41,8 @@
     }
     h2 {
       text-align: center;
-      margin-top: 0;
+      margin-top: 10px;
+      margin-bottom: 10px;
     }
     .controls {
       display: flex;
@@ -53,6 +61,17 @@
       font-weight: bold;
       padding: 0 6px;
     }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .filter-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
     table {
       border-collapse: collapse;
       width: 100%;
@@ -69,7 +88,8 @@
       white-space: nowrap;
       min-width: 100px;
     }
-    td:nth-child(8), th:nth-child(8), td:nth-child(9), th:nth-child(9) {
+    td:nth-child(8), th:nth-child(8),
+    td:nth-child(9), th:nth-child(9) {
       word-break: break-word;
       min-width: 120px;
     }
@@ -90,48 +110,53 @@
 </head>
 <body>
   <div class="container">
-    <div class="top-nav">
-      <button onclick="history.back()">← 前のページへ</button>
-    </div>
-    <h2>カード詳細検索</h2>
+    <div class="top-bar">
+      <div class="nav-row">
+        <button onclick="history.back()">← 前のページへ</button>
+        <h2>カード詳細検索</h2>
+        <div>
+          <button onclick="toggleDarkMode()">🌗 モード切替</button>
+          <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
+          <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+        </div>
+      </div>
+      <div id="filtersWrapper">
+        <fieldset class="filter-group">
+          <legend>所持状態</legend>
+          <div class="filter-row">
+            <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
+            <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
+          </div>
+        </fieldset>
 
-    <div class="controls">
-      <button onclick="toggleDarkMode()">🌗 モード切替</button>
-      <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
-    </div>
+        <fieldset class="filter-group">
+          <legend>レアリティ</legend>
+          <button onclick="selectAll('rarityFilter')">全選択</button>
+          <button onclick="clearAll('rarityFilter')">選択解除</button>
+          <div class="filter-row" id="rarityFilter"></div>
+        </fieldset>
 
-    <div class="controls">
-      <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
-    </div>
+        <fieldset class="filter-group">
+          <legend>色</legend>
+          <button onclick="selectAll('colorFilter')">全選択</button>
+          <button onclick="clearAll('colorFilter')">選択解除</button>
+          <div class="filter-row" id="colorFilter"></div>
+        </fieldset>
 
-    <div id="filtersWrapper">
-      <fieldset class="filter-group">
-        <legend>所持状態</legend>
-        <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
-        <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
-      </fieldset>
+        <fieldset class="filter-group">
+          <legend>Bloom</legend>
+          <button onclick="selectAll('bloomFilter')">全選択</button>
+          <button onclick="clearAll('bloomFilter')">選択解除</button>
+          <div class="filter-row" id="bloomFilter"></div>
+        </fieldset>
 
-      <fieldset class="filter-group">
-        <legend>レアリティ</legend>
-        <div id="rarityFilter"></div>
-      </fieldset>
-
-      <fieldset class="filter-group">
-        <legend>色</legend>
-        <div id="colorFilter"></div>
-      </fieldset>
-
-      <fieldset class="filter-group">
-        <legend>Bloom</legend>
-        <div id="bloomFilter"></div>
-      </fieldset>
-
-      <fieldset class="filter-group">
-        <legend>収録商品</legend>
-        <select id="productFilter" onchange="renderTable()">
-          <option value="">収録商品（選択）</option>
-        </select>
-      </fieldset>
+        <fieldset class="filter-group">
+          <legend>収録商品</legend>
+          <select id="productFilter" onchange="renderTable()">
+            <option value="">収録商品（選択）</option>
+          </select>
+        </fieldset>
+      </div>
     </div>
 
     <table id="cardTable">
@@ -175,6 +200,16 @@
         localStorage.setItem("darkMode", document.body.classList.contains("dark"));
       }
 
+      function selectAll(id) {
+        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
+        renderTable();
+      }
+
+      function clearAll(id) {
+        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
+        renderTable();
+      }
+
       function setupFilters() {
         const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
         cards.forEach(c => {
@@ -210,6 +245,24 @@
         populateSelect("productFilter", productSet, "収録商品");
       }
 
+      function renderSkills(skills) {
+        return skills.map(skill => {
+          if (skill.text) {
+            return `<b>【${skill.type}】</b><br>${skill.text}`;
+          } else {
+            const namePart = skill.name ? `[${skill.name}]` : "";
+            const typePart = `<b>【${skill.type}】</b>`;
+            const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
+            const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+            const iconText = skill.icons?.main ? skill.icons.main.join("・") : "";
+            const tokkouText = skill.icons?.tokkou ? `特攻：${skill.icons.tokkou.join("・")}` : "";
+            const icons = iconText || tokkouText ? `<br>${iconText}${tokkouText ? "｜" + tokkouText : ""}` : "";
+            const desc = skill.description ?? "";
+            return `${typePart}${namePart}${dmg}${subtype}${icons}<br>${desc}`;
+          }
+        }).join("<br><br>");
+      }
+
       function renderTable() {
         const keyword = document.getElementById("keywordSearch").value.toLowerCase();
         const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
@@ -231,21 +284,18 @@
             (ownedStates.includes("unowned") && (!count || count == 0));
           if (!matchOwned) return;
 
+          const allText = [
+            card.name, card.id, card.rarity, card.color, card.bloom,
+            card.hp ?? card.life ?? "", card.product,
+            card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
+          ].join(" ").toLowerCase();
+
           const match = {
             rarity: rarity.length === 0 || rarity.includes(card.rarity),
             color: color.length === 0 || color.includes(card.color),
             bloom: bloom.length === 0 || bloom.includes(card.bloom),
             product: !product || card.product.toLowerCase().includes(product),
-            keyword: !keyword || (
-              card.name.toLowerCase().includes(keyword) ||
-              card.id.toLowerCase().includes(keyword) ||
-              card.rarity.toLowerCase().includes(keyword) ||
-              card.color.toLowerCase().includes(keyword) ||
-              card.bloom.toLowerCase().includes(keyword) ||
-              (card.hp ?? card.life ?? "").toString().includes(keyword) ||
-              card.tags.join(" ").toLowerCase().includes(keyword) ||
-              card.skills.join(" ").toLowerCase().includes(keyword)
-            )
+            keyword: !keyword || allText.includes(keyword)
           };
 
           if (Object.values(match).includes(false)) return;
@@ -259,8 +309,8 @@
             <td>${card.color}</td>
             <td>${card.bloom}</td>
             <td>${card.hp ?? card.life ?? "-"}</td>
-            <td>${card.tags.join(", ")}</td>
-            <td>${card.skills.join(", ")}</td>
+            <td>${card.tags.join("<br>")}</td>
+            <td>${renderSkills(card.skills)}</td>
           `;
           tbody.appendChild(row);
         });
