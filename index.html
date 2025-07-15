@@ -127,7 +127,68 @@
 </head>
 <body>
   <div class="container">
-    <!-- 以下にフィルターUI、表、CSVエリア、画像モーダル、JS処理が続きます -->
+    <h2>ホロライブカード一覧</h2>
+    <div class="controls">
+      <button onclick="toggleDarkMode()">🌗 モード切替</button>
+      <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
+    </div>
+
+    <div class="filter-row" id="ownedStateGroup">
+      <label><input type="checkbox" name="ownedState" value="owned" checked> 所持あり</label>
+      <label><input type="checkbox" name="ownedState" value="unowned" checked> 所持なし</label>
+    </div>
+
+    <div class="filter-row toggle-switch">
+      <label>
+        <input type="checkbox" id="filterMode" />
+      </label>
+      <span class="label">OR条件</span>
+    </div>
+
+    <div class="filter-row" id="rarityFilter">
+      <button onclick="selectAll('rarityFilter')">全選択</button>
+      <button onclick="clearAll('rarityFilter')">全部外す</button>
+    </div>
+    <div class="filter-row" id="colorFilter">
+      <button onclick="selectAll('colorFilter')">全選択</button>
+      <button onclick="clearAll('colorFilter')">全部外す</button>
+    </div>
+    <div class="filter-row" id="bloomFilter">
+      <button onclick="selectAll('bloomFilter')">全選択</button>
+      <button onclick="clearAll('bloomFilter')">全部外す</button>
+    </div>
+
+    <div class="controls">
+      <select id="productFilter" onchange="renderTable()">
+        <option value="">収録商品（選択）</option>
+      </select>
+    </div>
+
+    <div id="countDisplay" style="font-weight:bold; margin-bottom:10px;"></div>
+
+    <table id="cardTable">
+      <thead>
+        <tr>
+          <th>画像</th>
+          <th>名前</th>
+          <th>番号</th>
+          <th class="rarity">レア</th>
+          <th>色</th>
+          <th>Bloom</th>
+          <th>HP</th>
+          <th>収録</th>
+          <th>枚数</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>CSVインポート・エクスポート</h3>
+    <div class="controls">
+      <textarea id="csvInput" rows="4" placeholder="id,枚数 のCSVを貼り付けてください"></textarea>
+      <button onclick="importCSV()">📥 CSVインポート</button>
+      <button onclick="exportCSV()">📤 所持CSVをコピー</button>
+    </div>
     <div id="imageModal" onclick="hideImageModal()" style="
       display:none;
       position:fixed;
@@ -147,14 +208,14 @@
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
         renderTable();
       }
+
       function clearAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
         renderTable();
       }
 
       function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(),
-              bloomSet = new Set(), productSet = new Set();
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
         cards.forEach(c => {
           raritySet.add(c.rarity);
           colorSet.add(c.color);
@@ -207,7 +268,6 @@
         cards.forEach(card => {
           const count = card.owned;
 
-          // 所持状態フィルター
           if (
             ownedStates.length === 1 &&
             ((ownedStates[0] === "owned" && !count) ||
@@ -298,14 +358,17 @@
         }
 
         fetch("json_file/card_data.json")
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) throw new Error("JSON読み込み失敗");
+            return response.json();
+          })
           .then(rawData => {
             cards = Object.entries(rawData)
               .sort(([idA], [idB]) => idA.localeCompare(idB))
               .map(([key, card]) => ({
                 id: key,
                 name: card.name,
-                rarity: card.rarity,
+                rarity: card.rarity ?? "-",
                 color: card.color ?? "-",
                 bloom: card.bloom_level ?? "-",
                 hp: card.card_type === "ホロメン" ? card.hp : "-",
@@ -317,7 +380,10 @@
             setupFilters();
             renderTable();
           })
-          .catch(() => alert("JSONの読み込みに失敗しました"));
+          .catch(err => {
+            console.error(err);
+            alert("JSONファイルの読み込みに失敗しました！");
+          });
       };
     </script>
   </div>
