@@ -12,6 +12,22 @@
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
     }
+    .dark {
+      background: #222;
+      color: #eee;
+    }
+    .dark table {
+      background: #333;
+    }
+    .dark th, .dark td {
+      border-color: #666;
+    }
+    .dark input, .dark select, .dark textarea {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
     .container {
       max-width: none;
       width: fit-content;
@@ -26,6 +42,11 @@
       border-bottom: 1px solid #ccc;
       padding: 10px;
     }
+    .dark .top-bar {
+      background: #222;
+      border-color: #444;
+    }
+
     .top-bar .nav-row {
       display: flex;
       justify-content: space-between;
@@ -39,11 +60,13 @@
       cursor: pointer;
       border-radius: 6px;
     }
+
     h2 {
       text-align: center;
       margin-top: 10px;
       margin-bottom: 10px;
     }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -51,32 +74,51 @@
       margin-bottom: 10px;
       align-items: center;
     }
+
     .filter-group {
       border: 1px solid #ccc;
       border-radius: 6px;
       padding: 10px;
       margin-bottom: 10px;
     }
+    .dark .filter-group {
+      border-color: #666;
+    }
+
     .filter-group legend {
       font-weight: bold;
       padding: 0 6px;
     }
+
     .filter-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 6px;
     }
+
     .filter-row label {
       display: flex;
       align-items: center;
       gap: 4px;
     }
+
     table {
       border-collapse: collapse;
       width: 100%;
       table-layout: auto;
     }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f8f8f8;
+      z-index: 50;
+    }
+    .dark thead {
+      background: #333;
+    }
+
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
@@ -84,21 +126,45 @@
       text-align: left;
       vertical-align: top;
     }
+    .dark th, .dark td {
+      border-color: #666;
+    }
+
     td:nth-child(2), th:nth-child(2) {
       white-space: nowrap;
-      min-width: 100px;
+      min-width: 120px;
     }
+
     td:nth-child(8), th:nth-child(8),
     td:nth-child(9), th:nth-child(9) {
       word-break: break-word;
       min-width: 120px;
     }
+
+    td.name-cell .meta {
+      margin-top: 4px;
+      padding: 4px;
+      border-top: 1px dashed #ccc;
+      font-size: 13px;
+      color: #555;
+    }
+    .dark td.name-cell .meta {
+      border-top: 1px dashed #666;
+      color: #aaa;
+    }
+
     input[type="number"] {
       width: 40px;
       background-color: #fff !important;
       color: #000;
       border: 1px solid #ccc;
     }
+    .dark input[type="number"] {
+      background-color: #444 !important;
+      color: #eee;
+      border-color: #666;
+    }
+
     img {
       width: 60px;
       border-radius: 4px;
@@ -156,6 +222,13 @@
             <option value="">収録商品（選択）</option>
           </select>
         </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>タグ絞り込み</legend>
+          <select id="tagsFilter" onchange="renderTable()">
+            <option value="">タグ（選択）</option>
+          </select>
+        </fieldset>
       </div>
     </div>
 
@@ -163,8 +236,7 @@
       <thead>
         <tr>
           <th>画像</th>
-          <th>名前</th>
-          <th>番号</th>
+          <th>名前／番号／カードタイプ</th>
           <th>レア</th>
           <th>色</th>
           <th>Bloom</th>
@@ -211,12 +283,13 @@
       }
 
       function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
         cards.forEach(c => {
           raritySet.add(c.rarity);
           colorSet.add(c.color);
           bloomSet.add(c.bloom);
           productSet.add(c.product);
+          c.tags.forEach(tag => tagSet.add(tag));
         });
 
         function populateCheck(id, items) {
@@ -243,6 +316,7 @@
         populateCheck("colorFilter", [...colorSet].sort());
         populateCheck("bloomFilter", [...bloomSet].sort());
         populateSelect("productFilter", productSet, "収録商品");
+        populateSelect("tagsFilter", tagSet, "タグ（選択）");
       }
 
       function renderSkills(skills) {
@@ -271,6 +345,7 @@
         const color = getChecked("colorFilter");
         const bloom = getChecked("bloomFilter");
         const product = document.getElementById("productFilter").value.toLowerCase();
+        const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
 
         const tbody = document.querySelector("#cardTable tbody");
         tbody.innerHTML = "";
@@ -286,7 +361,7 @@
 
           const allText = [
             card.name, card.id, card.rarity, card.color, card.bloom,
-            card.hp ?? card.life ?? "", card.product,
+            card.hp ?? card.life ?? "", card.product, card.card_type,
             card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
           ].join(" ").toLowerCase();
 
@@ -295,19 +370,27 @@
             color: color.length === 0 || color.includes(card.color),
             bloom: bloom.length === 0 || bloom.includes(card.bloom),
             product: !product || card.product.toLowerCase().includes(product),
-            keyword: !keyword || allText.includes(keyword)
+            keyword: !keyword || allText.includes(keyword),
+            tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
           };
 
           if (Object.values(match).includes(false)) return;
 
+          const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+
           const row = document.createElement("tr");
           row.innerHTML = `
             <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-            <td>${card.name}</td>
-            <td>${card.id}</td>
+            <td class="name-cell">
+              <div style="font-weight: bold;">${card.name}</div>
+              <div class="meta">
+                <span style="margin-right: 10px;">📄 ${card.id}</span>
+                <span>🃏 ${card.card_type}</span>
+              </div>
+            </td>
             <td>${card.rarity}</td>
             <td>${card.color}</td>
-            <td>${card.bloom}</td>
+            <td>${bloomText}</td>
             <td>${card.hp ?? card.life ?? "-"}</td>
             <td>${card.tags.join("<br>")}</td>
             <td>${renderSkills(card.skills)}</td>
@@ -346,7 +429,8 @@
               tags: card.tags ?? [],
               skills: card.skills ?? [],
               image: card.image_url,
-              owned: parseInt(localStorage.getItem("count_" + key) ?? "0")
+              owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+              card_type: card.card_type ?? "-"
             }));
             setupFilters();
             renderTable();
