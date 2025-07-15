@@ -323,11 +323,16 @@
         return skills.map(skill => {
           if (skill.text) {
             return `<b>【${skill.type}】</b><br>${skill.text}`;
+          } else if (skill.type === "キーワード") {
+            const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
+            const name = skill.name ?? "";
+            const desc = skill.description ?? "";
+            return `${subtype}<br>${name}<br>${desc}`;
           } else {
-            const namePart = skill.name ? `[${skill.name}]` : "";
             const typePart = `<b>【${skill.type}】</b>`;
-            const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
+            const namePart = skill.name ? `[${skill.name}]` : "";
             const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+            const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
             const iconText = skill.icons?.main ? skill.icons.main.join("・") : "";
             const tokkouText = skill.icons?.tokkou ? `特攻：${skill.icons.tokkou.join("・")}` : "";
             const icons = iconText || tokkouText ? `<br>${iconText}${tokkouText ? "｜" + tokkouText : ""}` : "";
