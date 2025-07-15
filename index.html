@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ホロライブカード管理</title>
   <style>
     body {
       font-family: sans-serif;
-      margin: 10px;
+      margin: 0;
       font-size: 15px;
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
@@ -47,25 +47,24 @@
     }
     input[type="number"] {
       width: 40px;
-      background-color: #fff;
+      background-color: #fff !important;
       color: #000;
-      border: 1px solid #807f7f;
+      border: 1px solid #ccc;
     }
     @media (max-width: 600px) {
       input[type="number"] { width: 36px; }
     }
-    .controls {
+    .controls, .filter-row {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 10px;
+      align-items: center;
     }
-    select, input[type="text"], textarea, button {
-      font-size: 1em;
-      margin: 5px 0;
-      max-width: 300px;
-      padding: 6px;
-      border-radius: 4px;
+    .filter-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .dark {
       background-color: #222;
@@ -80,7 +79,41 @@
     .dark #cardTable td, .dark #cardTable th { color: #111; }
     .dark tr[data-rarity] td { color: #000; }
 
-    /* レアリティ背景色（13種） */
+    /* トグルスイッチ */
+    .toggle-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-switch input[type="checkbox"] {
+      width: 40px;
+      height: 20px;
+      appearance: none;
+      background: #ccc;
+      border-radius: 10px;
+      position: relative;
+      outline: none;
+      transition: background 0.3s;
+    }
+    .toggle-switch input:checked {
+      background: #4caf50;
+    }
+    .toggle-switch input[type="checkbox"]::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle-switch input[type="checkbox"]:checked::before {
+      transform: translateX(20px);
+    }
+
+    /* レア背景色（13種） */
     tr[data-rarity="C"]   { background-color: #ffffff; }
     tr[data-rarity="OC"]  { background-color: #f4f4f4; }
     tr[data-rarity="OSR"] { background-color: #ffe5f0; }
@@ -94,21 +127,33 @@
     tr[data-rarity="SY"]  { background-color: #f0fffc; }
     tr[data-rarity="U"]   { background-color: #f3f3f3; }
     tr[data-rarity="UR"]  { background-color: #ffe8f8; }
-    tr[data-rarity="-"]   { background-color: #ffffff; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>ホロライブカード一覧</h2>
+
     <div class="controls">
       <button onclick="toggleDarkMode()">🌗 モード切替</button>
-      <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-      <select id="rarityFilter" onchange="renderTable()"></select>
-      <select id="colorFilter" onchange="renderTable()"></select>
-      <select id="bloomFilter" onchange="renderTable()"></select>
-      <select id="productFilter" onchange="renderTable()"></select>
-      <label><input type="checkbox" id="ownedFilter" onchange="renderTable()"> 所持ありのみ</label>
+      <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()">
     </div>
+
+    <div class="filter-row" id="ownedStateGroup">
+      <label><input type="checkbox" name="ownedState" value="owned" checked> 所持あり</label>
+      <label><input type="checkbox" name="ownedState" value="unowned" checked> 所持なし</label>
+    </div>
+
+    <div class="filter-row toggle-switch">
+      <label>
+        <input type="checkbox" id="filterMode">
+      </label>
+      <span class="label">OR条件</span>
+    </div>
+
+    <div class="filter-row" id="rarityFilter"></div>
+    <div class="filter-row" id="colorFilter"></div>
+    <div class="filter-row" id="bloomFilter"></div>
+    <div class="filter-row" id="productFilter"></div>
 
     <div id="countDisplay" style="font-weight:bold; margin-bottom:10px;"></div>
 
@@ -153,6 +198,7 @@
       function setupFilters() {
         const raritySet = new Set(), colorSet = new Set(),
               bloomSet = new Set(), productSet = new Set();
+
         cards.forEach(c => {
           raritySet.add(c.rarity);
           colorSet.add(c.color);
@@ -160,30 +206,32 @@
           productSet.add(c.product);
         });
 
-        function populate(id, items, label) {
-          const select = document.getElementById(id);
-          select.innerHTML = `<option value="">${label}</option>`;
+        function populate(containerId, items) {
+          const container = document.getElementById(containerId);
+          container.innerHTML = "";
           [...items].sort().forEach(val => {
-            const opt = document.createElement("option");
-            opt.value = val;
-            opt.textContent = val;
-            select.appendChild(opt);
+            const label = document.createElement("label");
+            label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val}`;
+            container.appendChild(label);
           });
         }
 
-        populate("rarityFilter", raritySet, "レアリティ");
-        populate("colorFilter", colorSet, "色");
-        populate("bloomFilter", bloomSet, "Bloom");
-        populate("productFilter", productSet, "収録商品");
+        populate("rarityFilter", raritySet);
+        populate("colorFilter", colorSet);
+        populate("bloomFilter", bloomSet);
+        populate("productFilter", productSet);
       }
 
       function renderTable() {
         const keyword = document.getElementById("nameSearch").value.toLowerCase();
-        const rarity = document.getElementById("rarityFilter").value;
-        const color = document.getElementById("colorFilter").value;
-        const bloom = document.getElementById("bloomFilter").value;
-        const product = document.getElementById("productFilter").value.toLowerCase();
-        const ownedOnly = document.getElementById("ownedFilter").checked;
+        const isOR = document.getElementById("filterMode").checked;
+
+        const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
+        const rarity = getChecked("rarityFilter");
+        const color = getChecked("colorFilter");
+        const bloom = getChecked("bloomFilter");
+        const product = getChecked("productFilter").map(p => p.toLowerCase());
+        const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
 
         const tbody = document.querySelector("#cardTable tbody");
         tbody.innerHTML = "";
@@ -191,12 +239,27 @@
 
         cards.forEach(card => {
           const count = card.owned;
-          if (keyword && !card.name.toLowerCase().includes(keyword)) return;
-          if (rarity && card.rarity !== rarity) return;
-          if (color && card.color !== color) return;
-          if (bloom && card.bloom !== bloom) return;
-          if (product && !card.product.toLowerCase().includes(product)) return;
-          if (ownedOnly && (!count || count === 0)) return;
+
+          // 所持状態フィルター
+          if (
+            ownedStates.length === 1 &&
+            ((ownedStates[0] === "owned" && !count) ||
+             (ownedStates[0] === "unowned" && count))
+          ) return;
+          if (ownedStates.length === 0) return;
+
+          const match = {
+            name: !keyword || card.name.toLowerCase().includes(keyword),
+            rarity: rarity.includes(card.rarity),
+            color: color.includes(card.color),
+            bloom: bloom.includes(card.bloom),
+            product: product.length === 0 || product.some(p => card.product.toLowerCase().includes(p))
+          };
+
+          const matchCount = Object.values(match).filter(Boolean).length;
+          const total = Object.keys(match).length;
+
+          if ((isOR && matchCount === 0) || (!isOR && matchCount < total)) return;
 
           shown++; ownedCount += parseInt(count || 0);
 
@@ -216,7 +279,8 @@
           tbody.appendChild(row);
         });
 
-        updateCountDisplay(shown, ownedCount);
+        document.getElementById("countDisplay").textContent =
+          `所持枚数：${ownedCount} / 表示：${shown}（平均 ${shown > 0 ? Math.round((ownedCount / shown) * 100) : 0}%）`;
       }
 
       function updateOwned(id, value) {
@@ -225,12 +289,6 @@
         const card = cards.find(c => c.id === id);
         if (card) card.owned = num;
         renderTable();
-      }
-
-      function updateCountDisplay(total, owned) {
-        const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
-        document.getElementById("countDisplay").textContent =
-          `所持枚数：${owned} / 表示：${total}（平均 ${percent}%）`;
       }
 
       function toggleDarkMode() {
@@ -252,12 +310,9 @@
       }
 
       function exportCSV() {
-        const lines = cards
-          .filter(c => c.owned > 0)
-          .map(c => `${c.id},${c.owned}`);
-        const csv = lines.join("\n");
-        navigator.clipboard.writeText(csv)
-          .then(() => alert("所持CSVをクリップボードにコピーしました！"))
+        const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
+        navigator.clipboard.writeText(lines.join("\n"))
+          .then(() => alert("所持CSVをコピーしました"))
           .catch(() => alert("コピーに失敗しました"));
       }
 
@@ -296,9 +351,9 @@
             setupFilters();
             renderTable();
           })
-          .catch(() => alert("JSONファイルの読み込みに失敗しました"));
+          .catch(() => alert("JSONの読み込みに失敗しました"));
       };
     </script>
-  </div> <!-- .container -->
+  </div>
 </body>
 </html>
