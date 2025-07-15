@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ホロライブカード管理</title>
   <style>
     body {
@@ -33,24 +33,6 @@
       cursor: pointer;
       border-radius: 6px;
     }
-    /* 以下は既存のスタイル：テーブル・フィルター・ボタンなど */
-    table { border-collapse: collapse; width: 100%; table-layout: auto; }
-    th, td { border: 1px solid #ccc; padding: 8px; font-size: 15px; text-align: left; }
-    td:nth-child(3), td.rarity { white-space: nowrap; }
-    td.rarity, th.rarity { font-size: 13px; width: 40px; text-align: center; }
-    input[type="number"] {
-      width: 40px;
-      background-color: #fff !important;
-      color: #000;
-      border: 1px solid #ccc;
-    }
-    img {
-      width: 60px;
-      border-radius: 4px;
-      cursor: zoom-in;
-      background-color: #fff;
-      border: 1px solid #ddd;
-    }
     .controls, .filter-row {
       display: flex;
       flex-wrap: wrap;
@@ -68,11 +50,93 @@
       font-size: 13px;
       cursor: pointer;
     }
-    select { font-size: 15px; padding: 6px; max-width: 240px; }
+    select {
+      font-size: 15px;
+      padding: 6px;
+      max-width: 240px;
+    }
+    .filter-group {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .filter-group legend {
+      font-weight: bold;
+      padding: 0 6px;
+    }
+    .toggle-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-switch input[type="checkbox"] {
+      width: 40px;
+      height: 20px;
+      appearance: none;
+      background: #ccc;
+      border-radius: 10px;
+      position: relative;
+      outline: none;
+      transition: background 0.3s;
+    }
+    .toggle-switch input:checked { background: #4caf50; }
+    .toggle-switch input::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle-switch input:checked::before {
+      transform: translateX(20px);
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: auto;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 15px;
+      text-align: left;
+    }
+    td:nth-child(3), td.rarity { white-space: nowrap; }
+    td.rarity, th.rarity { font-size: 13px; width: 40px; text-align: center; }
+    input[type="number"] {
+      width: 40px;
+      background-color: #fff !important;
+      color: #000;
+      border: 1px solid #ccc;
+    }
+    img {
+      width: 60px;
+      border-radius: 4px;
+      cursor: zoom-in;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
 
-    /* ダークモードなどのスタイルは省略（前回コードと同様） */
-    /* レアリティごとの背景も tr[data-rarity="..."] で設定済み */
-
+    /* レアリティごとの背景色（ハイフン含む） */
+    tr[data-rarity="-"]    { background-color: #ffffff; }
+    tr[data-rarity="C"]    { background-color: #ffffff; }
+    tr[data-rarity="OC"]   { background-color: #f4f4f4; }
+    tr[data-rarity="OSR"]  { background-color: #ffe5f0; }
+    tr[data-rarity="OUR"]  { background-color: #ffece0; }
+    tr[data-rarity="P"]    { background-color: #fff9e6; }
+    tr[data-rarity="R"]    { background-color: #f9fff0; }
+    tr[data-rarity="RR"]   { background-color: #e6f5ff; }
+    tr[data-rarity="S"]    { background-color: #fff3ff; }
+    tr[data-rarity="SEC"]  { background-color: #fdfdce; }
+    tr[data-rarity="SR"]   { background-color: #fff6e6; }
+    tr[data-rarity="SY"]   { background-color: #f0fffc; }
+    tr[data-rarity="U"]    { background-color: #f3f3f3; }
+    tr[data-rarity="UR"]   { background-color: #ffe8f8; }
   </style>
 </head>
 <body>
@@ -89,32 +153,51 @@
       <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
     </div>
 
-    <div class="filter-row" id="ownedStateGroup">
-      <label><input type="checkbox" name="ownedState" value="owned" checked> 所持あり</label>
-      <label><input type="checkbox" name="ownedState" value="unowned" checked> 所持なし</label>
-    </div>
+    <fieldset class="filter-group">
+      <legend>所持状態</legend>
+      <div class="filter-row" id="ownedStateGroup">
+        <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
+        <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
+      </div>
+    </fieldset>
 
-    <div class="filter-row toggle-switch">
-      <label>
-        <input type="checkbox" id="filterMode" />
-      </label>
-      <span class="label">OR条件</span>
-    </div>
+    <fieldset class="filter-group">
+      <legend>マッチ条件</legend>
+      <div class="filter-row toggle-switch">
+        <label>
+          <input type="checkbox" id="filterMode" onchange="renderTable()" />
+        </label>
+        <span class="label">OR条件</span>
+      </div>
+    </fieldset>
 
-    <div class="filter-row">
-      <button onclick="selectAllFilters()">全選択</button>
-      <button onclick="clearAllFilters()">全部外す</button>
-    </div>
+    <fieldset class="filter-group">
+      <legend>レアリティ</legend>
+      <button onclick="selectAll('rarityFilter')">全選択</button>
+      <button onclick="clearAll('rarityFilter')">全部外す</button>
+      <div class="filter-row" id="rarityFilter"></div>
+    </fieldset>
 
-    <div class="filter-row" id="rarityFilter"></div>
-    <div class="filter-row" id="colorFilter"></div>
-    <div class="filter-row" id="bloomFilter"></div>
+    <fieldset class="filter-group">
+      <legend>色</legend>
+      <button onclick="selectAll('colorFilter')">全選択</button>
+      <button onclick="clearAll('colorFilter')">全部外す</button>
+      <div class="filter-row" id="colorFilter"></div>
+    </fieldset>
 
-    <div class="controls">
+    <fieldset class="filter-group">
+      <legend>Bloom</legend>
+      <button onclick="selectAll('bloomFilter')">全選択</button>
+      <button onclick="clearAll('bloomFilter')">全部外す</button>
+      <div class="filter-row" id="bloomFilter"></div>
+    </fieldset>
+
+    <fieldset class="filter-group">
+      <legend>収録商品</legend>
       <select id="productFilter" onchange="renderTable()">
         <option value="">収録商品（選択）</option>
       </select>
-    </div>
+    </fieldset>
 
     <div id="countDisplay" style="font-weight:bold; margin-bottom:10px;"></div>
 
@@ -156,17 +239,13 @@
     <script>
       let cards = [];
 
-      function selectAllFilters() {
-        ["rarityFilter", "colorFilter", "bloomFilter"].forEach(id => {
-          document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
-        });
+      function selectAll(id) {
+        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
         renderTable();
       }
 
-      function clearAllFilters() {
-        ["rarityFilter", "colorFilter", "bloomFilter"].forEach(id => {
-          document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
-        });
+      function clearAll(id) {
+        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
         renderTable();
       }
 
@@ -183,7 +262,7 @@
           const container = document.getElementById(id);
           items.forEach(val => {
             const label = document.createElement("label");
-            label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val}`;
+            label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
             container.appendChild(label);
           });
         }
@@ -203,13 +282,6 @@
         populateCheck("colorFilter", [...colorSet].sort());
         populateCheck("bloomFilter", [...bloomSet].sort());
         populateSelect("productFilter", productSet, "収録商品");
-
-        // フィルター変更時に再描画
-        ["rarityFilter", "colorFilter", "bloomFilter"].forEach(id => {
-          document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => {
-            cb.addEventListener("change", renderTable);
-          });
-        });
       }
 
       function renderTable() {
