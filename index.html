@@ -505,12 +505,16 @@
           const container = document.createElement("div");
           container.style.display = "flex";
           container.style.flexWrap = "wrap";
-          container.style.gap = "16px";
+          container.style.gap = "12px";
+          container.style.justifyContent = "center";
+          container.style.padding = "8px";
 
           sortedCards.forEach(card => {
             const box = document.createElement("div");
-            box.style.width = "calc(25% - 16px)";
-            box.style.minWidth = "200px";
+            box.style.flex = "1 1 160px";
+            box.style.maxWidth = "24%"; // ← 横4枚並びしやすくなる
+            box.style.minWidth = "140px";
+            box.style.boxSizing = "border-box";
             box.style.border = "1px solid #ccc";
             box.style.borderRadius = "8px";
             box.style.padding = "8px";
@@ -525,12 +529,12 @@
             img.onclick = () => showImageModal(card.image);
 
             const info = document.createElement("div");
+            info.style.marginTop = "8px";
             info.innerHTML = `
               <div style="font-weight:bold;">${card.name}</div>
               <div style="font-size:13px;">📄 ${card.id}</div>
               <div style="font-size:13px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
             `;
-            info.style.marginTop = "8px";
 
             box.appendChild(img);
             box.appendChild(info);
