@@ -514,6 +514,7 @@
             const box = document.createElement("div");
             box.style.flex = "0 0 auto";
             // box.style.width = "calc(25% - 8px)";
+            box.style.maxWidth = "24%"; // ← 横4枚並びしやすくなる
             box.style.minWidth = "120px"; // 👈 これでスマホ4枚並びに近づく
             box.style.boxSizing = "border-box";
             box.style.border = "1px solid #ccc";
