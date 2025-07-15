@@ -305,7 +305,7 @@
               .map(([key, card]) => ({
                 id: key,
                 name: card.name,
-                rarity: card.rarity ?? "-",
+                rarity: card.rarity,
                 color: card.color ?? "-",
                 bloom: card.bloom_level ?? "-",
                 hp: card.card_type === "ホロメン" ? card.hp : "-",
