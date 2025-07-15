@@ -12,16 +12,20 @@
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
     }
+
     .dark {
       background: #222;
       color: #eee;
     }
+
     .dark table {
       background: #333;
     }
+
     .dark th, .dark td {
       border-color: #666;
     }
+
     .dark input, .dark select, .dark textarea {
       background: #444;
       color: #eee;
@@ -43,6 +47,7 @@
       border-bottom: 1px solid #ccc;
       padding: 10px;
     }
+
     .dark .top-bar {
       background: #222;
       border-color: #444;
@@ -83,6 +88,7 @@
       padding: 10px;
       margin-bottom: 10px;
     }
+
     .dark .filter-group {
       border-color: #666;
     }
@@ -179,6 +185,18 @@
       background-color: #fff;
       border: 1px solid #ddd;
     }
+    
+    select {
+      font-size: 15px;
+      padding: 6px;
+      max-width: 240px;
+    }
+
+    input[type="text"] {
+      font-size: 15px;
+      padding: 6px;
+      width: 240px;
+    }
   </style>
 </head>
 <body>
@@ -187,10 +205,16 @@
       <div class="nav-row">
         <button onclick="history.back()">← 前のページへ</button>
         <h2>カード詳細検索</h2>
-        <div>
+        <div class="controls">
           <button onclick="toggleDarkMode()">🌗 モード切替</button>
           <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
           <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+          <select id="sortMethod" onchange="renderTable()">
+            <option value="release" selected>発売日順</option>
+            <option value="id">カード番号順</option>
+            <option value="name">名前順</option>
+            <option value="rarity">レアリティ順</option>
+          </select>
         </div>
       </div>
       <div id="filtersWrapper">
@@ -254,6 +278,7 @@
       </thead>
       <tbody></tbody>
     </table>
+
     <div id="imageModal" onclick="hideImageModal()" style="
       display:none;
       position:fixed;
@@ -270,192 +295,224 @@
         max-height:100dvh;
         object-fit:contain;">
     </div>
-
     <script>
       let cards = [];
-
+      let releaseMap = {};
+    
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
         el.style.display = el.style.display === "none" ? "block" : "none";
       }
-
+    
       function toggleDarkMode() {
         document.body.classList.toggle("dark");
         localStorage.setItem("darkMode", document.body.classList.contains("dark"));
       }
-
+    
       function selectAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
         renderTable();
       }
-
+    
       function clearAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
         renderTable();
       }
-
-      function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
-        cards.forEach(c => {
-          raritySet.add(c.rarity);
-          colorSet.add(c.color);
-          bloomSet.add(c.bloom);
-          if (!c.product.includes(",")) {
-            productSet.add(c.product);
-          }
-          c.tags.forEach(tag => tagSet.add(tag));
-        });
-
-        function populateCheck(id, items) {
-          const container = document.getElementById(id);
-          items.forEach(val => {
-            const label = document.createElement("label");
-            label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
-            container.appendChild(label);
-          });
-        }
-
-        function populateSelect(id, items, label) {
-          const select = document.getElementById(id);
-          select.innerHTML = `<option value="">${label}</option>`;
-          [...items].sort().forEach(val => {
-            const opt = document.createElement("option");
-            opt.value = val;
-            opt.textContent = val;
-            select.appendChild(opt);
-          });
-        }
-
-        populateCheck("rarityFilter", [...raritySet].sort());
-        populateCheck("colorFilter", [...colorSet].sort());
-        populateCheck("bloomFilter", [...bloomSet].sort());
-        populateSelect("productFilter", productSet, "収録商品");
-        populateSelect("tagsFilter", tagSet, "タグ（選択）");
-      }
-
-      function renderSkills(skills) {
-        return skills.map(skill => {
-          if (skill.text) {
-            return `<b>【${skill.type}】</b><br>${skill.text}`;
-          } else if (skill.type === "キーワード") {
-            const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
-            const name = skill.name ?? "";
-            const desc = skill.description ?? "";
-            return `${subtype}<br>${name}<br>${desc}`;
-          } else {
-            const typePart = `<b>【${skill.type}】</b>`;
-            const namePart = skill.name ? `[${skill.name}]` : "";
-            const dmg = skill.dmg ? `（${skill.dmg}）` : "";
-            const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
-            const iconText = skill.icons?.main ? skill.icons.main.join("・") : "";
-            const tokkouText = skill.icons?.tokkou ? `特攻：${skill.icons.tokkou.join("・")}` : "";
-            const icons = iconText || tokkouText ? `<br>${iconText}${tokkouText ? "｜" + tokkouText : ""}` : "";
-            const desc = skill.description ?? "";
-            return `${typePart}${namePart}${dmg}${subtype}${icons}<br>${desc}`;
-          }
-        }).join("<br><br>");
-      }
-
-      function renderTable() {
-        const keyword = document.getElementById("keywordSearch").value.toLowerCase();
-        const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-        const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
-        const rarity = getChecked("rarityFilter");
-        const color = getChecked("colorFilter");
-        const bloom = getChecked("bloomFilter");
-        const product = document.getElementById("productFilter").value.toLowerCase();
-        const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
-
-        const tbody = document.querySelector("#cardTable tbody");
-        tbody.innerHTML = "";
-
-        cards.forEach(card => {
-          const count = card.owned;
-
-          const matchOwned =
-            ownedStates.length === 0 ||
-            (ownedStates.includes("owned") && count > 0) ||
-            (ownedStates.includes("unowned") && (!count || count == 0));
-          if (!matchOwned) return;
-
-          const allText = [
-            card.name, card.id, card.rarity, card.color, card.bloom,
-            card.hp ?? card.life ?? "", card.product, card.card_type,
-            card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
-          ].join(" ").toLowerCase();
-
-          const match = {
-            rarity: rarity.length === 0 || rarity.includes(card.rarity),
-            color: color.length === 0 || color.includes(card.color),
-            bloom: bloom.length === 0 || bloom.includes(card.bloom),
-            product: !product || card.product.toLowerCase().includes(product),
-            keyword: !keyword || allText.includes(keyword),
-            tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
-          };
-
-          if (Object.values(match).includes(false)) return;
-
-          const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-            <td class="name-cell">
-              <div style="font-weight: bold;">${card.name}</div>
-              <div class="meta">
-                📄 ${card.id}<br>🃏 ${card.card_type}
-              </div>
-            </td>
-            <td>${card.rarity}</td>
-            <td>${card.color}</td>
-            <td>${bloomText}</td>
-            <td>${card.hp ?? card.life ?? "-"}</td>
-            <td>${card.tags.join("<br>")}</td>
-            <td>${renderSkills(card.skills)}</td>
-          `;
-          tbody.appendChild(row);
-        });
-      }
-
+    
       function showImageModal(src) {
         const modal = document.getElementById("imageModal");
         modal.querySelector("img").src = src;
         modal.style.display = "block";
       }
-
+    
       function hideImageModal() {
         document.getElementById("imageModal").style.display = "none";
       }
-
-      window.onload = () => {
-        if (localStorage.getItem("darkMode") === "true") {
-          document.body.classList.add("dark");
+    
+      function sortCards(cards) {
+        const method = document.getElementById("sortMethod")?.value ?? "release";
+        const sorted = [...cards];
+    
+        if (method === "release") {
+          sorted.sort((a, b) => {
+            const ra = releaseMap[a.product] ?? "9999-12-31";
+            const rb = releaseMap[b.product] ?? "9999-12-31";
+            if (ra !== rb) return ra.localeCompare(rb);
+            if (a.product !== b.product) return a.product.localeCompare(b.product);
+            return a.id.localeCompare(b.id);
+          });
+        } else if (method === "id") {
+          sorted.sort((a, b) => a.id.localeCompare(b.id));
+        } else if (method === "name") {
+          sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
+        } else if (method === "rarity") {
+          const rank = { "SR": 3, "R": 2, "N": 1 };
+          sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
         }
+    
+        return sorted;
+      }
+      function setupFilters() {
+    const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
+    cards.forEach(c => {
+      raritySet.add(c.rarity);
+      colorSet.add(c.color);
+      bloomSet.add(c.bloom);
+      if (!c.product.includes(",")) {
+        productSet.add(c.product);
+      }
+      c.tags.forEach(tag => tagSet.add(tag));
+    });
 
-        fetch("json_file/card_data.json")
-          .then(response => response.json())
-          .then(rawData => {
-            cards = Object.entries(rawData).map(([key, card]) => ({
-              id: key,
-              name: card.name,
-              rarity: card.rarity ?? "-",
-              color: card.color ?? "-",
-              bloom: card.bloom_level ?? "-",
-              hp: card.hp ?? null,
-              life: card.life ?? null,
-              product: card.product ?? "-",
-              tags: card.tags ?? [],
-              skills: card.skills ?? [],
-              image: card.image_url,
-              owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-              card_type: card.card_type ?? "-"
-            }));
-            setupFilters();
-            renderTable();
-          })
-          .catch(() => alert("JSONファイルの読み込みに失敗しました"));
+    function populateCheck(id, items) {
+      const container = document.getElementById(id);
+      items.forEach(val => {
+        const label = document.createElement("label");
+        label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
+        container.appendChild(label);
+      });
+    }
+
+    function populateSelect(id, items, label) {
+      const select = document.getElementById(id);
+      select.innerHTML = `<option value="">${label}</option>`;
+      [...items].sort().forEach(val => {
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+      });
+    }
+
+    populateCheck("rarityFilter", [...raritySet].sort());
+    populateCheck("colorFilter", [...colorSet].sort());
+    populateCheck("bloomFilter", [...bloomSet].sort());
+    populateSelect("productFilter", productSet, "収録商品");
+    populateSelect("tagsFilter", tagSet, "タグ（選択）");
+  }
+
+  function renderSkills(skills) {
+    return skills.map(skill => {
+      if (skill.text) {
+        return `<b>【${skill.type}】</b><br>${skill.text}`;
+      } else if (skill.type === "キーワード") {
+        const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
+        const name = skill.name ?? "";
+        const desc = skill.description ?? "";
+        return `${subtype}<br>${name}<br>${desc}`;
+      } else {
+        const typePart = `<b>【${skill.type}】</b>`;
+        const namePart = skill.name ? `[${skill.name}]` : "";
+        const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+        const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
+        const iconText = skill.icons?.main ? skill.icons.main.join("・") : "";
+        const tokkouText = skill.icons?.tokkou ? `特攻：${skill.icons.tokkou.join("・")}` : "";
+        const icons = iconText || tokkouText ? `<br>${iconText}${tokkouText ? "｜" + tokkouText : ""}` : "";
+        const desc = skill.description ?? "";
+        return `${typePart}${namePart}${dmg}${subtype}${icons}<br>${desc}`;
+      }
+    }).join("<br><br>");
+  }
+
+  function renderTable() {
+    const keyword = document.getElementById("keywordSearch").value.toLowerCase();
+    const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
+    const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
+    const rarity = getChecked("rarityFilter");
+    const color = getChecked("colorFilter");
+    const bloom = getChecked("bloomFilter");
+    const product = document.getElementById("productFilter").value.toLowerCase();
+    const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
+
+    const tbody = document.querySelector("#cardTable tbody");
+    tbody.innerHTML = "";
+
+    const filtered = cards.filter(card => {
+      const count = card.owned;
+      const matchOwned =
+        ownedStates.length === 0 ||
+        (ownedStates.includes("owned") && count > 0) ||
+        (ownedStates.includes("unowned") && (!count || count == 0));
+      if (!matchOwned) return false;
+
+      const allText = [
+        card.name, card.id, card.rarity, card.color, card.bloom,
+        card.hp ?? card.life ?? "", card.product, card.card_type,
+        card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
+      ].join(" ").toLowerCase();
+
+      const match = {
+        rarity: rarity.length === 0 || rarity.includes(card.rarity),
+        color: color.length === 0 || color.includes(card.color),
+        bloom: bloom.length === 0 || bloom.includes(card.bloom),
+        product: !product || card.product.toLowerCase().includes(product),
+        keyword: !keyword || allText.includes(keyword),
+        tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
       };
-    </script>
-  </div>
+
+      return !Object.values(match).includes(false);
+    });
+
+    const sortedCards = sortCards(filtered);
+
+    sortedCards.forEach(card => {
+      const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
+        <td class="name-cell">
+          <div style="font-weight: bold;">${card.name}</div>
+          <div class="meta">
+            📄 ${card.id}<br>🃏 ${card.card_type}
+          </div>
+        </td>
+        <td>${card.rarity}</td>
+        <td>${card.color}</td>
+        <td>${bloomText}</td>
+        <td>${card.hp ?? card.life ?? "-"}</td>
+        <td>${card.tags.join("<br>")}</td>
+        <td>${renderSkills(card.skills)}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  window.onload = async () => {
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark");
+    }
+
+    try {
+      const [cardRes, releaseRes] = await Promise.all([
+        fetch("json_file/card_data.json"),
+        fetch("json_file/release_dates.json")
+      ]);
+      const rawData = await cardRes.json();
+      releaseMap = await releaseRes.json();
+
+      cards = Object.entries(rawData).map(([key, card]) => ({
+        id: key,
+        name: card.name,
+        rarity: card.rarity ?? "-",
+        color: card.color ?? "-",
+        bloom: card.bloom_level ?? "-",
+        hp: card.hp ?? null,
+        life: card.life ?? null,
+        product: card.product ?? "-",
+        tags: card.tags ?? [],
+        skills: card.skills ?? [],
+        image: card.image_url,
+        owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+        card_type: card.card_type ?? "-"
+      }));
+
+      setupFilters();
+      renderTable();
+    } catch (err) {
+      console.error(err);
+      alert("データの読み込みに失敗しました！");
+    }
+  };
+</script>
 </body>
 </html>
