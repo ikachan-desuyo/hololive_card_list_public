@@ -213,7 +213,6 @@
       <div class="top-controls">
         <button onclick="setViewMode('table')">🧾 表モード</button>
         <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
-        <button onclick="setViewMode('large')">🔍 拡大表示</button>
         <button onclick="toggleDarkMode()">🌗 モード切替</button>
         <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
         <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
@@ -498,47 +497,49 @@
         }
       
         // 🔄 プレビュー表示モード（compact / large）
-        tableArea.style.display = "none";
-        previewArea.innerHTML = "";
-        previewArea.style.display = "block";
-      
-        const container = document.createElement("div");
-        container.style.display = "flex";
-        container.style.flexWrap = "wrap";
-        container.style.gap = "16px";
-      
-        const cardBoxStyle = viewMode === "compact" ? "calc(25% - 16px)" : "calc(50% - 16px)";
-        sortedCards.forEach(card => {
-          const box = document.createElement("div");
-          box.style.width = cardBoxStyle;
-          box.style.minWidth = "200px";
-          box.style.border = "1px solid #ccc";
-          box.style.borderRadius = "8px";
-          box.style.padding = "8px";
-          box.style.background = document.body.classList.contains("dark") ? "#333" : "#fff";
-      
-          const img = document.createElement("img");
-          img.src = card.image;
-          img.alt = card.name;
-          img.style.width = "100%";
-          img.style.borderRadius = "4px";
-          img.style.cursor = "zoom-in";
-          img.onclick = () => showImageModal(card.image);
-      
-          const info = document.createElement("div");
-          info.innerHTML = `
-            <div style="font-weight:bold;">${card.name}</div>
-            <div style="font-size:13px;">📄 ${card.id}</div>
-            <div style="font-size:13px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
-          `;
-          info.style.marginTop = "8px";
+        if (viewMode === "compact") {
+          tableArea.style.display = "none";
+          previewArea.innerHTML = "";
+          previewArea.style.display = "block";
 
-          box.appendChild(img);
-          box.appendChild(info);
-          container.appendChild(box);
-        });
+          const container = document.createElement("div");
+          container.style.display = "flex";
+          container.style.flexWrap = "wrap";
+          container.style.gap = "16px";
 
-        previewArea.appendChild(container);
+          sortedCards.forEach(card => {
+            const box = document.createElement("div");
+            box.style.width = "calc(25% - 16px)";
+            box.style.minWidth = "200px";
+            box.style.border = "1px solid #ccc";
+            box.style.borderRadius = "8px";
+            box.style.padding = "8px";
+            box.style.background = document.body.classList.contains("dark") ? "#333" : "#fff";
+
+            const img = document.createElement("img");
+            img.src = card.image;
+            img.alt = card.name;
+            img.style.width = "100%";
+            img.style.borderRadius = "4px";
+            img.style.cursor = "zoom-in";
+            img.onclick = () => showImageModal(card.image);
+
+            const info = document.createElement("div");
+            info.innerHTML = `
+              <div style="font-weight:bold;">${card.name}</div>
+              <div style="font-size:13px;">📄 ${card.id}</div>
+              <div style="font-size:13px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
+            `;
+            info.style.marginTop = "8px";
+
+            box.appendChild(img);
+            box.appendChild(info);
+            container.appendChild(box);
+          });
+
+          previewArea.appendChild(container);
+          return;
+        }
       }
 
       function updateOwned(id, value) {
