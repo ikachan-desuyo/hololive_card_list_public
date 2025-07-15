@@ -92,6 +92,22 @@
       font-size: 15px;
       text-align: left;
     }
+    td:nth-child(2), th:nth-child(2) {
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    td:nth-child(8), th:nth-child(8) {
+      word-break: break-word;
+      min-width: 120px;
+    }
+    @media screen and (max-width: 600px) {
+      td:nth-child(2), th:nth-child(2) {
+        min-width: 80px;
+      }
+      td:nth-child(8), th:nth-child(8) {
+        min-width: 100px;
+      }
+    }
     td:nth-child(3), td.rarity { white-space: nowrap; }
     td.rarity, th.rarity { font-size: 13px; width: 40px; text-align: center; }
     input[type="number"] {
@@ -277,7 +293,6 @@
         cards.forEach(card => {
           const count = card.owned;
 
-          // 所持状態のOR条件評価
           const matchOwned =
             ownedStates.length === 0 ||
             (ownedStates.includes("owned") && count > 0) ||
