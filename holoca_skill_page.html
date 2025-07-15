@@ -288,7 +288,9 @@
           raritySet.add(c.rarity);
           colorSet.add(c.color);
           bloomSet.add(c.bloom);
-          productSet.add(c.product);
+          if (!c.product.includes(",")) {
+            productSet.add(c.product);
+          }
           c.tags.forEach(tag => tagSet.add(tag));
         });
 
