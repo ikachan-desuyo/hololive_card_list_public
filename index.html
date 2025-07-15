@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ホロライブカード一覧</title>
   <style>
-    /* 既存CSSはそのまま（省略なし） */
     body {
       font-family: sans-serif;
       margin: 0;
@@ -187,6 +186,18 @@
       background-color: #fff;
       border: 1px solid #ddd;
     }
+
+    #cardPreviewArea img {
+      object-fit: contain;
+      background: transparent;
+      border: none;
+      outline: none;
+    }
+    .dark #cardPreviewArea div {
+      background: #333;
+      color: #eee;
+      border-color: #666;
+    }
   </style>
 </head>
 <body>
@@ -200,6 +211,9 @@
       </h2>
 
       <div class="top-controls">
+        <button onclick="setViewMode('table')">🧾 表モード</button>
+        <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
+        <button onclick="setViewMode('large')">🔍 拡大表示</button>
         <button onclick="toggleDarkMode()">🌗 モード切替</button>
         <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
         <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
@@ -210,6 +224,7 @@
           <option value="rarity">レアリティ順</option>
         </select>
       </div>
+
       <div id="filtersWrapper">
         <fieldset class="filter-group">
           <legend>所持状態</legend>
@@ -270,6 +285,9 @@
       <tbody></tbody>
     </table>
 
+    <!-- 🔄 表示モード用のプレビュー領域 -->
+    <div id="cardPreviewArea" style="display:none;"></div>
+
     <h3>CSVインポート・エクスポート</h3>
     <div class="controls">
       <textarea id="csvInput" rows="4" placeholder="id,枚数 のCSVを貼り付けてください"></textarea>
@@ -296,37 +314,43 @@
     <script>
       let cards = [];
       let releaseMap = {};
-    
+      let viewMode = "table"; // 表示モード: "table" | "compact" | "large"
+      
+      function setViewMode(mode) {
+        viewMode = mode;
+        renderTable();
+      }
+      
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
         el.style.display = el.style.display === "none" ? "block" : "none";
       }
-    
+      
       function toggleDarkMode() {
         document.body.classList.toggle("dark");
         localStorage.setItem("darkMode", document.body.classList.contains("dark"));
       }
-    
+      
       function selectAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
         renderTable();
       }
-    
+      
       function clearAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
         renderTable();
       }
-    
+      
       function showImageModal(src) {
         const modal = document.getElementById("imageModal");
         modal.querySelector("img").src = src;
         modal.style.display = "block";
       }
-    
+      
       function hideImageModal() {
         document.getElementById("imageModal").style.display = "none";
       }
-    
+      
       function renderSkills(skills) {
         return skills.map(skill => {
           if (skill.text) {
@@ -338,194 +362,247 @@
           }
         }).join("<br><br>");
       }
+      
       function setupFilters() {
-    const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
-    cards.forEach(c => {
-      raritySet.add(c.rarity);
-      colorSet.add(c.color);
-      bloomSet.add(c.bloom);
-      if (!c.product.includes(",")) {
-        productSet.add(c.product);
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
+        cards.forEach(c => {
+          raritySet.add(c.rarity);
+          colorSet.add(c.color);
+          bloomSet.add(c.bloom);
+          if (!c.product.includes(",")) {
+            productSet.add(c.product);
+          }
+        });
+      
+        function populateCheck(id, items) {
+          const container = document.getElementById(id);
+          items.forEach(val => {
+            const label = document.createElement("label");
+            label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
+            container.appendChild(label);
+          });
+        }
+      
+        function populateSelect(id, items, label) {
+          const select = document.getElementById(id);
+          select.innerHTML = `<option value="">${label}</option>`;
+          [...items].sort().forEach(val => {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+          });
+        }
+      
+        populateCheck("rarityFilter", [...raritySet].sort());
+        populateCheck("colorFilter", [...colorSet].sort());
+        populateCheck("bloomFilter", [...bloomSet].sort());
+        populateSelect("productFilter", productSet, "収録商品");
       }
-    });
+      
+      function sortCards(cards) {
+        const method = document.getElementById("sortMethod")?.value ?? "release";
+        let sorted = [...cards];
+        if (method === "release") {
+          sorted.sort((a, b) => {
+            const ra = releaseMap[a.product] ?? "9999-12-31";
+            const rb = releaseMap[b.product] ?? "9999-12-31";
+            if (ra !== rb) return ra.localeCompare(rb);
+            if (a.product !== b.product) return a.product.localeCompare(b.product);
+            return a.id.localeCompare(b.id);
+          });
+        } else if (method === "id") {
+          sorted.sort((a, b) => a.id.localeCompare(b.id));
+        } else if (method === "name") {
+          sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
+        } else if (method === "rarity") {
+          const rank = { "SR": 3, "R": 2, "N": 1 };
+          sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
+        }
+        return sorted;
+      }
+      
+      function renderTable() {
+        const keyword = document.getElementById("nameSearch").value.toLowerCase();
+        const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
+        const rarity = getChecked("rarityFilter");
+        const color = getChecked("colorFilter");
+        const bloom = getChecked("bloomFilter");
+        const product = document.getElementById("productFilter").value.toLowerCase();
+        const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
+      
+        const tableArea = document.getElementById("cardTable");
+        const previewArea = document.getElementById("cardPreviewArea");
+      
+        const filtered = cards.filter(card => {
+          const count = card.owned;
+          const matchOwned =
+            ownedStates.length === 0 ||
+            (ownedStates.includes("owned") && count > 0) ||
+            (ownedStates.includes("unowned") && (!count || count == 0));
+          if (!matchOwned) return false;
+      
+          const match = {
+            name: !keyword || card.name.toLowerCase().includes(keyword),
+            rarity: rarity.length === 0 || rarity.includes(card.rarity),
+            color: color.length === 0 || color.includes(card.color),
+            bloom: bloom.length === 0 || bloom.includes(card.bloom),
+            product: !product || card.product.toLowerCase().includes(product)
+          };
+      
+          return !Object.values(match).includes(false);
+        });
+      
+        const sortedCards = sortCards(filtered);
+      
+        const tbody = tableArea.querySelector("tbody");
+        tbody.innerHTML = "";
+      
+        if (viewMode === "table") {
+          previewArea.style.display = "none";
+          tableArea.style.display = "";
+          let shown = 0, ownedCount = 0, ownedTypes = 0;
+      
+          sortedCards.forEach(card => {
+            shown++;
+            if (card.owned > 0) ownedTypes++;
+            ownedCount += card.owned;
+      
+            const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+            const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
+      
+            const row = document.createElement("tr");
+            row.setAttribute("data-rarity", card.rarity);
+            row.innerHTML = `
+              <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
+              <td class="name-cell">
+                <div style="font-weight: bold;">${card.name}</div>
+                <div class="meta">📄 ${card.id}<br>🃏 ${card.card_type}</div>
+              </td>
+              <td class="rarity">${card.rarity}</td>
+              <td>${card.color}</td>
+              <td>${bloomText}</td>
+              <td>${card.hp ?? "-"}</td>
+              <td>${productText}</td>
+              <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
+            `;
+            tbody.appendChild(row);
+          });
+      
+          const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
+          document.getElementById("countDisplay").textContent =
+            `所持枚数：${ownedCount} / 表示：${shown}種類（所持率 ${ratio}%）`;
+          document.getElementById("typeDisplay").textContent =
+            `所持種類数：${ownedTypes}`;
+          return;
+        }
+      
+        // 🔄 プレビュー表示モード（compact / large）
+        tableArea.style.display = "none";
+        previewArea.innerHTML = "";
+        previewArea.style.display = "block";
+      
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.flexWrap = "wrap";
+        container.style.gap = "16px";
+      
+        const cardBoxStyle = viewMode === "compact" ? "calc(25% - 16px)" : "calc(50% - 16px)";
+        sortedCards.forEach(card => {
+          const box = document.createElement("div");
+          box.style.width = cardBoxStyle;
+          box.style.minWidth = "200px";
+          box.style.border = "1px solid #ccc";
+          box.style.borderRadius = "8px";
+          box.style.padding = "8px";
+          box.style.background = document.body.classList.contains("dark") ? "#333" : "#fff";
+      
+          const img = document.createElement("img");
+          img.src = card.image;
+          img.alt = card.name;
+          img.style.width = "100%";
+          img.style.borderRadius = "4px";
+          img.style.cursor = "zoom-in";
+          img.onclick = () => showImageModal(card.image);
+      
+          const info = document.createElement("div");
+          info.innerHTML = `
+            <div style="font-weight:bold;">${card.name}</div>
+            <div style="font-size:13px;">📄 ${card.id}</div>
+            <div style="font-size:13px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
+          `;
+          info.style.marginTop = "8px";
 
-    function populateCheck(id, items) {
-      const container = document.getElementById(id);
-      items.forEach(val => {
-        const label = document.createElement("label");
-        label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
-        container.appendChild(label);
-      });
-    }
+          box.appendChild(img);
+          box.appendChild(info);
+          container.appendChild(box);
+        });
 
-    function populateSelect(id, items, label) {
-      const select = document.getElementById(id);
-      select.innerHTML = `<option value="">${label}</option>`;
-      [...items].sort().forEach(val => {
-        const opt = document.createElement("option");
-        opt.value = val;
-        opt.textContent = val;
-        select.appendChild(opt);
-      });
-    }
+        previewArea.appendChild(container);
+      }
 
-    populateCheck("rarityFilter", [...raritySet].sort());
-    populateCheck("colorFilter", [...colorSet].sort());
-    populateCheck("bloomFilter", [...bloomSet].sort());
-    populateSelect("productFilter", productSet, "収録商品");
-  }
+      function updateOwned(id, value) {
+        const num = Math.max(0, parseInt(value) || 0);
+        localStorage.setItem("count_" + id, num);
+        const card = cards.find(c => c.id === id);
+        if (card) card.owned = num;
+        renderTable();
+      }
 
-  function sortCards(cards) {
-    const method = document.getElementById("sortMethod")?.value ?? "release";
-    let sorted = [...cards];
-    if (method === "release") {
-      sorted.sort((a, b) => {
-        const ra = releaseMap[a.product] ?? "9999-12-31";
-        const rb = releaseMap[b.product] ?? "9999-12-31";
-        if (ra !== rb) return ra.localeCompare(rb);
-        if (a.product !== b.product) return a.product.localeCompare(b.product);
-        return a.id.localeCompare(b.id);
-      });
-    } else if (method === "id") {
-      sorted.sort((a, b) => a.id.localeCompare(b.id));
-    } else if (method === "name") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
-    } else if (method === "rarity") {
-      const rank = { "SR": 3, "R": 2, "N": 1 };
-      sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
-    }
-    return sorted;
-  }
+      function importCSV() {
+        const input = document.getElementById("csvInput").value.trim().split("\n");
+        input.forEach(line => {
+          const [id, count] = line.split(",");
+          const num = Math.max(0, parseInt(count) || 0);
+          localStorage.setItem("count_" + id, num);
+          const card = cards.find(c => c.id === id);
+          if (card) card.owned = num;
+        });
+        renderTable();
+        alert("CSVを反映しました！");
+      }
 
-  function renderTable() {
-    const keyword = document.getElementById("nameSearch").value.toLowerCase();
-    const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-    const rarity = getChecked("rarityFilter");
-    const color = getChecked("colorFilter");
-    const bloom = getChecked("bloomFilter");
-    const product = document.getElementById("productFilter").value.toLowerCase();
-    const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
+      function exportCSV() {
+        const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
+        navigator.clipboard.writeText(lines.join("\n"))
+          .then(() => alert("所持CSVをコピーしました"))
+          .catch(() => alert("コピーに失敗しました"));
+      }
 
-    const tbody = document.querySelector("#cardTable tbody");
-    tbody.innerHTML = "";
+      window.onload = async () => {
+        if (localStorage.getItem("darkMode") === "true") {
+          document.body.classList.add("dark");
+        }
 
-    let shown = 0, ownedCount = 0, ownedTypes = 0;
+        try {
+          const [cardRes, releaseRes] = await Promise.all([
+            fetch("json_file/card_data.json"),
+            fetch("json_file/release_dates.json")
+          ]);
+          const cardRaw = await cardRes.json();
+          releaseMap = await releaseRes.json();
 
-    let filtered = cards.filter(card => {
-      const count = card.owned;
-      const matchOwned =
-        ownedStates.length === 0 ||
-        (ownedStates.includes("owned") && count > 0) ||
-        (ownedStates.includes("unowned") && (!count || count == 0));
-      if (!matchOwned) return false;
-
-      const match = {
-        name: !keyword || card.name.toLowerCase().includes(keyword),
-        rarity: rarity.length === 0 || rarity.includes(card.rarity),
-        color: color.length === 0 || color.includes(card.color),
-        bloom: bloom.length === 0 || bloom.includes(card.bloom),
-        product: !product || card.product.toLowerCase().includes(product)
+          cards = Object.entries(cardRaw)
+            .map(([key, card]) => ({
+              id: key,
+              name: card.name,
+              rarity: card.rarity ?? "-",
+              color: card.color ?? "-",
+              bloom: card.bloom_level ?? "-",
+              hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
+              product: card.product,
+              image: card.image_url,
+              url: `https://hololive-official-cardgame.com/cardlist/?id=${card.id}`,
+              owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+              card_type: card.card_type ?? "-"
+            }));
+          setupFilters();
+          renderTable();
+        } catch (err) {
+          console.error(err);
+          alert("データの読み込みに失敗しました！");
+        }
       };
-
-      return !Object.values(match).includes(false);
-    });
-
-    let sortedCards = sortCards(filtered);
-
-    sortedCards.forEach(card => {
-      shown++;
-      if (card.owned > 0) ownedTypes++;
-      ownedCount += card.owned;
-
-      const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-      const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
-
-      const row = document.createElement("tr");
-      row.setAttribute("data-rarity", card.rarity);
-      row.innerHTML = `
-        <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-        <td class="name-cell">
-          <div style="font-weight: bold;">${card.name}</div>
-          <div class="meta">📄 ${card.id}<br>🃏 ${card.card_type}</div>
-        </td>
-        <td class="rarity">${card.rarity}</td>
-        <td>${card.color}</td>
-        <td>${bloomText}</td>
-        <td>${card.hp ?? "-"}</td>
-        <td>${productText}</td>
-        <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
-      `;
-      tbody.appendChild(row);
-    });
-
-    const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
-    document.getElementById("countDisplay").textContent =
-      `所持枚数：${ownedCount} / 表示：${shown}種類（所持率 ${ratio}%）`;
-    document.getElementById("typeDisplay").textContent =
-      `所持種類数：${ownedTypes}`;
-  }
-  function updateOwned(id, value) {
-    const num = Math.max(0, parseInt(value) || 0);
-    localStorage.setItem("count_" + id, num);
-    const card = cards.find(c => c.id === id);
-    if (card) card.owned = num;
-    renderTable();
-  }
-
-  function importCSV() {
-    const input = document.getElementById("csvInput").value.trim().split("\n");
-    input.forEach(line => {
-      const [id, count] = line.split(",");
-      const num = Math.max(0, parseInt(count) || 0);
-      localStorage.setItem("count_" + id, num);
-      const card = cards.find(c => c.id === id);
-      if (card) card.owned = num;
-    });
-    renderTable();
-    alert("CSVを反映しました！");
-  }
-
-  function exportCSV() {
-    const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
-    navigator.clipboard.writeText(lines.join("\n"))
-      .then(() => alert("所持CSVをコピーしました"))
-      .catch(() => alert("コピーに失敗しました"));
-  }
-
-  window.onload = async () => {
-    if (localStorage.getItem("darkMode") === "true") {
-      document.body.classList.add("dark");
-    }
-
-    try {
-      const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-      ]);
-      const cardRaw = await cardRes.json();
-      releaseMap = await releaseRes.json();
-
-      cards = Object.entries(cardRaw)
-        .map(([key, card]) => ({
-          id: key,
-          name: card.name,
-          rarity: card.rarity ?? "-",
-          color: card.color ?? "-",
-          bloom: card.bloom_level ?? "-",
-          hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
-          product: card.product,
-          image: card.image_url,
-          url: `https://hololive-official-cardgame.com/cardlist/?id=${card.id}`,
-          owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-          card_type: card.card_type ?? "-"
-        }));
-      setupFilters();
-      renderTable();
-    } catch (err) {
-      console.error(err);
-      alert("データの読み込みに失敗しました！");
-    }
-  };
 </script>
 </body>
 </html>
