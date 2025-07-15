@@ -395,6 +395,16 @@
     populateSelect("tagsFilter", tagSet, "タグ（選択）");
   }
 
+  const iconImageMap = {
+    red: "images/TCG-ColorArtIcon-Red.png",
+    blue: "images/TCG-ColorArtIcon-Blue.png",
+    yellow: "images/TCG-ColorArtIcon-Yellow.png",
+    green: "images/TCG-ColorArtIcon-Green.png",
+    purple: "images/TCG-ColorArtIcon-Purple.png",
+    white: "images/TCG-ColorArtIcon-White.png",
+    any: "images/TCG-ColorArtIcon-Colorless.png"
+  };
+
   function renderSkills(skills) {
   return skills.map(skill => {
     const iconHTML = (skill.icons?.main ?? [])
