@@ -411,8 +411,18 @@
     any: "images/TCG-ColorArtIcon-Colorless.png"
   };
 
+  const tokkouImageMap = {
+    red: "images/tokkou_50_red.png",
+    blue: "images/tokkou_50_blue.png",
+    yellow: "images/tokkou_50_yellow.png",
+    green: "images/tokkou_50_green.png",
+    purple: "images/tokkou_50_purple.png",
+    white: "images/tokkou_50_white.png"
+  };
+
   function renderSkills(skills) {
     return skills.map(skill => {
+      // メインアイコン
       const iconHTML = (skill.icons?.main ?? [])
         .map(icon => {
           const src = iconImageMap[icon.toLowerCase()];
@@ -422,26 +432,32 @@
         })
         .join(" ");
 
-      const tokkouText = (skill.icons?.tokkou ?? []).length > 0
-        ? `特攻：${skill.icons.tokkou.join("・")}`
+      // 特攻アイコン（any は除外）
+      const tokkouHTML = (skill.icons?.tokkou ?? [])
+        .filter(t => tokkouImageMap[t.toLowerCase()])
+        .map(tokkou => {
+          const src = tokkouImageMap[tokkou.toLowerCase()];
+          return `<img src="${src}" alt="特攻:${tokkou}" class="skill-icon" style="height:20px; max-width:24px; object-fit:contain; background:transparent; vertical-align:middle;" />`;
+        })
+        .join(" ");
+
+      const iconsBlock = (iconHTML || tokkouHTML)
+        ? `<br>${iconHTML}${tokkouHTML ? "｜" + tokkouHTML : ""}`
         : "";
 
+      // 表示タイプ別に処理
       if (skill.text) {
-        return `<b>【${skill.type}】</b><br>${iconHTML}<br>${skill.text}`;
+        return `<b>【${skill.type}】</b>${iconsBlock}<br>${skill.text}`;
       } else if (skill.type === "キーワード") {
         const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
         const name = skill.name ?? "";
         const desc = skill.description ?? "";
-        return `${subtype}<br>${iconHTML}<br>${name}<br>${desc}`;
+        return `${subtype}${iconsBlock}<br>${name}<br>${desc}`;
       } else {
         const typePart = `<b>【${skill.type}】</b>`;
         const namePart = skill.name ? `[${skill.name}]` : "";
         const dmg = skill.dmg ? `（${skill.dmg}）` : "";
         const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
-        const extraIcons = tokkouText ? `｜${tokkouText}` : "";
-        const iconsBlock = iconHTML || tokkouText
-          ? `<br>${iconHTML}${extraIcons}`
-          : "";
         const desc = skill.description ?? "";
         return `${typePart}${namePart}${dmg}${subtype}${iconsBlock}<br>${desc}`;
       }
