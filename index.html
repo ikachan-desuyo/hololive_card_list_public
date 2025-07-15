@@ -34,6 +34,7 @@
       margin: 0 auto;
       padding: 10px;
     }
+
     .container-top {
       position: sticky;
       top: 0;
@@ -51,16 +52,27 @@
       margin-bottom: 10px;
       position: relative;
     }
+
     .top-nav {
       position: absolute;
       top: 0;
       right: 10px;
     }
+
     .top-nav button {
       padding: 6px 10px;
       font-size: 13px;
       cursor: pointer;
       border-radius: 6px;
+    }
+
+    .top-controls {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
     }
 
     .controls, .filter-row {
@@ -151,10 +163,17 @@
       border-top: 1px dashed #ccc;
       font-size: 13px;
       color: #555;
+      line-height: 1.4;
     }
     .dark td.name-cell .meta {
       border-top: 1px dashed #666;
       color: #aaa;
+    }
+
+    td:nth-child(2), th:nth-child(2) {
+      min-width: 140px;
+      max-width: 180px;
+      word-break: break-word;
     }
 
     td.rarity, th.rarity {
@@ -163,22 +182,13 @@
       text-align: center;
     }
 
-    input[type="number"], textarea {
-      background-color: #fff;
-      color: #000;
-      border: 1px solid #ccc;
+    td:nth-child(8), th:nth-child(8) {
+      width: 40px;
     }
 
-    .dark input[type="number"], .dark textarea {
-      background-color: #444;
-      color: #eee;
-      border-color: #666;
-    }
-
-    textarea {
-      font-size: 14px;
-      padding: 6px;
-      width: 300px;
+    input[type="number"] {
+      width: 32px;
+      text-align: center;
     }
 
     img {
@@ -196,16 +206,13 @@
       <h2>
         ホロライブカード一覧
         <div class="top-nav">
-          <button onclick="location.href='holoca_skill_page.html'">📂 他のページへ</button>
+          <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
         </div>
       </h2>
 
-      <div class="controls">
+      <div class="top-controls">
         <button onclick="toggleDarkMode()">🌗 モード切替</button>
         <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-      </div>
-
-      <div class="controls">
         <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
       </div>
 
@@ -291,6 +298,16 @@
       <script>
         let cards = [];
   
+        function toggleFilters() {
+          const el = document.getElementById("filtersWrapper");
+          el.style.display = el.style.display === "none" ? "block" : "none";
+        }
+  
+        function toggleDarkMode() {
+          document.body.classList.toggle("dark");
+          localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+        }
+  
         function selectAll(id) {
           document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
           renderTable();
@@ -299,11 +316,6 @@
         function clearAll(id) {
           document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
           renderTable();
-        }
-  
-        function toggleFilters() {
-          const el = document.getElementById("filtersWrapper");
-          el.style.display = el.style.display === "none" ? "block" : "none";
         }
   
         function setupFilters() {
@@ -346,7 +358,6 @@
         function renderTable() {
           const keyword = document.getElementById("nameSearch").value.toLowerCase();
           const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-  
           const rarity = getChecked("rarityFilter");
           const color = getChecked("colorFilter");
           const bloom = getChecked("bloomFilter");
@@ -390,8 +401,7 @@
               <td class="name-cell">
                 <div style="font-weight: bold;">${card.name}</div>
                 <div class="meta">
-                  <span style="margin-right: 10px;">📄 ${card.id}</span>
-                  <span>🃏 ${card.card_type}</span>
+                  📄 ${card.id}<br>🃏 ${card.card_type}
                 </div>
               </td>
               <td class="rarity">${card.rarity}</td>

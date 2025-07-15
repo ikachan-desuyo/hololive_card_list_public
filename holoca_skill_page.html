@@ -34,6 +34,7 @@
       margin: 0 auto;
       padding: 10px;
     }
+
     .top-bar {
       position: sticky;
       top: 0;
@@ -54,6 +55,7 @@
       flex-wrap: wrap;
       gap: 10px;
     }
+
     .top-bar button {
       padding: 6px 10px;
       font-size: 14px;
@@ -131,14 +133,10 @@
     }
 
     td:nth-child(2), th:nth-child(2) {
-      white-space: nowrap;
+      white-space: normal;
       min-width: 120px;
-    }
-
-    td:nth-child(8), th:nth-child(8),
-    td:nth-child(9), th:nth-child(9) {
+      max-width: 160px;
       word-break: break-word;
-      min-width: 120px;
     }
 
     td.name-cell .meta {
@@ -147,10 +145,17 @@
       border-top: 1px dashed #ccc;
       font-size: 13px;
       color: #555;
+      line-height: 1.4;
     }
     .dark td.name-cell .meta {
       border-top: 1px dashed #666;
       color: #aaa;
+    }
+
+    td:nth-child(8), th:nth-child(8),
+    td:nth-child(9), th:nth-child(9) {
+      word-break: break-word;
+      min-width: 120px;
     }
 
     input[type="number"] {
@@ -171,6 +176,12 @@
       cursor: zoom-in;
       background-color: #fff;
       border: 1px solid #ddd;
+    }
+
+    @media screen and (max-width: 600px) {
+      td:nth-child(9), th:nth-child(9) {
+        min-width: 200px;
+      }
     }
   </style>
 </head>
@@ -391,8 +402,7 @@
             <td class="name-cell">
               <div style="font-weight: bold;">${card.name}</div>
               <div class="meta">
-                <span style="margin-right: 10px;">📄 ${card.id}</span>
-                <span>🃏 ${card.card_type}</span>
+                📄 ${card.id}<br>🃏 ${card.card_type}
               </div>
             </td>
             <td>${card.rarity}</td>
