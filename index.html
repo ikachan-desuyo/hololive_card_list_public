@@ -13,9 +13,16 @@
       overflow-x: hidden;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1800px; /* 横幅拡張 */
       margin: 0 auto;
       padding: 10px;
+    }
+    .container-top {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 100;
+      border-bottom: 1px solid #ccc;
     }
     h2 {
       text-align: center;
@@ -32,14 +39,6 @@
       font-size: 13px;
       cursor: pointer;
       border-radius: 6px;
-    }
-    .sticky-info {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      padding: 10px 0;
-      z-index: 100;
-      border-bottom: 1px solid #ccc;
     }
     .controls, .filter-row {
       display: flex;
@@ -76,6 +75,11 @@
     #filtersWrapper {
       transition: all 0.3s ease;
     }
+    .sticky-info {
+      background: #fff;
+      padding: 10px 0;
+      border-bottom: 1px solid #ccc;
+    }
     table {
       border-collapse: collapse;
       width: 100%;
@@ -102,7 +106,6 @@
       background-color: #fff;
       border: 1px solid #ddd;
     }
-
     tr[data-rarity="-"]    { background-color: #ffffff; }
     tr[data-rarity="C"]    { background-color: #ffffff; }
     tr[data-rarity="OC"]   { background-color: #f4f4f4; }
@@ -121,58 +124,60 @@
 </head>
 <body>
   <div class="container">
-    <h2>
-      ホロライブカード一覧
-      <div class="top-nav">
-        <button onclick="location.href='another_page.html'">📂 他のページへ</button>
-      </div>
-    </h2>
-
-    <div class="controls">
-      <button onclick="toggleDarkMode()">🌗 モード切替</button>
-      <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-    </div>
-
-    <div class="controls">
-      <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
-    </div>
-
-    <div id="filtersWrapper">
-      <fieldset class="filter-group">
-        <legend>所持状態</legend>
-        <div class="filter-row" id="ownedStateGroup">
-          <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
-          <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
+    <div class="container-top">
+      <h2>
+        ホロライブカード一覧
+        <div class="top-nav">
+          <button onclick="location.href='another_page.html'">📂 他のページへ</button>
         </div>
-      </fieldset>
+      </h2>
 
-      <fieldset class="filter-group">
-        <legend>レアリティ</legend>
-        <button onclick="selectAll('rarityFilter')">全選択</button>
-        <button onclick="clearAll('rarityFilter')">全部外す</button>
-        <div class="filter-row" id="rarityFilter"></div>
-      </fieldset>
+      <div class="controls">
+        <button onclick="toggleDarkMode()">🌗 モード切替</button>
+        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
+      </div>
 
-      <fieldset class="filter-group">
-        <legend>色</legend>
-        <button onclick="selectAll('colorFilter')">全選択</button>
-        <button onclick="clearAll('colorFilter')">全部外す</button>
-        <div class="filter-row" id="colorFilter"></div>
-      </fieldset>
+      <div class="controls">
+        <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+      </div>
 
-      <fieldset class="filter-group">
-        <legend>Bloom</legend>
-        <button onclick="selectAll('bloomFilter')">全選択</button>
-        <button onclick="clearAll('bloomFilter')">全部外す</button>
-        <div class="filter-row" id="bloomFilter"></div>
-      </fieldset>
+      <div id="filtersWrapper">
+        <fieldset class="filter-group">
+          <legend>所持状態</legend>
+          <div class="filter-row" id="ownedStateGroup">
+            <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
+            <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
+          </div>
+        </fieldset>
 
-      <fieldset class="filter-group">
-        <legend>収録商品</legend>
-        <select id="productFilter" onchange="renderTable()">
-          <option value="">収録商品（選択）</option>
-        </select>
-      </fieldset>
+        <fieldset class="filter-group">
+          <legend>レアリティ</legend>
+          <button onclick="selectAll('rarityFilter')">全選択</button>
+          <button onclick="clearAll('rarityFilter')">全部外す</button>
+          <div class="filter-row" id="rarityFilter"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>色</legend>
+          <button onclick="selectAll('colorFilter')">全選択</button>
+          <button onclick="clearAll('colorFilter')">全部外す</button>
+          <div class="filter-row" id="colorFilter"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>Bloom</legend>
+          <button onclick="selectAll('bloomFilter')">全選択</button>
+          <button onclick="clearAll('bloomFilter')">全部外す</button>
+          <div class="filter-row" id="bloomFilter"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>収録商品</legend>
+          <select id="productFilter" onchange="renderTable()">
+            <option value="">収録商品（選択）</option>
+          </select>
+        </fieldset>
+      </div>
     </div>
 
     <div class="sticky-info">
