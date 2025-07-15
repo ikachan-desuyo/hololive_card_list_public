@@ -396,27 +396,39 @@
   }
 
   function renderSkills(skills) {
-    return skills.map(skill => {
-      if (skill.text) {
-        return `<b>【${skill.type}】</b><br>${skill.text}`;
-      } else if (skill.type === "キーワード") {
-        const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
-        const name = skill.name ?? "";
-        const desc = skill.description ?? "";
-        return `${subtype}<br>${name}<br>${desc}`;
-      } else {
-        const typePart = `<b>【${skill.type}】</b>`;
-        const namePart = skill.name ? `[${skill.name}]` : "";
-        const dmg = skill.dmg ? `（${skill.dmg}）` : "";
-        const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
-        const iconText = skill.icons?.main ? skill.icons.main.join("・") : "";
-        const tokkouText = skill.icons?.tokkou ? `特攻：${skill.icons.tokkou.join("・")}` : "";
-        const icons = iconText || tokkouText ? `<br>${iconText}${tokkouText ? "｜" + tokkouText : ""}` : "";
-        const desc = skill.description ?? "";
-        return `${typePart}${namePart}${dmg}${subtype}${icons}<br>${desc}`;
-      }
-    }).join("<br><br>");
-  }
+  return skills.map(skill => {
+    const iconHTML = (skill.icons?.main ?? [])
+      .map(icon => {
+        const src = iconImageMap[icon.toLowerCase()];
+        return src ? `<img src="${src}" alt="${icon}" style="height:20px; vertical-align:middle;" />` : icon;
+      })
+      .join(" ");
+
+    const tokkouText = (skill.icons?.tokkou ?? []).length > 0
+      ? `特攻：${skill.icons.tokkou.join("・")}`
+      : "";
+
+    if (skill.text) {
+      return `<b>【${skill.type}】</b><br>${iconHTML}<br>${skill.text}`;
+    } else if (skill.type === "キーワード") {
+      const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
+      const name = skill.name ?? "";
+      const desc = skill.description ?? "";
+      return `${subtype}<br>${iconHTML}<br>${name}<br>${desc}`;
+    } else {
+      const typePart = `<b>【${skill.type}】</b>`;
+      const namePart = skill.name ? `[${skill.name}]` : "";
+      const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+      const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
+      const extraIcons = tokkouText ? `｜${tokkouText}` : "";
+      const iconsBlock = iconHTML || tokkouText
+        ? `<br>${iconHTML}${extraIcons}`
+        : "";
+      const desc = skill.description ?? "";
+      return `${typePart}${namePart}${dmg}${subtype}${iconsBlock}<br>${desc}`;
+    }
+  }).join("<br><br>");
+}
 
   function renderTable() {
     const keyword = document.getElementById("keywordSearch").value.toLowerCase();
