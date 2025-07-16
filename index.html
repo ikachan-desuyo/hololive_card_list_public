@@ -63,8 +63,8 @@
     .filter-group {
       border: 1px solid #ccc;
       border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 10px;
+      padding: 6px;
+      margin-bottom: 2px;
     }
   
     .dark .filter-group {
@@ -187,7 +187,7 @@
     }
 
     .chip {
-      padding: 6px 12px;
+      padding: 2px 10px;
       border: 1px solid #aaa;
       border-radius: 16px;
       background: #f0f0f0;
@@ -399,6 +399,11 @@
       let releaseMap = {};
       let viewMode = "compact";
       let renderLimit = 100;
+
+      const ownedLabelMap = {
+        owned: "所持あり",
+        unowned: "所持なし"
+      };
     
       function populateChipGroup(id, items, withAllButton = false, selectAllByDefault = true) {
         const container = document.getElementById(id);
@@ -416,7 +421,9 @@
 
         items.forEach(val => {
           const btn = document.createElement("button");
-          btn.textContent = val;
+          // ✅ 所持状態だけ日本語ラベルに変換
+          const label = id === "ownedStateChipGroup" ? ownedLabelMap[val] ?? val : val;
+          btn.textContent = label;
           btn.className = "chip";
           btn.dataset.value = val;
           btn.onclick = () => toggleChip(btn);
