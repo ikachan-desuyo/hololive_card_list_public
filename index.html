@@ -473,7 +473,7 @@
       tableArea.style.display = "";
       let shown = 0, ownedCount = 0, ownedTypes = 0;
 
-      sortedCards.forEach(card => {
+      sortedCards.slice(0, renderLimit).forEach(card => {
         shown++;
         if (card.owned > 0) ownedTypes++;
         ownedCount += card.owned;
@@ -500,9 +500,8 @@
 
       const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
       document.getElementById("countDisplay").textContent =
-        `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持率：${ratio}%`;
-      document.getElementById("typeDisplay").textContent =
-        `所持種類数：${ownedTypes}`;
+        `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
+      document.getElementById("typeDisplay").textContent = ``;
       return;
     }
 
@@ -546,7 +545,7 @@
     const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
 
     document.getElementById("countDisplay").textContent =
-      `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持率：${ratio}% / 所持種類数：${ownedTypes}`;
+      `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
     document.getElementById("typeDisplay").textContent = "";
   }
 
@@ -583,7 +582,7 @@
   }
 
   window.addEventListener("scroll", () => {
-    if (viewMode === "compact") {
+    if (viewMode === "compact" || viewMode === "table") {
       const bottom = window.innerHeight + window.scrollY;
       const docHeight = document.body.offsetHeight;
       if (bottom >= docHeight - 100) {

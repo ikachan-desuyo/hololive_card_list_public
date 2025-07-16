@@ -308,6 +308,7 @@
     <script>
       let cards = [];
       let releaseMap = {};
+      let renderLimit = 100; 
     
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
@@ -363,206 +364,213 @@
         return sorted;
       }
       function setupFilters() {
-    const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
-    cards.forEach(c => {
-      raritySet.add(c.rarity);
-      colorSet.add(c.color);
-      bloomSet.add(c.bloom);
-      if (!c.product.includes(",")) {
-        productSet.add(c.product);
-      }
-      c.tags.forEach(tag => tagSet.add(tag));
-    });
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
+        cards.forEach(c => {
+          raritySet.add(c.rarity);
+          colorSet.add(c.color);
+          bloomSet.add(c.bloom);
+          if (!c.product.includes(",")) {
+            productSet.add(c.product);
+          }
+          c.tags.forEach(tag => tagSet.add(tag));
+        });
 
-    function populateCheck(id, items) {
-      const container = document.getElementById(id);
-      items.forEach(val => {
-        const label = document.createElement("label");
-        label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
-        container.appendChild(label);
+        function populateCheck(id, items) {
+          const container = document.getElementById(id);
+          items.forEach(val => {
+            const label = document.createElement("label");
+            label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
+            container.appendChild(label);
+          });
+        }
+
+      function populateSelect(id, items, label) {
+        const select = document.getElementById(id);
+        select.innerHTML = `<option value="">${label}</option>`;
+        [...items].sort().forEach(val => {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val;
+          select.appendChild(opt);
+        });
+      }
+
+      populateCheck("rarityFilter", [...raritySet].sort());
+      populateCheck("colorFilter", [...colorSet].sort());
+      populateCheck("bloomFilter", [...bloomSet].sort());
+      populateSelect("productFilter", productSet, "収録商品");
+      populateSelect("tagsFilter", tagSet, "タグ（選択）");
+    }
+
+    const iconImageMap = {
+      red: "images/TCG-ColorArtIcon-Red.png",
+      blue: "images/TCG-ColorArtIcon-Blue.png",
+      yellow: "images/TCG-ColorArtIcon-Yellow.png",
+      green: "images/TCG-ColorArtIcon-Green.png",
+      purple: "images/TCG-ColorArtIcon-Purple.png",
+      white: "images/TCG-ColorArtIcon-White.png",
+      any: "images/TCG-ColorArtIcon-Colorless.png"
+    };
+
+    const tokkouImageMap = {
+      '赤+50': "images/tokkou_50_red.png",
+      '青+50': "images/tokkou_50_blue.png",
+      '黄+50': "images/tokkou_50_yellow.png",
+      '緑+50': "images/tokkou_50_green.png",
+      '紫+50': "images/tokkou_50_purple.png",
+      '白+50': "images/tokkou_50_white.png"
+    };
+
+    function renderSkills(skills) {
+      return skills.map(skill => {
+        // メインアイコン
+        const iconHTML = (skill.icons?.main ?? [])
+          .map(icon => {
+            const src = iconImageMap[icon.toLowerCase()];
+            return src
+              ? `<img src="${src}" alt="${icon}" class="skill-icon" style="height:20px; max-width:24px; object-fit:contain; background:transparent; vertical-align:middle;" />`
+              : icon;
+          })
+          .join(" ");
+
+        // 特攻アイコン（any は除外）
+        const tokkouHTML = (skill.icons?.tokkou ?? [])
+          .filter(t => tokkouImageMap[t.toLowerCase()])
+          .map(tokkou => {
+            const src = tokkouImageMap[tokkou.toLowerCase()];
+            return `<img src="${src}" alt="特攻:${tokkou}" class="skill-icon" style="height:52px; max-width:56px; object-fit:contain; background:transparent; vertical-align:middle;" />`;
+          })
+          .join(" ");
+
+        const iconsBlock = (iconHTML || tokkouHTML)
+          ? `<br>${iconHTML}${tokkouHTML ? "｜" + tokkouHTML : ""}`
+          : "";
+
+        // 表示タイプ別に処理
+        if (skill.text) {
+          return `<b>【${skill.type}】</b>${iconsBlock}<br>${skill.text}`;
+        } else if (skill.type === "キーワード") {
+          const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
+          const name = skill.name ?? "";
+          const desc = skill.description ?? "";
+          return `${subtype}${iconsBlock}<br>${name}<br>${desc}`;
+        } else {
+          const typePart = `<b>【${skill.type}】</b>`;
+          const namePart = skill.name ? `[${skill.name}]` : "";
+          const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+          const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
+          const desc = skill.description ?? "";
+          return `${typePart}${namePart}${dmg}${subtype}${iconsBlock}<br>${desc}`;
+        }
+      }).join("<br><br>");
+    }
+
+    function renderTable() {
+      const keyword = document.getElementById("keywordSearch").value.toLowerCase();
+      const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
+      const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
+      const rarity = getChecked("rarityFilter");
+      const color = getChecked("colorFilter");
+      const bloom = getChecked("bloomFilter");
+      const product = document.getElementById("productFilter").value.toLowerCase();
+      const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
+
+      const tbody = document.querySelector("#cardTable tbody");
+      tbody.innerHTML = "";
+
+      const filtered = cards.filter(card => {
+        const count = card.owned;
+        const matchOwned =
+          ownedStates.length === 0 ||
+          (ownedStates.includes("owned") && count > 0) ||
+          (ownedStates.includes("unowned") && (!count || count == 0));
+        if (!matchOwned) return false;
+
+        const allText = [
+          card.name, card.id, card.rarity, card.color, card.bloom,
+          card.hp ?? card.life ?? "", card.product, card.card_type,
+          card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
+        ].join(" ").toLowerCase();
+
+        const match = {
+          rarity: rarity.length === 0 || rarity.includes(card.rarity),
+          color: color.length === 0 || color.includes(card.color),
+          bloom: bloom.length === 0 || bloom.includes(card.bloom),
+          product: !product || card.product.toLowerCase().includes(product),
+          keyword: !keyword || allText.includes(keyword),
+          tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
+        };
+
+        return !Object.values(match).includes(false);
+      });
+
+      const sortedCards = sortCards(filtered);
+
+      sortedCards.slice(0, renderLimit).forEach(card => {
+        const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><img src="${card.image}" loading="lazy" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
+          <td class="name-cell">
+            <div style="font-weight: bold;">${card.name}</div>
+            <div class="meta">📄 ${card.id}<br>🃏 ${card.card_type}</div>
+          </td>
+          <td>${card.rarity}</td>
+          <td>${card.color}</td>
+          <td>${bloomText}</td>
+          <td>${card.hp ?? card.life ?? "-"}</td>
+          <td>${card.tags.join("<br>")}</td>
+          <td>${renderSkills(card.skills)}</td>
+        `;
+        tbody.appendChild(row);
       });
     }
 
-    function populateSelect(id, items, label) {
-      const select = document.getElementById(id);
-      select.innerHTML = `<option value="">${label}</option>`;
-      [...items].sort().forEach(val => {
-        const opt = document.createElement("option");
-        opt.value = val;
-        opt.textContent = val;
-        select.appendChild(opt);
-      });
-    }
-
-    populateCheck("rarityFilter", [...raritySet].sort());
-    populateCheck("colorFilter", [...colorSet].sort());
-    populateCheck("bloomFilter", [...bloomSet].sort());
-    populateSelect("productFilter", productSet, "収録商品");
-    populateSelect("tagsFilter", tagSet, "タグ（選択）");
-  }
-
-  const iconImageMap = {
-    red: "images/TCG-ColorArtIcon-Red.png",
-    blue: "images/TCG-ColorArtIcon-Blue.png",
-    yellow: "images/TCG-ColorArtIcon-Yellow.png",
-    green: "images/TCG-ColorArtIcon-Green.png",
-    purple: "images/TCG-ColorArtIcon-Purple.png",
-    white: "images/TCG-ColorArtIcon-White.png",
-    any: "images/TCG-ColorArtIcon-Colorless.png"
-  };
-
-  const tokkouImageMap = {
-    '赤+50': "images/tokkou_50_red.png",
-    '青+50': "images/tokkou_50_blue.png",
-    '黄+50': "images/tokkou_50_yellow.png",
-    '緑+50': "images/tokkou_50_green.png",
-    '紫+50': "images/tokkou_50_purple.png",
-    '白+50': "images/tokkou_50_white.png"
-  };
-
-  function renderSkills(skills) {
-    return skills.map(skill => {
-      // メインアイコン
-      const iconHTML = (skill.icons?.main ?? [])
-        .map(icon => {
-          const src = iconImageMap[icon.toLowerCase()];
-          return src
-            ? `<img src="${src}" alt="${icon}" class="skill-icon" style="height:20px; max-width:24px; object-fit:contain; background:transparent; vertical-align:middle;" />`
-            : icon;
-        })
-        .join(" ");
-
-      // 特攻アイコン（any は除外）
-      const tokkouHTML = (skill.icons?.tokkou ?? [])
-        .filter(t => tokkouImageMap[t.toLowerCase()])
-        .map(tokkou => {
-          const src = tokkouImageMap[tokkou.toLowerCase()];
-          return `<img src="${src}" alt="特攻:${tokkou}" class="skill-icon" style="height:52px; max-width:56px; object-fit:contain; background:transparent; vertical-align:middle;" />`;
-        })
-        .join(" ");
-
-      const iconsBlock = (iconHTML || tokkouHTML)
-        ? `<br>${iconHTML}${tokkouHTML ? "｜" + tokkouHTML : ""}`
-        : "";
-
-      // 表示タイプ別に処理
-      if (skill.text) {
-        return `<b>【${skill.type}】</b>${iconsBlock}<br>${skill.text}`;
-      } else if (skill.type === "キーワード") {
-        const subtype = skill.subtype ? `<b>【${skill.subtype}】</b>` : "";
-        const name = skill.name ?? "";
-        const desc = skill.description ?? "";
-        return `${subtype}${iconsBlock}<br>${name}<br>${desc}`;
-      } else {
-        const typePart = `<b>【${skill.type}】</b>`;
-        const namePart = skill.name ? `[${skill.name}]` : "";
-        const dmg = skill.dmg ? `（${skill.dmg}）` : "";
-        const subtype = skill.subtype ? `<br>${skill.subtype}` : "";
-        const desc = skill.description ?? "";
-        return `${typePart}${namePart}${dmg}${subtype}${iconsBlock}<br>${desc}`;
+    window.onload = async () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark");
       }
-    }).join("<br><br>");
-  }
 
-  function renderTable() {
-    const keyword = document.getElementById("keywordSearch").value.toLowerCase();
-    const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-    const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
-    const rarity = getChecked("rarityFilter");
-    const color = getChecked("colorFilter");
-    const bloom = getChecked("bloomFilter");
-    const product = document.getElementById("productFilter").value.toLowerCase();
-    const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
+      try {
+        const [cardRes, releaseRes] = await Promise.all([
+          fetch("json_file/card_data.json"),
+          fetch("json_file/release_dates.json")
+        ]);
+        const rawData = await cardRes.json();
+        releaseMap = await releaseRes.json();
 
-    const tbody = document.querySelector("#cardTable tbody");
-    tbody.innerHTML = "";
+        cards = Object.entries(rawData).map(([key, card]) => ({
+          id: key,
+          name: card.name,
+          rarity: card.rarity ?? "-",
+          color: card.color ?? "-",
+          bloom: card.bloom_level ?? "-",
+          hp: card.hp ?? null,
+          life: card.life ?? null,
+          product: card.product ?? "-",
+          tags: card.tags ?? [],
+          skills: card.skills ?? [],
+          image: card.image_url,
+          owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+          card_type: card.card_type ?? "-"
+        }));
 
-    const filtered = cards.filter(card => {
-      const count = card.owned;
-      const matchOwned =
-        ownedStates.length === 0 ||
-        (ownedStates.includes("owned") && count > 0) ||
-        (ownedStates.includes("unowned") && (!count || count == 0));
-      if (!matchOwned) return false;
+        setupFilters();
+        renderTable();
+      } catch (err) {
+        console.error(err);
+        alert("データの読み込みに失敗しました！");
+      }
+    };
 
-      const allText = [
-        card.name, card.id, card.rarity, card.color, card.bloom,
-        card.hp ?? card.life ?? "", card.product, card.card_type,
-        card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
-      ].join(" ").toLowerCase();
-
-      const match = {
-        rarity: rarity.length === 0 || rarity.includes(card.rarity),
-        color: color.length === 0 || color.includes(card.color),
-        bloom: bloom.length === 0 || bloom.includes(card.bloom),
-        product: !product || card.product.toLowerCase().includes(product),
-        keyword: !keyword || allText.includes(keyword),
-        tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
-      };
-
-      return !Object.values(match).includes(false);
+    window.addEventListener("scroll", () => {
+      const bottom = window.innerHeight + window.scrollY;
+      const docHeight = document.body.offsetHeight;
+      if (bottom >= docHeight - 100) {
+        renderLimit += 40;
+        renderTable();
+      }
     });
-
-    const sortedCards = sortCards(filtered);
-
-    sortedCards.forEach(card => {
-      const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-        <td class="name-cell">
-          <div style="font-weight: bold;">${card.name}</div>
-          <div class="meta">
-            📄 ${card.id}<br>🃏 ${card.card_type}
-          </div>
-        </td>
-        <td>${card.rarity}</td>
-        <td>${card.color}</td>
-        <td>${bloomText}</td>
-        <td>${card.hp ?? card.life ?? "-"}</td>
-        <td>${card.tags.join("<br>")}</td>
-        <td>${renderSkills(card.skills)}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-
-  window.onload = async () => {
-    if (localStorage.getItem("darkMode") === "true") {
-      document.body.classList.add("dark");
-    }
-
-    try {
-      const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-      ]);
-      const rawData = await cardRes.json();
-      releaseMap = await releaseRes.json();
-
-      cards = Object.entries(rawData).map(([key, card]) => ({
-        id: key,
-        name: card.name,
-        rarity: card.rarity ?? "-",
-        color: card.color ?? "-",
-        bloom: card.bloom_level ?? "-",
-        hp: card.hp ?? null,
-        life: card.life ?? null,
-        product: card.product ?? "-",
-        tags: card.tags ?? [],
-        skills: card.skills ?? [],
-        image: card.image_url,
-        owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-        card_type: card.card_type ?? "-"
-      }));
-
-      setupFilters();
-      renderTable();
-    } catch (err) {
-      console.error(err);
-      alert("データの読み込みに失敗しました！");
-    }
-  };
-</script>
-</body>
+    </script>
+  </body>
 </html>
