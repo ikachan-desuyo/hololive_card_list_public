@@ -248,7 +248,13 @@
       max-width: calc(100vw - 32px); /* 左右の余白分を調整 */
       font-size: 13px;
     }
-
+    
+    .mobile-layout #cardPreviewArea > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+    }
   </style>
 </head>
 <body>
@@ -363,7 +369,7 @@
     <script>
       let cards = [];
       let releaseMap = {};
-      let viewMode = "table";
+      let viewMode = "compact";
       let renderLimit = 100;
     
       function setViewMode(mode) {
