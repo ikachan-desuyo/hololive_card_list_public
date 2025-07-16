@@ -178,6 +178,38 @@
       padding: 0;
       overflow-wrap: break-word;
     }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border: 1px solid #aaa;
+      border-radius: 16px;
+      background: #f0f0f0;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+      transition: 0.2s;
+    }
+
+    .chip:hover {
+      background: #ddd;
+    }
+
+    .chip.selected {
+      background: #0095ff;
+      color: #fff;
+      border-color: #007acc;
+    }
+
+    .chip.all-chip {
+      font-weight: bold;
+    }
   
     /* ✅ スマホ専用表示レイアウト追加調整 */
     .mobile-layout #cardPreviewArea div > div {
@@ -284,29 +316,25 @@
       <div id="filtersWrapper">
         <fieldset class="filter-group">
           <legend>所持状態</legend>
-          <label><input type="checkbox" name="ownedState" value="owned" checked onchange="renderTable()"> 所持あり</label>
-          <label><input type="checkbox" name="ownedState" value="unowned" checked onchange="renderTable()"> 所持なし</label>
+          <div id="ownedStateChipGroup" class="chip-group">
+            <button class="chip selected" data-value="owned" onclick="toggleChip(this)">所持あり</button>
+            <button class="chip selected" data-value="unowned" onclick="toggleChip(this)">所持なし</button>
+          </div>
         </fieldset>
-
+        
         <fieldset class="filter-group">
           <legend>レアリティ</legend>
-          <button onclick="selectAll('rarityFilter')">全選択</button>
-          <button onclick="clearAll('rarityFilter')">全部外す</button>
-          <div id="rarityFilter" class="filter-row"></div>
+          <div id="rarityFilter" class="chip-group"></div>
         </fieldset>
-
+        
         <fieldset class="filter-group">
           <legend>色</legend>
-          <button onclick="selectAll('colorFilter')">全選択</button>
-          <button onclick="clearAll('colorFilter')">全部外す</button>
-          <div id="colorFilter" class="filter-row"></div>
+          <div id="colorFilter" class="chip-group"></div>
         </fieldset>
-
+        
         <fieldset class="filter-group">
           <legend>Bloom</legend>
-          <button onclick="selectAll('bloomFilter')">全選択</button>
-          <button onclick="clearAll('bloomFilter')">全部外す</button>
-          <div id="bloomFilter" class="filter-row"></div>
+          <div id="bloomFilter" class="chip-group"></div>
         </fieldset>
 
         <fieldset class="filter-group">
@@ -372,6 +400,52 @@
       let viewMode = "compact";
       let renderLimit = 100;
     
+      function populateChipGroup(id, items, withAllButton = false) {
+        const container = document.getElementById(id);
+        container.innerHTML = "";
+        container.classList.add("chip-group");
+
+        if (withAllButton) {
+          const allBtn = document.createElement("button");
+          allBtn.textContent = "すべて";
+          allBtn.className = "chip selected all-chip";
+          allBtn.dataset.value = "ALL";
+          allBtn.onclick = () => selectAllChip(allBtn);
+          container.appendChild(allBtn);
+        }
+
+        items.forEach(val => {
+          const btn = document.createElement("button");
+          btn.textContent = val;
+          btn.className = "chip selected";
+          btn.dataset.value = val;
+          btn.onclick = () => toggleChip(btn);
+          container.appendChild(btn);
+        });
+      }
+
+      function toggleChip(btn) {
+        const group = btn.parentElement;
+        const allBtn = group.querySelector(".all-chip");
+        if (allBtn) allBtn.classList.remove("selected");
+
+        btn.classList.toggle("selected");
+        renderTable();
+      }
+
+      function selectAllChip(allBtn) {
+        const group = allBtn.parentElement;
+        group.querySelectorAll(".chip").forEach(btn => btn.classList.remove("selected"));
+        allBtn.classList.add("selected");
+        renderTable();
+      }
+
+      function getCheckedFromChips(id) {
+        const allSelected = document.querySelector(`#${id} .chip.all-chip.selected`);
+        if (allSelected) return [];
+        return [...document.querySelectorAll(`#${id} .chip.selected:not(.all-chip)`)].map(btn => btn.dataset.value);
+      }
+
       function setViewMode(mode) {
         viewMode = mode;
         renderLimit = 100;
@@ -408,7 +482,7 @@
       function hideImageModal() {
         document.getElementById("imageModal").style.display = "none";
       }
-    
+      
       function setupFilters() {
         const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
         cards.forEach(c => {
@@ -419,33 +493,22 @@
             productSet.add(c.product);
           }
         });
-    
-        function populateCheck(id, items) {
-          const container = document.getElementById(id);
-          items.forEach(val => {
-            const label = document.createElement("label");
-            label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderTable()"> ${val}`;
-            container.appendChild(label);
-          });
-        }
-    
-        function populateSelect(id, items, label) {
-          const select = document.getElementById(id);
-          select.innerHTML = `<option value="">${label}</option>`;
-          [...items].sort().forEach(val => {
-            const opt = document.createElement("option");
-            opt.value = val;
-            opt.textContent = val;
-            select.appendChild(opt);
-          });
-        }
-    
-        populateCheck("rarityFilter", [...raritySet].sort());
-        populateCheck("colorFilter", [...colorSet].sort());
-        populateCheck("bloomFilter", [...bloomSet].sort());
-        populateSelect("productFilter", productSet, "収録商品");
+
+        populateChipGroup("rarityFilter", [...raritySet].sort(), true);
+        populateChipGroup("colorFilter", [...colorSet].sort(), true);
+        populateChipGroup("bloomFilter", [...bloomSet].sort(), true);
+        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false);
+
+        const select = document.getElementById("productFilter");
+        select.innerHTML = `<option value="">収録商品（選択）</option>`;
+        [...productSet].sort().forEach(val => {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val;
+          select.appendChild(opt);
+        });
       }
-    
+      
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
         let sorted = [...cards];
@@ -472,11 +535,11 @@
   function renderTable() {
     const keyword = document.getElementById("nameSearch").value.toLowerCase();
     const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-    const rarity = getChecked("rarityFilter");
-    const color = getChecked("colorFilter");
-    const bloom = getChecked("bloomFilter");
+    const ownedStates = getCheckedFromChips("ownedStateChipGroup");
+    const rarity = getCheckedFromChips("rarityFilter");
+    const color = getCheckedFromChips("colorFilter");
+    const bloom = getCheckedFromChips("bloomFilter");
     const product = document.getElementById("productFilter").value.toLowerCase();
-    const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
 
     const tableArea = document.getElementById("cardTable");
     const previewArea = document.getElementById("cardPreviewArea");
