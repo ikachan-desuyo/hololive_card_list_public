@@ -507,7 +507,7 @@
         populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false); // ←両方選択のまま
 
         const select = document.getElementById("productFilter");
-        select.innerHTML = `<option value="">収録商品（選択）</option>`;
+        select.innerHTML = `<option value="">すべての商品</option>`;
         [...productSet].sort().forEach(val => {
           const opt = document.createElement("option");
           opt.value = val;
