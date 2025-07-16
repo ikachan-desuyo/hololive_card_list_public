@@ -235,6 +235,20 @@
     .mobile-layout .filter-group label * {
       font-size: 13px !important;
     }
+
+    /* スマホレイアウト時、チェックボックスラベルのテキストサイズを縮小 */
+    .mobile-layout .filter-row label {
+      font-size: 12px !important;
+      line-height: 1.2;
+    }
+
+    /* スマホで収録商品セレクトを画面幅に合わせる */
+    .mobile-layout #productFilter {
+      width: 100%;
+      max-width: calc(100vw - 32px); /* 左右の余白分を調整 */
+      font-size: 13px;
+    }
+
   </style>
 </head>
 <body>
