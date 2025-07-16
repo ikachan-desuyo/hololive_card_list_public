@@ -312,7 +312,8 @@
     
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
-        el.style.display = el.style.display === "none" ? "block" : "none";
+        const isHidden = window.getComputedStyle(el).display === "none";
+        el.style.display = isHidden ? "block" : "none";
       }
     
       function toggleDarkMode() {
