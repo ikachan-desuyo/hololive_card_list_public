@@ -543,8 +543,8 @@
       const info = document.createElement("div");
       info.innerHTML = `
         <div style="font-weight:bold;">${card.name}</div>
-        <div style="font-size:11px;">📄 ${card.id}</div>
-        <div style="font-size:11px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
+        <div style="font-size:11px;">📄${card.id}</div>
+        <div style="font-size:11px;">✨${card.rarity}🃏${card.owned ?? 0}枚</div>
       `;
       box.appendChild(img);
       box.appendChild(info);
