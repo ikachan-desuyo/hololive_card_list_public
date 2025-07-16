@@ -500,19 +500,22 @@
     });
 
     const sortedCards = sortCards(filtered);
+    const displayCards = sortedCards.slice(0, renderLimit); // ← 表示分だけ
+
     const tbody = tableArea.querySelector("tbody");
     tbody.innerHTML = "";
+
+    // ✅ 統計は filtered ベースで全件集計
+    const shown = filtered.length;
+    const ownedTypes = filtered.filter(c => c.owned > 0).length;
+    const ownedCount = filtered.reduce((sum, c) => sum + (c.owned ?? 0), 0);
+    const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
 
     if (viewMode === "table") {
       previewArea.style.display = "none";
       tableArea.style.display = "";
-      let shown = 0, ownedCount = 0, ownedTypes = 0;
 
-      sortedCards.slice(0, renderLimit).forEach(card => {
-        shown++;
-        if (card.owned > 0) ownedTypes++;
-        ownedCount += card.owned;
-
+      displayCards.forEach(card => {
         const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
         const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
 
@@ -533,13 +536,14 @@
         tbody.appendChild(row);
       });
 
-      const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
+      // ✅ フィルター後全件の統計を表示
       document.getElementById("countDisplay").textContent =
         `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
       document.getElementById("typeDisplay").textContent = ``;
       return;
     }
 
+    // ✅ 簡易モードはそのまま
     tableArea.style.display = "none";
     previewArea.innerHTML = "";
     previewArea.style.display = "block";
@@ -549,7 +553,7 @@
     const columns = isMobile ? 4 : Math.floor(window.innerWidth / 160);
     const cardWidth = isMobile ? Math.floor((window.innerWidth - 32) / columns) : 160;
 
-    sortedCards.slice(0, renderLimit).forEach(card => {
+    displayCards.forEach(card => {
       const box = document.createElement("div");
       box.style.width = `${cardWidth}px`;
 
@@ -574,11 +578,7 @@
 
     previewArea.appendChild(container);
 
-    const shown = sortedCards.length;
-    const ownedTypes = sortedCards.filter(c => c.owned > 0).length;
-    const ownedCount = sortedCards.reduce((sum, c) => sum + (c.owned ?? 0), 0);
-    const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
-
+    // ✅ 統計表示（簡易モードも全件ベース）
     document.getElementById("countDisplay").textContent =
       `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
     document.getElementById("typeDisplay").textContent = "";
