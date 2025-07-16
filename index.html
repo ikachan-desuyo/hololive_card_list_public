@@ -400,7 +400,7 @@
       let viewMode = "compact";
       let renderLimit = 100;
     
-      function populateChipGroup(id, items, withAllButton = false) {
+      function populateChipGroup(id, items, withAllButton = false, selectAllByDefault = true) {
         const container = document.getElementById(id);
         container.innerHTML = "";
         container.classList.add("chip-group");
@@ -408,7 +408,7 @@
         if (withAllButton) {
           const allBtn = document.createElement("button");
           allBtn.textContent = "すべて";
-          allBtn.className = "chip selected all-chip";
+          allBtn.className = "chip all-chip" + (selectAllByDefault ? " selected" : "");
           allBtn.dataset.value = "ALL";
           allBtn.onclick = () => selectAllChip(allBtn);
           container.appendChild(allBtn);
@@ -417,7 +417,7 @@
         items.forEach(val => {
           const btn = document.createElement("button");
           btn.textContent = val;
-          btn.className = "chip selected";
+          btn.className = "chip";
           btn.dataset.value = val;
           btn.onclick = () => toggleChip(btn);
           container.appendChild(btn);
@@ -494,10 +494,10 @@
           }
         });
 
-        populateChipGroup("rarityFilter", [...raritySet].sort(), true);
-        populateChipGroup("colorFilter", [...colorSet].sort(), true);
-        populateChipGroup("bloomFilter", [...bloomSet].sort(), true);
-        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false);
+        populateChipGroup("rarityFilter", [...raritySet].sort(), true, true);
+        populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
+        populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
+        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false); // ←両方選択のまま
 
         const select = document.getElementById("productFilter");
         select.innerHTML = `<option value="">収録商品（選択）</option>`;
