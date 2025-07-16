@@ -72,5 +72,3 @@ A skill-based search tool for advanced filtering across card abilities.
 - Total owned among results
 
 ---
-
-Let me know if you'd like to add sections for setup, update logs, or roadmap features!
