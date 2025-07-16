@@ -1,44 +1,66 @@
-📝 ホロライブカード一覧 Webアプリ機能概要
-📌 基本情報
-- Webベースのホロライブカード一覧表示ツール
-- 表モードと簡易表示モードの切り替え可能
-- ユーザーの所持状況をローカル保存し、インポート・エクスポート可能
 
-🖥 表示機能
-| モード | 概要 | 
-| 表モード | テーブル形式で詳細情報を一覧表示（画像・レア・Bloom・収録など） | 
-| 簡易表示モード | カード画像＋名前＋所持数をコンパクトに表示（スマホに最適） | 
+📚 README — Hololive Card Web Tools
+🗂 Hololive Card List (index.html)
+A responsive card list page for managing your Hololive card collection. Built for both desktop and mobile views.
+✅ Features
+- View Modes
+- Table view: structured card details in grid format
+- Compact view: image-focused gallery optimized for small screens
+- Auto expansion on scroll (renderLimit)
+- Filter System (fully chip-style UI)
+- Ownership: Owned / Unowned toggle buttons
+- Rarity: dynamically generated + All button
+- Color: dynamically generated + All button
+- Bloom: dynamically generated + All button
+- Product: searchable dropdown
+- Keyword search: full-text match across name, ID, tags, and skills
+- Statistics Summary
+- Displayed above card list
+- Auto-updates based on filtered result
+- Includes:
+- Number of owned cards
+- Number of filtered cards
+- Ownership ratio (%)
+- Card Ownership Tracker
+- Manual input per card
+- LocalStorage saves across sessions
+- CSV Import:
+- Accepts id,ownedCount format
+- Updates local storage
+- CSV Export:
+- Copies owned cards in id,ownedCount format
+- Image Modal Viewer
+- Click card image to zoom in
+- Dark Mode Toggle
+- Persists user preference via LocalStorage
+- Responsive Mobile Layout
+- Font size / spacing adjustments
+- Filters compressed with scrollable layout
+
+🔍 Hololive Card Detail Search (holoca_skill_page.html)
+A data-driven advanced search page with skill filtering and logic detection.
+✅ Features
+- Multi-condition Filtering
+- Search by:
+- Card name, ID, rarity, type
+- Skill text (partial match)
+- Leader skill / normal skill separation
+- HP condition / cost type / level presence
+- Skill Detection Highlights
+- Automatically identifies and color-codes:
+- HP condition triggers
+- Buffs / debuffs (e.g., ATK UP, DMG DOWN)
+- Activation timing
+- Skill level conditions
+- Option to highlight detected logic terms
+- Tag and Product Filters
+- Dropdown search with auto-match
+- Preview and Ownership Display
+- Image preview with zoom modal
+- Ownership input (linked to same LocalStorage as index.html)
+- Product grouping and card-type based layout
+- Result Statistics
+- Number of results
+- Filtered ownership count
 
 
-- 段階的描画（renderLimitに応じてスクロールで追加描画）
-- モバイルレイアウトにも対応
-
-🎯 フィルター機能（全項目チップ型UI）
-| フィルター項目 | 機能内容 | 
-| 所持状態 | 「所持あり」「所持なし」を個別選択可能（両方選択が初期状態） | 
-| レアリティ | 自動抽出されたレアリティごとにボタン表示／「すべて」選択も可能 | 
-| 色 | 自動抽出された色ごとにボタン表示／「すべて」選択も可能 | 
-| Bloom | 自動抽出されたBloomレベルごとにボタン表示／「すべて」選択も可能 | 
-| カード名検索 | フリーワードによる名前・タグ・属性などの全文検索 | 
-| 収録商品 | セレクトボックスによる部分一致検索 | 
-
-
-- フィルターの表示／非表示切り替え
-- 選択項目に応じて統計情報が更新
-
-📊 統計表示機能
-- 表示中のカードに対して所持枚数・種類・所持率をリアルタイムに算出
-- 描画件数に関わらずフィルター後の全カードを基に統計計算
-
-📤 所持情報の管理
-| 機能 | 説明 | 
-| 所持枚数入力 | 表モードでカードごとに枚数指定（ローカル保存） | 
-| CSVインポート | id,枚数 形式のデータで所持情報を一括反映 | 
-| CSVエクスポート | 所持ありカードのCSVテキストをクリップボードにコピー可能 | 
-
-
-
-🌙 その他機能
-- ダークモード切り替え（ローカル保存対応）
-- 画像のモーダル表示（拡大）
-- スマホ表示最適化（レイアウト・文字サイズなど）
