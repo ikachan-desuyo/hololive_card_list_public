@@ -1,69 +1,44 @@
-# Hololive Card List Viewer
+📝 ホロライブカード一覧 Webアプリ機能概要
+📌 基本情報
+- Webベースのホロライブカード一覧表示ツール
+- 表モードと簡易表示モードの切り替え可能
+- ユーザーの所持状況をローカル保存し、インポート・エクスポート可能
 
-An interactive and responsive web app to manage and view Hololive trading cards.  
-Designed with mobile-first usability and flexible layout logic for an intuitive experience across devices.
+🖥 表示機能
+| モード | 概要 | 
+| 表モード | テーブル形式で詳細情報を一覧表示（画像・レア・Bloom・収録など） | 
+| 簡易表示モード | カード画像＋名前＋所持数をコンパクトに表示（スマホに最適） | 
 
----
 
-## 🚀 Features
+- 段階的描画（renderLimitに応じてスクロールで追加描画）
+- モバイルレイアウトにも対応
 
-### 🔄 View Modes
-- **Table View**: Full card details with filtering, sorting, and editable ownership counts.
-- **Compact Preview Mode**: Grid layout showing card image, name, rarity, and count.
-- **Manual Mode Switching**: Users can toggle between table and preview view anytime.
+🎯 フィルター機能（全項目チップ型UI）
+| フィルター項目 | 機能内容 | 
+| 所持状態 | 「所持あり」「所持なし」を個別選択可能（両方選択が初期状態） | 
+| レアリティ | 自動抽出されたレアリティごとにボタン表示／「すべて」選択も可能 | 
+| 色 | 自動抽出された色ごとにボタン表示／「すべて」選択も可能 | 
+| Bloom | 自動抽出されたBloomレベルごとにボタン表示／「すべて」選択も可能 | 
+| カード名検索 | フリーワードによる名前・タグ・属性などの全文検索 | 
+| 収録商品 | セレクトボックスによる部分一致検索 | 
 
-### 📱 Mobile Layout Support
-- **Automatic Layout Adjustment** for mobile screens (`window.innerWidth <= 540`)
-- `mobile-layout` CSS class dynamically applied on page load
-- Optimized card preview box sizes and spacing for compact viewing
 
-### ⚙️ Dynamic Filters
-- Filter cards by:
-  - Ownership status (`Owned` / `Unowned`)
-  - Rarity
-  - Color
-  - Bloom Level
-  - Product
+- フィルターの表示／非表示切り替え
+- 選択項目に応じて統計情報が更新
 
-- Full toggle controls:
-  - “Select All” and “Clear All” buttons for checkboxes
-  - Dropdown filtering by product
+📊 統計表示機能
+- 表示中のカードに対して所持枚数・種類・所持率をリアルタイムに算出
+- 描画件数に関わらずフィルター後の全カードを基に統計計算
 
-### 🔎 Search & Sort
-- Search cards by name (real-time fuzzy match)
-- Sort cards by:
-  - Release date
-  - Card ID
-  - Name
-  - Rarity
+📤 所持情報の管理
+| 機能 | 説明 | 
+| 所持枚数入力 | 表モードでカードごとに枚数指定（ローカル保存） | 
+| CSVインポート | id,枚数 形式のデータで所持情報を一括反映 | 
+| CSVエクスポート | 所持ありカードのCSVテキストをクリップボードにコピー可能 | 
 
-### 🌙 Dark Mode
-- Toggleable via button
-- Stored in `localStorage` and loaded on page refresh
 
-### 📤 CSV Integration
-- **Import ownership** using CSV with format: `id,quantity`
-- **Export current ownership** to clipboard in CSV format
-- Local ownership count saved via `localStorage`
 
-### 🖼️ Image Viewer
-- Zoomable modal popup for card previews
-- Click-to-enlarge behavior on both layouts
-
----
-
-## 💻 Technical Highlights
-
-- **Responsive design** via flexible CSS and JS layout logic
-- **No external dependencies** required (pure HTML/CSS/JS)
-- **Smart filtering & sorting** using vanilla JavaScript
-- **Mobile-first enhancements** with adaptive preview rendering
-- **GitHub Pages deployment-ready** using GitHub Actions (dynamic or branch)
-
----
-
-## 📱 Mobile Auto-Optimization Notes
-
-- Layout switches **independently from view mode**
-- No interference with CSV, filters, or user toggles
-- Works on first page load with width check or device detection (`navigator.userAgent`)
+🌙 その他機能
+- ダークモード切り替え（ローカル保存対応）
+- 画像のモーダル表示（拡大）
+- スマホ表示最適化（レイアウト・文字サイズなど）
