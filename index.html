@@ -32,6 +32,7 @@
       background: #fff;
       z-index: 100;
       border-bottom: 1px solid #ccc;
+      padding: 10px;
     }
     .dark .container-top {
       background: #222;
@@ -103,6 +104,7 @@
       background: #fff;
       padding: 10px 0;
       border-bottom: 1px solid #ccc;
+      font-size: 14px;
     }
     .dark .sticky-info {
       background: #222;
@@ -154,21 +156,46 @@
       border: 1px solid #ddd;
     }
 
-    .mobile-layout #cardPreviewArea div {
-      flex: 0 0 auto;
-      width: 80px;
-      min-width: 70px;
-      max-width: 90px;
-      margin: 4px;
+    /* ✅ スマホレイアウト調整（compactモード表示改善） */
+    .mobile-layout #cardPreviewArea {
       padding: 4px;
-      border-radius: 4px;
-      box-sizing: border-box;
     }
 
-    .mobile-layout #cardPreviewArea img {
-      width: 100%;
-      border-radius: 3px;
-      object-fit: contain;
+    .mobile-layout #cardPreviewArea > div {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    .mobile-layout #cardPreviewArea div > div {
+      flex: 0 0 auto;
+      width: 84px;
+      margin: 4px;
+      padding: 4px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .mobile-layout .sticky-info {
+      font-size: 13px;
+      padding: 6px 0;
+      line-height: 1.3;
+    }
+
+    .mobile-layout .container-top {
+      padding: 6px;
+    }
+    .mobile-layout h2 {
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+    .mobile-layout .top-controls {
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
     }
   </style>
 </head>
@@ -256,7 +283,7 @@
       <tbody></tbody>
     </table>
 
-    <!-- ✅ 簡易表示のカードプレビュー領域（自動スマホ対応） -->
+    <!-- ✅ 簡易表示モード：プレビュー表示領域（スマホ最適化対応済） -->
     <div id="cardPreviewArea" style="display:none;"></div>
 
     <h3>CSVインポート・エクスポート</h3>
@@ -266,6 +293,7 @@
       <button onclick="exportCSV()">📤 所持CSVをコピー</button>
     </div>
 
+    <!-- ✅ 画像拡大モーダル表示 -->
     <div id="imageModal" onclick="hideImageModal()" style="
       display:none;
       position:fixed;
@@ -286,42 +314,42 @@
       let cards = [];
       let releaseMap = {};
       let viewMode = "table";
-      
+
       function setViewMode(mode) {
         viewMode = mode;
         renderTable();
       }
-      
+
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
         el.style.display = el.style.display === "none" ? "block" : "none";
       }
-      
+
       function toggleDarkMode() {
         document.body.classList.toggle("dark");
         localStorage.setItem("darkMode", document.body.classList.contains("dark"));
       }
-      
+
       function selectAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
         renderTable();
       }
-      
+
       function clearAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
         renderTable();
       }
-      
+
       function showImageModal(src) {
         const modal = document.getElementById("imageModal");
         modal.querySelector("img").src = src;
         modal.style.display = "block";
       }
-      
+
       function hideImageModal() {
         document.getElementById("imageModal").style.display = "none";
       }
-      
+
       function setupFilters() {
         const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
         cards.forEach(c => {
@@ -332,7 +360,7 @@
             productSet.add(c.product);
           }
         });
-      
+
         function populateCheck(id, items) {
           const container = document.getElementById(id);
           items.forEach(val => {
@@ -341,7 +369,7 @@
             container.appendChild(label);
           });
         }
-      
+
         function populateSelect(id, items, label) {
           const select = document.getElementById(id);
           select.innerHTML = `<option value="">${label}</option>`;
@@ -352,13 +380,13 @@
             select.appendChild(opt);
           });
         }
-      
+
         populateCheck("rarityFilter", [...raritySet].sort());
         populateCheck("colorFilter", [...colorSet].sort());
         populateCheck("bloomFilter", [...bloomSet].sort());
         populateSelect("productFilter", productSet, "収録商品");
       }
-      
+
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
         let sorted = [...cards];
@@ -381,174 +409,208 @@
         return sorted;
       }
       function renderTable() {
-  const keyword = document.getElementById("nameSearch").value.toLowerCase();
-  const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-  const rarity = getChecked("rarityFilter");
-  const color = getChecked("colorFilter");
-  const bloom = getChecked("bloomFilter");
-  const product = document.getElementById("productFilter").value.toLowerCase();
-  const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
+        const keyword = document.getElementById("nameSearch").value.toLowerCase();
+        const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
+        const rarity = getChecked("rarityFilter");
+        const color = getChecked("colorFilter");
+        const bloom = getChecked("bloomFilter");
+        const product = document.getElementById("productFilter").value.toLowerCase();
+        const ownedStates = [...document.querySelectorAll('input[name="ownedState"]:checked')].map(el => el.value);
 
-  const tableArea = document.getElementById("cardTable");
-  const previewArea = document.getElementById("cardPreviewArea");
+        const tableArea = document.getElementById("cardTable");
+        const previewArea = document.getElementById("cardPreviewArea");
 
-  const filtered = cards.filter(card => {
-    const count = card.owned;
-    const matchOwned =
-      ownedStates.length === 0 ||
-      (ownedStates.includes("owned") && count > 0) ||
-      (ownedStates.includes("unowned") && (!count || count == 0));
-    if (!matchOwned) return false;
+        const filtered = cards.filter(card => {
+          const count = card.owned;
+          const matchOwned =
+            ownedStates.length === 0 ||
+            (ownedStates.includes("owned") && count > 0) ||
+            (ownedStates.includes("unowned") && (!count || count == 0));
+          if (!matchOwned) return false;
 
-    const match = {
-      name: !keyword || card.name.toLowerCase().includes(keyword),
-      rarity: rarity.length === 0 || rarity.includes(card.rarity),
-      color: color.length === 0 || color.includes(card.color),
-      bloom: bloom.length === 0 || bloom.includes(card.bloom),
-      product: !product || card.product.toLowerCase().includes(product)
-    };
+          const match = {
+            name: !keyword || card.name.toLowerCase().includes(keyword),
+            rarity: rarity.length === 0 || rarity.includes(card.rarity),
+            color: color.length === 0 || color.includes(card.color),
+            bloom: bloom.length === 0 || bloom.includes(card.bloom),
+            product: !product || card.product.toLowerCase().includes(product)
+          };
 
-    return !Object.values(match).includes(false);
-  });
+          return !Object.values(match).includes(false);
+        });
 
-  const sortedCards = sortCards(filtered);
+        const sortedCards = sortCards(filtered);
+        const tbody = tableArea.querySelector("tbody");
+        tbody.innerHTML = "";
 
-  const tbody = tableArea.querySelector("tbody");
-  tbody.innerHTML = "";
+        if (viewMode === "table") {
+          previewArea.style.display = "none";
+          tableArea.style.display = "";
 
-  // 表モード
-  if (viewMode === "table") {
-    previewArea.style.display = "none";
-    tableArea.style.display = "";
-    let shown = 0, ownedCount = 0, ownedTypes = 0;
+          let shown = 0, ownedCount = 0, ownedTypes = 0;
+          sortedCards.forEach(card => {
+            shown++;
+            if (card.owned > 0) ownedTypes++;
+            ownedCount += card.owned;
 
-    sortedCards.forEach(card => {
-      shown++;
-      if (card.owned > 0) ownedTypes++;
-      ownedCount += card.owned;
+            const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+            const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
 
-      const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-      const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
+            const row = document.createElement("tr");
+            row.setAttribute("data-rarity", card.rarity);
+            row.innerHTML = `
+              <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
+              <td class="name-cell">
+                <div style="font-weight: bold;">${card.name}</div>
+                <div class="meta">📄 ${card.id}<br>🃏 ${card.card_type}</div>
+              </td>
+              <td class="rarity">${card.rarity}</td>
+              <td>${card.color}</td>
+              <td>${bloomText}</td>
+              <td>${card.hp ?? "-"}</td>
+              <td>${productText}</td>
+              <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
+            `;
+            tbody.appendChild(row);
+          });
 
-      const row = document.createElement("tr");
-      row.setAttribute("data-rarity", card.rarity);
-      row.innerHTML = `
-        <td><img src="${card.image}" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-        <td class="name-cell">
-          <div style="font-weight: bold;">${card.name}</div>
-          <div class="meta">📄 ${card.id}<br>🃏 ${card.card_type}</div>
-        </td>
-        <td class="rarity">${card.rarity}</td>
-        <td>${card.color}</td>
-        <td>${bloomText}</td>
-        <td>${card.hp ?? "-"}</td>
-        <td>${productText}</td>
-        <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
-      `;
-      tbody.appendChild(row);
-    });
+          const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
+          document.getElementById("countDisplay").textContent =
+            `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持率：${ratio}%`;
+          document.getElementById("typeDisplay").textContent =
+            `所持種類数：${ownedTypes}`;
+          return;
+        }
 
-    const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
-    document.getElementById("countDisplay").textContent =
-      `所持枚数：${ownedCount} / 表示：${shown}種類（所持率 ${ratio}%）`;
-    document.getElementById("typeDisplay").textContent =
-      `所持種類数：${ownedTypes}`;
-    return;
-  }
+        tableArea.style.display = "none";
+        previewArea.innerHTML = "";
+        previewArea.style.display = "block";
 
-  // 簡易表示モード（スマホ対応あり）
-  tableArea.style.display = "none";
-  previewArea.innerHTML = "";
-  previewArea.style.display = "block";
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.flexWrap = "wrap";
+        container.style.gap = "12px";
+        container.style.justifyContent = "flex-start";
+        container.style.padding = "8px";
 
-  const container = document.createElement("div");
-  container.style.display = "flex";
-  container.style.flexWrap = "wrap";
-  container.style.gap = "12px";
-  container.style.justifyContent = "flex-start";
-  container.style.padding = "8px";
+        const isMobile = document.body.classList.contains("mobile-layout");
 
-  const isMobile = document.body.classList.contains("mobile-layout");
+        sortedCards.forEach(card => {
+          const box = document.createElement("div");
+          if (isMobile) {
+            box.style.flex = "0 0 auto";
+            box.style.width = "84px";
+          } else {
+            box.style.flex = "1 1 160px";
+          }
+          box.style.boxSizing = "border-box";
+          box.style.border = "1px solid #ccc";
+          box.style.borderRadius = "8px";
+          box.style.padding = "8px";
+          box.style.background = document.body.classList.contains("dark") ? "#333" : "#fff";
 
-  sortedCards.forEach(card => {
-    const box = document.createElement("div");
-    if (isMobile) {
-      box.style.flex = "0 0 auto";
-      box.style.width = "80px";
-    } else {
-      box.style.flex = "1 1 160px";
-    }
-    box.style.boxSizing = "border-box";
-    box.style.border = "1px solid #ccc";
-    box.style.borderRadius = "8px";
-    box.style.padding = "8px";
-    box.style.background = document.body.classList.contains("dark") ? "#333" : "#fff";
+          const img = document.createElement("img");
+          img.src = card.image;
+          img.alt = card.name;
+          img.style.width = "100%";
+          img.style.borderRadius = "4px";
+          img.style.cursor = "zoom-in";
+          img.onclick = () => showImageModal(card.image);
 
-    const img = document.createElement("img");
-    img.src = card.image;
-    img.alt = card.name;
-    img.style.width = "100%";
-    img.style.borderRadius = "4px";
-    img.style.cursor = "zoom-in";
-    img.onclick = () => showImageModal(card.image);
+          const info = document.createElement("div");
+          info.style.marginTop = "8px";
+          info.innerHTML = `
+            <div style="font-weight:bold;">${card.name}</div>
+            <div style="font-size:12px;">📄 ${card.id}</div>
+            <div style="font-size:12px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
+          `;
 
-    const info = document.createElement("div");
-    info.style.marginTop = "8px";
-    info.innerHTML = `
-      <div style="font-weight:bold;">${card.name}</div>
-      <div style="font-size:13px;">📄 ${card.id}</div>
-      <div style="font-size:13px;">✨ ${card.rarity}　🃏 ${card.owned ?? 0}枚</div>
-    `;
+          box.appendChild(img);
+          box.appendChild(info);
+          container.appendChild(box);
+        });
 
-    box.appendChild(img);
-    box.appendChild(info);
-    container.appendChild(box);
-  });
+        previewArea.appendChild(container);
 
-  previewArea.appendChild(container);
-}
-function isMobileScreen() {
-  return window.innerWidth <= 540;
-}
+        const shown = sortedCards.length;
+        const ownedTypes = sortedCards.filter(c => c.owned > 0).length;
+        const ownedCount = sortedCards.reduce((sum, c) => sum + (c.owned ?? 0), 0);
+        const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
+        document.getElementById("countDisplay").textContent =
+          `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持率：${ratio}% / 所持種類数：${ownedTypes}`;
+        document.getElementById("typeDisplay").textContent = "";
+      }
 
-window.onload = async () => {
-  if (localStorage.getItem("darkMode") === "true") {
-    document.body.classList.add("dark");
-  }
+      function updateOwned(id, value) {
+        const num = Math.max(0, parseInt(value) || 0);
+        localStorage.setItem("count_" + id, num);
+        const card = cards.find(c => c.id === id);
+        if (card) card.owned = num;
+        renderTable();
+      }
 
-  if (isMobileScreen()) {
-    document.body.classList.add("mobile-layout");
-  }
+      function importCSV() {
+        const input = document.getElementById("csvInput").value.trim().split("\n");
+        input.forEach(line => {
+          const [id, count] = line.split(",");
+          const num = Math.max(0, parseInt(count) || 0);
+          localStorage.setItem("count_" + id, num);
+          const card = cards.find(c => c.id === id);
+          if (card) card.owned = num;
+        });
+        renderTable();
+        alert("CSVを反映しました！");
+      }
 
-  try {
-    const [cardRes, releaseRes] = await Promise.all([
-      fetch("json_file/card_data.json"),
-      fetch("json_file/release_dates.json")
-    ]);
-    const cardRaw = await cardRes.json();
-    releaseMap = await releaseRes.json();
+      function exportCSV() {
+        const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
+        navigator.clipboard.writeText(lines.join("\n"))
+          .then(() => alert("所持CSVをコピーしました"))
+          .catch(() => alert("コピーに失敗しました"));
+      }
 
-    cards = Object.entries(cardRaw).map(([key, card]) => ({
-      id: key,
-      name: card.name,
-      rarity: card.rarity ?? "-",
-      color: card.color ?? "-",
-      bloom: card.bloom_level ?? "-",
-      hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
-      product: card.product,
-      image: card.image_url,
-      url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
-      owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-      card_type: card.card_type ?? "-"
-    }));
+      function isMobileScreen() {
+        return window.innerWidth <= 540;
+      }
 
-    setupFilters();
-    renderTable();
-  } catch (err) {
-    console.error(err);
-    alert("データの読み込みに失敗しました！");
-  }
-};
-</script>
-</body>
+      window.onload = async () => {
+        if (localStorage.getItem("darkMode") === "true") {
+          document.body.classList.add("dark");
+        }
+
+        if (isMobileScreen()) {
+          document.body.classList.add("mobile-layout");
+        }
+
+        try {
+          const [cardRes, releaseRes] = await Promise.all([
+            fetch("json_file/card_data.json"),
+            fetch("json_file/release_dates.json")
+          ]);
+          const cardRaw = await cardRes.json();
+          releaseMap = await releaseRes.json();
+
+          cards = Object.entries(cardRaw).map(([key, card]) => ({
+            id: key,
+            name: card.name,
+            rarity: card.rarity ?? "-",
+            color: card.color ?? "-",
+            bloom: card.bloom_level ?? "-",
+            hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
+            product: card.product,
+            image: card.image_url,
+            url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
+            owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+            card_type: card.card_type ?? "-"
+          }));
+
+          setupFilters();
+          renderTable();
+        } catch (err) {
+          console.error(err);
+          alert("データの読み込みに失敗しました！");
+        }
+      };
+    </script>
+  </body>
 </html>
