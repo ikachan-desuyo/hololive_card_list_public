@@ -167,22 +167,45 @@
       padding: 0;
       overflow-wrap: break-word;
     }
+
+    .dark #cardPreviewArea div > div div {
+      font-size: 11px;
+      line-height: 1.3;
+      color: #b9b8b8;
+      margin-top: 4px;
+      background: none;
+      border: none;
+      padding: 0;
+      overflow-wrap: break-word;
+    }
   
     /* ✅ スマホ専用表示レイアウト追加調整 */
     .mobile-layout #cardPreviewArea div > div {
       width: calc((100vw - 32px) / 4);
       max-width: 90px;
-      margin: 4px;
+      margin: 1px;
     }
   
     .mobile-layout .sticky-info {
       font-size: 11.5px;
       padding: 6px 0;
-      line-height: 1.2;
+      line-height: 1.1;
     }
   
     .mobile-layout #cardPreviewArea div > div div {
-      font-size: 11px;
+      font-size: 10px;
+    }
+
+    .dark .mobile-layout .sticky-info {
+      font-size: 11.5px;
+      padding: 6px 0;
+      line-height: 1.1;
+      color: #b9b8b8;
+    }
+  
+    .dark .mobile-layout #cardPreviewArea div > div div {
+      font-size: 10px;
+      color: #b9b8b8;
     }
   
     .mobile-layout .container-top {
