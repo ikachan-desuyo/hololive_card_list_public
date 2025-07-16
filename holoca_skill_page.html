@@ -218,13 +218,13 @@
         <div class="controls">
           <button onclick="toggleDarkMode()">🌗 モード切替</button>
           <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
-          <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
           <select id="sortMethod" onchange="renderTable()">
             <option value="release" selected>発売日順</option>
             <option value="id">カード番号順</option>
             <option value="name">名前順</option>
             <option value="rarity">レアリティ順</option>
           </select>
+          <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
         </div>
       </div>
       <div id="filtersWrapper">
