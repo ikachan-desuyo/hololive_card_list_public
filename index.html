@@ -222,17 +222,18 @@
       margin-bottom: 6px;
     }
 
-    /* ✅ スマホレイアウト用にフィルター中身の文字サイズを調整 */
-    .mobile-layout .filter-group label,
-    .mobile-layout .filter-row label,
-    .mobile-layout .filter-group select,
-    .mobile-layout .filter-group button {
+    /* ✅ スマホレイアウト時、フィルターのラベル全体に適用 */
+    .mobile-layout .filter-group label {
       font-size: 13px;
       line-height: 1.4;
     }
 
-    .mobile-layout .filter-group legend {
-      font-size: 13.5px;
+    /* ✅ ラベル内のテキストにも直接適用（構造によって必要） */
+    .mobile-layout .filter-group label > span,
+    .mobile-layout .filter-group label > div,
+    .mobile-layout .filter-group label > text,
+    .mobile-layout .filter-group label * {
+      font-size: 13px !important;
     }
   </style>
 </head>
