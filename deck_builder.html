@@ -169,7 +169,7 @@
     }
 
     body.dark {
-        background-color: #121212;
+        background-color: #222;
         color: #eee;
     }
 
@@ -177,7 +177,7 @@
     body.dark .card-thumb,
     body.dark .card-item {
         border-color: #555;
-        background-color: #1e1e1e;
+        background-color: #222;
     }
 
     body.dark select,
@@ -197,6 +197,39 @@
     body.dark .chip.selected {
         background-color: #007acc;
         color: #fff;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+
+    .card-box {
+        display: flex;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px;
+        background: #fff;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .card-box:hover {
+        background: #f0f0f0;
+    }
+
+    .card-box img {
+        width: 100px;
+        border-radius: 4px;
+        margin-right: 10px;
+        object-fit: cover;
+    }
+
+    .card-info {
+        flex-grow: 1;
+        font-size: 14px;
+        line-height: 1.5;
     }
   </style>
 </head>
