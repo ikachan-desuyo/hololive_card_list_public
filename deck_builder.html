@@ -704,10 +704,12 @@
             raritySet.add(c.rarity);
             colorSet.add(c.color);
             bloomSet.add(c.bloom);
-            productSet.add(c.product);
             c.tags?.forEach(tag => tagSet.add(tag));
             const typeParts = c.card_type?.split("・") ?? [];
             typeParts.forEach(part => typePartsSet.add(part.trim()));
+            if (!c.product.includes(",")) {
+              productSet.add(c.product);
+            }
           });
 
           function populateChipGroup(id, items, withAll = true) {
