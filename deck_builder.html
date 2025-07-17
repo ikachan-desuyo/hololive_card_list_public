@@ -137,7 +137,7 @@
     }
 
     .card-box img {
-      width: 80px;
+      width: 100%;
       border-radius: 4px;
       margin-right: 4px;
       object-fit: cover;
@@ -274,7 +274,7 @@
     }
 
     .mobile-layout .deck-box img {
-      width: 60px;
+      width: 100%;
       border-radius: 4px;
       margin-bottom: 6px;
     }
@@ -283,6 +283,18 @@
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
+    }
+
+    .mobile-layout .card-thumb {
+      position: relative;
+      width: 40px;
+    }
+
+    .mobile-layout .card-thumb img {
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      object-fit: cover;
     }
   </style>
 </head>
@@ -747,6 +759,21 @@
               badge.className = "count-badge";
               badge.textContent = `×${selectedCount}`;
               box.appendChild(badge);
+
+              // ✅ マイナスボタン
+              const minus = document.createElement("div");
+              minus.className = "delete-btn";
+              minus.textContent = "−";
+              minus.title = "このカードを1枚デッキから外す";
+              minus.onclick = (e) => {
+                e.stopPropagation();
+                const index = decks[currentDeck].indexOf(card.id);
+                if (index !== -1) {
+                  decks[currentDeck].splice(index, 1); // 1枚だけ除去
+                  updateDeckUI();
+                }
+              };
+              box.appendChild(minus);
             }
 
             container.appendChild(box);
