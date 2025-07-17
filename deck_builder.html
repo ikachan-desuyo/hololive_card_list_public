@@ -538,15 +538,24 @@
         }
       
         function deleteDeck() {
-            if (!currentDeck) return;
-            if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
+          if (!currentDeck) return;
+          if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
 
-            delete decks[currentDeck];
-            currentDeck = null;
+          delete decks[currentDeck];
+          currentDeck = null;
 
-            // ✅ 呼び出し順を保証
-            updateDeckUI();
-            renderDeckList();
+          // ✅ UI更新
+          updateDeckUI();
+          renderDeckList();
+
+          // ✅ 選択枚数表示をリセット
+          document.getElementById("cardStats").textContent = "";
+
+          // ✅ デッキカード一覧の表示もリセット（サムネイル表示部）
+          document.getElementById("deckCardList").innerHTML = "";
+
+          // ✅ 「現在のデッキ名」もリセット
+          document.getElementById("currentDeckName").textContent = "未選択";
         }
       
         function addCardToDeck(cardId) {
