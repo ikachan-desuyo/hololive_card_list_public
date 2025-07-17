@@ -575,7 +575,14 @@
 
           const container = document.getElementById("cardGallery");
           container.innerHTML = "";
-          container.className = "card-grid"; // ✅ 統一構造へ変更
+          container.className = "card-grid";
+
+          const countMap = {};
+          if (currentDeck && decks[currentDeck]) {
+            decks[currentDeck].forEach(id => {
+              countMap[id] = (countMap[id] || 0) + 1;
+            });
+          }
 
           const filtered = cards.filter(card => {
             const count = card.owned;
@@ -602,14 +609,20 @@
 
           const sorted = sortCards(filtered, sortMethod);
           sorted.forEach(card => {
+            const selectedCount = countMap[card.id] || 0;
+            const ownedCount = card.owned ?? 0;
+
             const box = document.createElement("div");
             box.className = "card-box";
             box.onclick = () => addCardToDeck(card.id);
+            box.style.position = "relative";
 
             const img = document.createElement("img");
             img.src = card.image;
             img.alt = card.name;
-            img.onerror = () => { img.src = "images/placeholder.png"; };
+            img.onerror = () => {
+              img.src = "images/placeholder.png";
+            };
             box.appendChild(img);
 
             const info = document.createElement("div");
@@ -617,9 +630,16 @@
             info.innerHTML = `
               <div style="font-weight:bold;">${card.name}</div>
               <div style="font-weight:bold;">📄${card.id}</div>
-              <div style="font-weight:bold;">✨${card.rarity}🃏${card.owned ?? 0}枚</div>
+              <div style="font-weight:bold;">✨${card.rarity} 🃏所持${ownedCount}枚</div>
             `;
             box.appendChild(info);
+
+            if (selectedCount > 0) {
+              const badge = document.createElement("div");
+              badge.className = "count-badge";
+              badge.textContent = `×${selectedCount}`;
+              box.appendChild(badge);
+            }
 
             container.appendChild(box);
           });
