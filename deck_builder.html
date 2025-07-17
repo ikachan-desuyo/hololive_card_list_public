@@ -368,6 +368,12 @@
       gap: 6px;
     }
 
+    .mobile-layout #nameSearch {
+      max-width: 150px;
+      font-size: 13px;
+      padding: 6px 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -379,7 +385,7 @@
       </div>
       <div class="deck-controls">
         <button onclick="toggleDarkMode()" style="margin-bottom: 10px;">
-            🌗 ダークモード切り替え
+            🌗
         </button>
         <button onclick="createDeck()">➕ デッキ作成</button>
         <select id="deckSelector" onchange="switchDeck()">
