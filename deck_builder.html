@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>デッキビルダー</title>
   <style>
     body {
@@ -167,12 +167,46 @@
       gap: 10px;
       margin: 10px 0;
     }
+
+    body.dark {
+        background-color: #121212;
+        color: #eee;
+    }
+
+    body.dark .deck-box,
+    body.dark .card-thumb,
+    body.dark .card-item {
+        border-color: #555;
+        background-color: #1e1e1e;
+    }
+
+    body.dark select,
+    body.dark button,
+    body.dark input {
+        background-color: #222;
+        color: #eee;
+        border-color: #555;
+    }
+
+    body.dark .chip {
+        background-color: #333;
+        color: #ddd;
+        border-color: #555;
+    }
+
+    body.dark .chip.selected {
+        background-color: #007acc;
+        color: #fff;
+    }
   </style>
 </head>
 <body>
     <div class="deck-header">
       <h2>🧠 デッキビルダー</h2>
       <div class="deck-controls">
+        <button onclick="toggleDarkMode()" style="margin-bottom: 10px;">
+            🌗 ダークモード切り替え
+        </button>
         <button onclick="createDeck()">➕ デッキ作成</button>
         <select id="deckSelector" onchange="switchDeck()">
           <option value="">📂 デッキ選択</option>
@@ -242,6 +276,11 @@
         let cards = [];
         let releaseMap = {};
       
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle("dark");
+            localStorage.setItem("darkMode", isDark ? "true" : "false");
+        }
+
         function createDeck() {
           const name = prompt("新しいデッキ名を入力してください");
           if (!name || name.trim() === "") {
@@ -264,11 +303,15 @@
         }
       
         function deleteDeck() {
-          if (!currentDeck) return;
-          if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
-          delete decks[currentDeck];
-          currentDeck = null;
-          updateDeckUI();
+            if (!currentDeck) return;
+            if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
+
+            delete decks[currentDeck];
+            currentDeck = null;
+
+            // ✅ 呼び出し順を保証
+            updateDeckUI();
+            renderDeckList();
         }
       
         function addCardToDeck(cardId) {
@@ -361,30 +404,31 @@
 
             renderDeckList();
             renderCardSelectionGallery();
-            }
+        }
       
         function renderDeckList() {
             const container = document.getElementById("deckList");
             container.innerHTML = "";
 
-            // 辞書化して高速にカード画像URL取得
-            const cardMap = {};
-            cards.forEach(c => cardMap[c.id] = c);
+            const deckNames = Object.keys(decks).filter(name => decks[name] && decks[name].length >= 0);
+            if (deckNames.length === 0) {
+                container.innerHTML = "<div style='color:#666;'>📂 デッキは存在しません</div>";
+                return;
+            }
 
-            Object.entries(decks).forEach(([name, cardIds]) => {
+            const cardMap = Object.fromEntries(cards.map(c => [c.id, c]));
+
+            deckNames.forEach(name => {
+                const cardIds = decks[name];
+                const topCardId = cardIds[0] ?? "placeholder";
+                const imageUrl = cardMap[topCardId]?.image ?? `images/${topCardId}.png`;
+
                 const box = document.createElement("div");
                 box.className = "deck-box";
                 box.onclick = () => {
                 currentDeck = name;
                 updateDeckUI();
                 };
-
-                // 代表画像：1枚目の cardId を使用
-                const topCardId = cardIds[0] ?? "placeholder";
-                const topCard = cardMap[topCardId];
-
-                const imageUrl = topCard?.image ?? `images/${topCardId}.png`;
-
                 box.innerHTML = `
                 <img src="${imageUrl}" alt="${name}" onerror="this.src='images/placeholder.png'" />
                 <div style="font-weight:bold;">${name}</div>
@@ -566,6 +610,46 @@
       alert("カードデータの読み込みに失敗しました！");
     }
   };
+
+  window.onload = async () => {
+  // 🌙 ダークモード状態をローカルストレージから取得
+    const isDark = localStorage.getItem("darkMode") === "true";
+    if (isDark) {
+        document.body.classList.add("dark");
+    }
+
+    // 🎴 カードデータなどの読み込み処理
+    try {
+        const [cardRes, releaseRes] = await Promise.all([
+        fetch("json_file/card_data.json"),
+        fetch("json_file/release_dates.json")
+        ]);
+        const rawData = await cardRes.json();
+        releaseMap = await releaseRes.json();
+
+        cards = Object.entries(rawData).map(([key, card]) => ({
+        id: key,
+        name: card.name,
+        rarity: card.rarity ?? "-",
+        color: card.color ?? "-",
+        bloom: card.bloom_level ?? "-",
+        hp: card.hp ?? null,
+        life: card.life ?? null,
+        product: card.product ?? "-",
+        tags: card.tags ?? [],
+        skills: card.skills ?? [],
+        image: card.image_url || `images/${key}.png`,
+        owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+        card_type: card.card_type ?? "-"
+        }));
+
+        setupFilterChips();
+        updateDeckUI();
+    } catch (err) {
+        console.error(err);
+        alert("カードデータの読み込みに失敗しました！");
+    }
+    };
 </script>
 </body>
 </html>
