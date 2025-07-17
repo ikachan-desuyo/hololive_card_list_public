@@ -305,76 +305,93 @@
         }
       
         function updateDeckUI() {
-          const select = document.getElementById("deckSelector");
-          select.innerHTML = `<option value="">📂 デッキ選択</option>` +
-            Object.keys(decks).map(name =>
-              `<option value="${name}" ${name === currentDeck ? "selected" : ""}>${name} (${decks[name].length})</option>`).join("");
-      
-          document.getElementById("currentDeckName").textContent = currentDeck || "未選択";
-      
-          const list = document.getElementById("deckCardList");
-          list.innerHTML = "";
-      
-          if (currentDeck && decks[currentDeck].length > 0) {
+            const select = document.getElementById("deckSelector");
+            select.innerHTML = `<option value="">📂 デッキ選択</option>` +
+                Object.keys(decks).map(name =>
+                `<option value="${name}" ${name === currentDeck ? "selected" : ""}>${name} (${decks[name].length})</option>`).join("");
+
+            document.getElementById("currentDeckName").textContent = currentDeck || "未選択";
+
+            const list = document.getElementById("deckCardList");
+            list.innerHTML = "";
+
+            // ✅ 初期表示：デッキ未選択なら非表示に
+            if (!currentDeck) {
+                document.getElementById("cardSelectionArea").style.display = "none";
+                return;
+            }
+
+            // ✅ 表示が必要な状態なら更新開始
+            document.getElementById("cardSelectionArea").style.display = "block";
+
             const countMap = {};
             decks[currentDeck].forEach(id => {
-              countMap[id] = (countMap[id] || 0) + 1;
+                countMap[id] = (countMap[id] || 0) + 1;
             });
-      
+
             Object.entries(countMap).sort().forEach(([cardId, count]) => {
-              const wrapper = document.createElement("div");
-              wrapper.className = "card-thumb";
-      
-              const img = document.createElement("img");
-              img.src = `images/${cardId}.png`;
-              img.alt = cardId;
-              wrapper.appendChild(img);
-      
-              const badge = document.createElement("div");
-              badge.className = "count-badge";
-              badge.textContent = `×${count}`;
-              wrapper.appendChild(badge);
-      
-              const del = document.createElement("div");
-              del.className = "delete-btn";
-              del.textContent = "×";
-              del.onclick = () => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "card-thumb";
+
+                const card = cards.find(c => c.id === cardId);
+                const img = document.createElement("img");
+                img.src = card?.image ?? `images/${cardId}.png`;
+                img.alt = card?.name ?? cardId;
+                img.onerror = () => {
+                img.src = "images/placeholder.png";
+                };
+                wrapper.appendChild(img);
+
+                const badge = document.createElement("div");
+                badge.className = "count-badge";
+                badge.textContent = `×${count}`;
+                wrapper.appendChild(badge);
+
+                const del = document.createElement("div");
+                del.className = "delete-btn";
+                del.textContent = "×";
+                del.onclick = () => {
                 decks[currentDeck] = decks[currentDeck].filter(id => id !== cardId);
                 updateDeckUI();
-              };
-              wrapper.appendChild(del);
-      
-              list.appendChild(wrapper);
+                };
+                wrapper.appendChild(del);
+
+                list.appendChild(wrapper);
             });
-          } else {
-            list.textContent = "デッキが選択されていないか、カードがありません";
-          }
-      
-          document.getElementById("cardSelectionArea").style.display = currentDeck ? "block" : "none";
-          renderDeckList();
-          renderCardSelectionGallery();
-        }
+
+            renderDeckList();
+            renderCardSelectionGallery();
+            }
       
         function renderDeckList() {
-          const container = document.getElementById("deckList");
-          container.innerHTML = "";
-      
-          Object.entries(decks).forEach(([name, cardIds]) => {
-            const box = document.createElement("div");
-            box.className = "deck-box";
-            box.onclick = () => {
-              currentDeck = name;
-              updateDeckUI();
-            };
-      
-            const topCardId = cardIds[0] ?? "placeholder";
-            box.innerHTML = `
-              <img src="images/${topCardId}.png" alt="${name}" />
-              <div style="font-weight:bold;">${name}</div>
-              <div>枚数: ${cardIds.length}</div>
-            `;
-            container.appendChild(box);
-          });
+            const container = document.getElementById("deckList");
+            container.innerHTML = "";
+
+            // 辞書化して高速にカード画像URL取得
+            const cardMap = {};
+            cards.forEach(c => cardMap[c.id] = c);
+
+            Object.entries(decks).forEach(([name, cardIds]) => {
+                const box = document.createElement("div");
+                box.className = "deck-box";
+                box.onclick = () => {
+                currentDeck = name;
+                updateDeckUI();
+                };
+
+                // 代表画像：1枚目の cardId を使用
+                const topCardId = cardIds[0] ?? "placeholder";
+                const topCard = cardMap[topCardId];
+
+                const imageUrl = topCard?.image ?? `images/${topCardId}.png`;
+
+                box.innerHTML = `
+                <img src="${imageUrl}" alt="${name}" onerror="this.src='images/placeholder.png'" />
+                <div style="font-weight:bold;">${name}</div>
+                <div>枚数: ${cardIds.length}</div>
+                `;
+                container.appendChild(box);
+            });
         }
       
         function toggleFilters() {
