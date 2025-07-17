@@ -121,6 +121,8 @@
       padding: 0 5px;
       cursor: pointer;
       line-height: 1;
+      width: 10px;
+      height: 15px;
     }
 
     .card-gallery {
@@ -504,6 +506,29 @@
         let cards = [];
         let releaseMap = {};
 
+        function sortDeckByTypeAndId(cardIds) {
+          // 優先度関数：文字列でなくカテゴリマッチに変更
+          function getPriority(type) {
+            if (type === "推しホロメン") return 1;
+            if (type.includes("Buzzホロメン") || type.includes("ホロメン")) return 2; // ✅ 拡張済み
+            if (type.includes("サポート")) return 3;
+            if (type.includes("エール")) return 4;
+            return 999; // その他は後方
+          }
+
+          return [...cardIds].sort((a, b) => {
+            const cardA = cards.find(c => c.id === a);
+            const cardB = cards.find(c => c.id === b);
+            const typeA = cardA?.card_type ?? "";
+            const typeB = cardB?.card_type ?? "";
+            const prioA = getPriority(typeA);
+            const prioB = getPriority(typeB);
+
+            if (prioA !== prioB) return prioA - prioB;
+            return a.localeCompare(b);
+          });
+        }
+
         function normalizeText(text) {
           return text
             .toLowerCase()
@@ -699,34 +724,36 @@
             countMap[id] = (countMap[id] || 0) + 1;
           });
 
-          Object.entries(countMap).sort().forEach(([cardId, count]) => {
-            const wrapper = document.createElement("div");
-            wrapper.className = "card-thumb";
+          const sortedCardIds = sortDeckByTypeAndId(Object.keys(countMap));
+          sortedCardIds.forEach(cardId => {
+            Object.entries(countMap).sort().forEach(([cardId, count]) => {
+              const wrapper = document.createElement("div");
+              wrapper.className = "card-thumb";
 
-            const card = cards.find(c => c.id === cardId);
-            const img = document.createElement("img");
-            img.src = card?.image ?? `images/${cardId}.png`;
-            img.alt = card?.name ?? cardId;
-            img.onerror = () => { img.src = "images/placeholder.png"; };
-            wrapper.appendChild(img);
+              const card = cards.find(c => c.id === cardId);
+              const img = document.createElement("img");
+              img.src = card?.image ?? `images/${cardId}.png`;
+              img.alt = card?.name ?? cardId;
+              img.onerror = () => { img.src = "images/placeholder.png"; };
+              wrapper.appendChild(img);
 
-            const badge = document.createElement("div");
-            badge.className = "count-badge";
-            badge.textContent = `×${count}`;
-            wrapper.appendChild(badge);
+              const badge = document.createElement("div");
+              badge.className = "count-badge";
+              badge.textContent = `×${count}`;
+              wrapper.appendChild(badge);
 
-            const del = document.createElement("div");
-            del.className = "delete-btn";
-            del.textContent = "×";
-            del.onclick = () => {
-              decks[currentDeck] = decks[currentDeck].filter(id => id !== cardId);
-              updateDeckUI();
-            };
-            wrapper.appendChild(del);
+              const del = document.createElement("div");
+              del.className = "delete-btn";
+              del.textContent = "×";
+              del.onclick = () => {
+                decks[currentDeck] = decks[currentDeck].filter(id => id !== cardId);
+                updateDeckUI();
+              };
+              wrapper.appendChild(del);
 
-            list.appendChild(wrapper);
+              list.appendChild(wrapper);
+            });
           });
-
           renderDeckList();
           renderCardSelectionGallery();
         }
