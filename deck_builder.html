@@ -57,25 +57,115 @@
       margin-bottom: 6px;
     }
 
-    #deckCardList {
-      margin-bottom: 20px;
+    .deck-thumbnail-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    .card-grid {
+    .card-thumb {
+      position: relative;
+      width: 60px;
+    }
+
+    .card-thumb img {
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      object-fit: cover;
+    }
+
+    .count-badge {
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      background: #007acc;
+      color: #fff;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #f44336;
+      color: #fff;
+      font-size: 12px;
+      border-radius: 50%;
+      padding: 0 5px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .card-gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, 120px);
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 12px;
     }
 
-    .card-grid img {
-      width: 100%;
-      cursor: pointer;
-      border-radius: 4px;
+    .card-item {
       border: 1px solid #ccc;
+      padding: 6px;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
     }
 
-    li {
-      line-height: 1.6;
+    .card-item:hover {
+      background: #f0f0f0;
+    }
+
+    .card-item img {
+      width: 100%;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    .filter-group {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border: 1px solid #aaa;
+      border-radius: 16px;
+      background: #f0f0f0;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .chip:hover {
+      background: #ddd;
+    }
+
+    .chip.selected {
+      background: #0095ff;
+      color: #fff;
+      border-color: #007acc;
+    }
+
+    .chip.all-chip {
+      font-weight: bold;
+    }
+
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
     }
   </style>
 </head>
@@ -83,7 +173,6 @@
     <div class="deck-header">
       <h2>🧠 デッキビルダー</h2>
       <div class="deck-controls">
-        <button onclick="history.back()">← 前のページへ</button>
         <button onclick="createDeck()">➕ デッキ作成</button>
         <select id="deckSelector" onchange="switchDeck()">
           <option value="">📂 デッキ選択</option>
@@ -100,18 +189,59 @@
     <!-- ✅ 視覚的デッキ一覧 -->
     <div id="deckList" class="deck-list"></div>
   
-    <!-- ✅ 選択中デッキの中身 -->
+    <!-- ✅ 選択中デッキの中身（サムネイル表示・枚数・削除） -->
     <div id="deckView">
       <h3>現在のデッキ: <span id="currentDeckName">未選択</span></h3>
-      <ul id="deckCardList"></ul>
+      <div id="deckCardList" class="deck-thumbnail-grid"></div>
     </div>
   
-    <!-- ✅ カード選択エリア -->
-    <div class="card-grid" id="cardGrid"></div>
+    <!-- ✅ カード選択ビュー：フィルター＋簡易表示（選択時のみ表示） -->
+    <div id="cardSelectionArea" style="display:none; margin-top:20px;">
+      <h3>🃏 カード一覧（デッキに追加）</h3>
+      <div class="top-controls">
+        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderCardSelectionGallery()" />
+        <select id="sortMethod" onchange="renderCardSelectionGallery()">
+          <option value="release">発売日順</option>
+          <option value="id">カード番号順</option>
+          <option value="name">名前順</option>
+          <option value="rarity">レアリティ順</option>
+        </select>
+        <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+      </div>
+  
+      <div id="filtersWrapper" style="display:none;">
+        <fieldset class="filter-group">
+          <legend>所持状態</legend>
+          <div id="ownedStateChipGroup" class="chip-group"></div>
+        </fieldset>
+        <fieldset class="filter-group">
+          <legend>レアリティ</legend>
+          <div id="rarityFilter" class="chip-group"></div>
+        </fieldset>
+        <fieldset class="filter-group">
+          <legend>色</legend>
+          <div id="colorFilter" class="chip-group"></div>
+        </fieldset>
+        <fieldset class="filter-group">
+          <legend>Bloom</legend>
+          <div id="bloomFilter" class="chip-group"></div>
+        </fieldset>
+        <fieldset class="filter-group">
+          <legend>収録商品</legend>
+          <select id="productFilter" onchange="renderCardSelectionGallery()">
+            <option value="">収録商品（選択）</option>
+          </select>
+        </fieldset>
+      </div>
+  
+      <div id="cardGallery" class="card-gallery"></div>
+    </div>
     <script>
         let decks = {};
         let currentDeck = null;
-    
+        let cards = [];
+        let releaseMap = {};
+      
         function createDeck() {
           const name = prompt("新しいデッキ名を入力してください");
           if (!name || name.trim() === "") {
@@ -126,13 +256,13 @@
           currentDeck = name;
           updateDeckUI();
         }
-    
+      
         function switchDeck() {
           const select = document.getElementById("deckSelector");
           currentDeck = select.value;
           updateDeckUI();
         }
-    
+      
         function deleteDeck() {
           if (!currentDeck) return;
           if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
@@ -140,7 +270,7 @@
           currentDeck = null;
           updateDeckUI();
         }
-    
+      
         function addCardToDeck(cardId) {
           if (!currentDeck) {
             alert("先にデッキを選択してください");
@@ -149,7 +279,7 @@
           decks[currentDeck].push(cardId);
           updateDeckUI();
         }
-    
+      
         function exportDecks() {
           const blob = new Blob([JSON.stringify(decks, null, 2)], {type: "application/json"});
           const link = document.createElement("a");
@@ -157,7 +287,7 @@
           link.download = "decks.json";
           link.click();
         }
-    
+      
         function importDecks() {
           const file = document.getElementById("importFile").files[0];
           if (!file) return;
@@ -173,29 +303,62 @@
           };
           reader.readAsText(file);
         }
-    
+      
         function updateDeckUI() {
           const select = document.getElementById("deckSelector");
           select.innerHTML = `<option value="">📂 デッキ選択</option>` +
             Object.keys(decks).map(name =>
-              `<option value="${name}" ${name === currentDeck ? "selected" : ""}>
-                ${name} (${decks[name].length})
-              </option>`).join("");
-    
+              `<option value="${name}" ${name === currentDeck ? "selected" : ""}>${name} (${decks[name].length})</option>`).join("");
+      
           document.getElementById("currentDeckName").textContent = currentDeck || "未選択";
-    
+      
           const list = document.getElementById("deckCardList");
-          list.innerHTML = currentDeck
-            ? decks[currentDeck].map(id => `<li>${id}</li>`).join("")
-            : "<li>デッキが選択されていません</li>";
-    
+          list.innerHTML = "";
+      
+          if (currentDeck && decks[currentDeck].length > 0) {
+            const countMap = {};
+            decks[currentDeck].forEach(id => {
+              countMap[id] = (countMap[id] || 0) + 1;
+            });
+      
+            Object.entries(countMap).sort().forEach(([cardId, count]) => {
+              const wrapper = document.createElement("div");
+              wrapper.className = "card-thumb";
+      
+              const img = document.createElement("img");
+              img.src = `images/${cardId}.png`;
+              img.alt = cardId;
+              wrapper.appendChild(img);
+      
+              const badge = document.createElement("div");
+              badge.className = "count-badge";
+              badge.textContent = `×${count}`;
+              wrapper.appendChild(badge);
+      
+              const del = document.createElement("div");
+              del.className = "delete-btn";
+              del.textContent = "×";
+              del.onclick = () => {
+                decks[currentDeck] = decks[currentDeck].filter(id => id !== cardId);
+                updateDeckUI();
+              };
+              wrapper.appendChild(del);
+      
+              list.appendChild(wrapper);
+            });
+          } else {
+            list.textContent = "デッキが選択されていないか、カードがありません";
+          }
+      
+          document.getElementById("cardSelectionArea").style.display = currentDeck ? "block" : "none";
           renderDeckList();
+          renderCardSelectionGallery();
         }
-    
+      
         function renderDeckList() {
           const container = document.getElementById("deckList");
           container.innerHTML = "";
-    
+      
           Object.entries(decks).forEach(([name, cardIds]) => {
             const box = document.createElement("div");
             box.className = "deck-box";
@@ -203,9 +366,8 @@
               currentDeck = name;
               updateDeckUI();
             };
-    
+      
             const topCardId = cardIds[0] ?? "placeholder";
-    
             box.innerHTML = `
               <img src="images/${topCardId}.png" alt="${name}" />
               <div style="font-weight:bold;">${name}</div>
@@ -214,18 +376,179 @@
             container.appendChild(box);
           });
         }
-    
-        // 仮カード一覧（本番は card_data.json を使う）
-        const dummyCards = ["card_001", "card_002", "card_003", "card_004", "card_005"];
-    
-        const grid = document.getElementById("cardGrid");
-        dummyCards.forEach(cardId => {
-          const img = document.createElement("img");
-          img.src = `images/${cardId}.png`;
-          img.alt = cardId;
-          img.onclick = () => addCardToDeck(cardId);
-          grid.appendChild(img);
-        });
-      </script>
-    </body>
+      
+        function toggleFilters() {
+          const el = document.getElementById("filtersWrapper");
+          el.style.display = window.getComputedStyle(el).display === "none" ? "block" : "none";
+        }
+      
+        function toggleChip(btn) {
+          const group = btn.parentElement;
+          const allBtn = group.querySelector(".all-chip");
+          if (allBtn) allBtn.classList.remove("selected");
+          btn.classList.toggle("selected");
+          renderCardSelectionGallery();
+        }
+      
+        function selectAllChip(allBtn) {
+          const group = allBtn.parentElement;
+          group.querySelectorAll(".chip").forEach(btn => btn.classList.remove("selected"));
+          allBtn.classList.add("selected");
+          renderCardSelectionGallery();
+        }
+      
+        function getCheckedFromChips(id) {
+          const allSelected = document.querySelector(`#${id} .chip.all-chip.selected`);
+          if (allSelected) return [];
+          return [...document.querySelectorAll(`#${id} .chip.selected:not(.all-chip)`)].map(btn => btn.dataset.value);
+        }
+      
+        function setupFilterChips() {
+          const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
+          cards.forEach(c => {
+            raritySet.add(c.rarity);
+            colorSet.add(c.color);
+            bloomSet.add(c.bloom);
+            productSet.add(c.product);
+          });
+      
+          function populateChipGroup(id, items, withAll = true) {
+            const container = document.getElementById(id);
+            container.innerHTML = "";
+            if (withAll) {
+              const allBtn = document.createElement("button");
+              allBtn.textContent = "すべて";
+              allBtn.className = "chip all-chip selected";
+              allBtn.dataset.value = "ALL";
+              allBtn.onclick = () => selectAllChip(allBtn);
+              container.appendChild(allBtn);
+            }
+            [...items].sort().forEach(val => {
+              const btn = document.createElement("button");
+              btn.textContent = val;
+              btn.className = "chip";
+              btn.dataset.value = val;
+              btn.onclick = () => toggleChip(btn);
+              container.appendChild(btn);
+            });
+          }
+      
+          function populateSelect(id, items, label) {
+            const select = document.getElementById(id);
+            select.innerHTML = `<option value="">${label}</option>`;
+            [...items].sort().forEach(val => {
+              const opt = document.createElement("option");
+              opt.value = val;
+              opt.textContent = val;
+              select.appendChild(opt);
+            });
+          }
+      
+          populateChipGroup("rarityFilter", raritySet);
+          populateChipGroup("colorFilter", colorSet);
+          populateChipGroup("bloomFilter", bloomSet);
+          populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false);
+          populateSelect("productFilter", productSet, "収録商品");
+        }
+      
+        function sortCards(list, method) {
+          const sorted = [...list];
+          if (method === "release") {
+            sorted.sort((a, b) => a.product.localeCompare(b.product) || a.id.localeCompare(b.id));
+          } else if (method === "id") {
+            sorted.sort((a, b) => a.id.localeCompare(b.id));
+          } else if (method === "name") {
+            sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
+          } else if (method === "rarity") {
+            const rank = { SR: 3, R: 2, N: 1 };
+            sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
+          }
+          return sorted;
+        }
+      
+        function renderCardSelectionGallery() {
+          const keyword = document.getElementById("nameSearch").value.toLowerCase();
+          const sortMethod = document.getElementById("sortMethod").value;
+          const owned = getCheckedFromChips("ownedStateChipGroup");
+          const rarity = getCheckedFromChips("rarityFilter");
+          const color = getCheckedFromChips("colorFilter");
+          const bloom = getCheckedFromChips("bloomFilter");
+          const product = document.getElementById("productFilter").value;
+      
+          const container = document.getElementById("cardGallery");
+          container.innerHTML = "";
+      
+          const filtered = cards.filter(card => {
+      const count = card.owned;
+      const allText = [
+        card.name, card.id, card.rarity, card.color, card.bloom,
+        card.hp ?? card.life ?? "", card.product, card.card_type
+      ].join(" ").toLowerCase();
+
+      const matchOwned =
+        owned.length === 0 ||
+        (owned.includes("owned") && count > 0) ||
+        (owned.includes("unowned") && (!count || count === 0));
+
+      const match = {
+        rarity: rarity.length === 0 || rarity.includes(card.rarity),
+        color: color.length === 0 || color.includes(card.color),
+        bloom: bloom.length === 0 || bloom.includes(card.bloom),
+        product: !product || card.product === product,
+        keyword: !keyword || allText.includes(keyword)
+      };
+
+      return matchOwned && !Object.values(match).includes(false);
+    });
+
+    const sorted = sortCards(filtered, sortMethod);
+    sorted.forEach(card => {
+      const div = document.createElement("div");
+      div.className = "card-item";
+      div.onclick = () => addCardToDeck(card.id);
+      div.innerHTML = `
+        <img src="${card.image}" alt="${card.name}" />
+        <div><strong>${card.name}</strong></div>
+        <div>${card.id}</div>
+        <div>${card.card_type}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // ✅ 起動時：JSON読み込み＋フィルター初期化
+  window.onload = async () => {
+    try {
+      const [cardRes, releaseRes] = await Promise.all([
+        fetch("json_file/card_data.json"),
+        fetch("json_file/release_dates.json")
+      ]);
+      const rawData = await cardRes.json();
+      releaseMap = await releaseRes.json();
+
+      cards = Object.entries(rawData).map(([key, card]) => ({
+        id: key,
+        name: card.name,
+        rarity: card.rarity ?? "-",
+        color: card.color ?? "-",
+        bloom: card.bloom_level ?? "-",
+        hp: card.hp ?? null,
+        life: card.life ?? null,
+        product: card.product ?? "-",
+        tags: card.tags ?? [],
+        skills: card.skills ?? [],
+        image: card.image_url || `images/${key}.png`,
+        owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+        card_type: card.card_type ?? "-"
+      }));
+
+      setupFilterChips();
+      updateDeckUI();
+    } catch (err) {
+      console.error(err);
+      alert("カードデータの読み込みに失敗しました！");
+    }
+  };
+</script>
+</body>
 </html>
