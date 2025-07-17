@@ -173,112 +173,115 @@
     }
 
     body.dark {
-        background-color: #222;
-        color: #eee;
+      background-color: #222;
+      color: #eee;
     }
 
     body.dark .deck-box,
     body.dark .card-thumb,
     body.dark .card-item {
-        border-color: #555;
-        background-color: #222;
+      border-color: #555;
+      background-color: #222;
     }
 
     body.dark select,
     body.dark button,
     body.dark input {
-        background-color: #222;
-        color: #eee;
-        border-color: #555;
+      background-color: #222;
+      color: #eee;
+      border-color: #555;
     }
 
     body.dark .chip {
-        background-color: #333;
-        color: #ddd;
-        border-color: #555;
+      background-color: #333;
+      color: #ddd;
+      border-color: #555;
     }
 
     body.dark .chip.selected {
-        background-color: #007acc;
-        color: #fff;
+      background-color: #007acc;
+      color: #fff;
     }
 
     .card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
     }
 
     .card-box {
-        display: flex;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 6px;
-        background: #fff;
-        align-items: center;
-        cursor: pointer;
+      display: flex;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 6px;
+      background: #fff;
+      align-items: center;
+      cursor: pointer;
     }
 
     .card-box:hover {
-        background: #f0f0f0;
+      background: #f0f0f0;
     }
 
     .card-info {
-        flex-grow: 1;
-        font-size: 14px;
-        line-height: 1.5;
+      flex-grow: 1;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     .card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
     }
 
     .card-box {
-        display: flex;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 6px;
-        background: #fff;
-        align-items: center;
-        cursor: pointer;
+      display: flex;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 6px;
+      background: #fff;
+      align-items: center;
+      cursor: pointer;
     }
 
     .card-box:hover {
-        background: #f0f0f0;
+      background: #f0f0f0;
     }
 
     .card-box img {
-        width: 100px;
-        border-radius: 4px;
-        margin-right: 10px;
-        object-fit: cover;
+      width: 100px;
+      border-radius: 4px;
+      margin-right: 10px;
+      object-fit: cover;
     }
 
     .card-info {
-        flex-grow: 1;
-        font-size: 14px;
-        line-height: 1.5;
+      flex-grow: 1;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     .mobile-layout .card-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 
     .mobile-layout .card-box {
-        flex-direction: column;
-        align-items: center;
+      flex-direction: column;
+      align-items: center;
     }
 
     .mobile-layout .card-box img {
-        width: 100%;
-        max-width: 160px;
-        margin-bottom: 8px;
+      width: calc((100vw - 32px) / 4);
+      max-width: 95px;
+      margin: 0.2px;
     }
 
     .mobile-layout .card-info {
-        text-align: center;
+      text-align: center;
+      font-size: 11.5px;
+      padding: 6px 0;
+      line-height: 1.1;
     }
   </style>
 </head>
