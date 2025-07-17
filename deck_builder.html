@@ -431,13 +431,15 @@
         }
       
         function updateDeckUI() {
+            // ✅ デッキ状態を localStorage に保存
+            localStorage.setItem("deckData", JSON.stringify(decks));
+
             const select = document.getElementById("deckSelector");
             select.innerHTML = `<option value="">📂 デッキ選択</option>` +
                 Object.keys(decks).map(name =>
                 `<option value="${name}" ${name === currentDeck ? "selected" : ""}>${name} (${decks[name].length})</option>`).join("");
 
             document.getElementById("currentDeckName").textContent = currentDeck || "未選択";
-
             const list = document.getElementById("deckCardList");
             list.innerHTML = "";
 
@@ -695,16 +697,26 @@
   };
 
   window.onload = async () => {
-    // ✅ スマホ幅かどうかを判定（幅600px以下をモバイルと定義）
-    if (window.innerWidth <= 600) {
-        document.body.classList.add("mobile-layout");
-    }
-
-    // 🌙 ダークモードの初期化
+    // 🌙 ダークモード
     if (localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark");
     }
 
+    // 📱 モバイル判定
+    if (window.innerWidth <= 600) {
+        document.body.classList.add("mobile-layout");
+    }
+
+    // 💾 保存されたデッキ読み込み
+    const savedDecks = localStorage.getItem("deckData");
+    if (savedDecks) {
+        try {
+        decks = JSON.parse(savedDecks);
+        currentDeck = Object.keys(decks)[0] ?? null;
+        } catch {
+        console.warn("保存されたデッキの読み込みに失敗しました");
+        }
+    }
     // 🎴 カードデータ読み込み
     try {
         const [cardRes, releaseRes] = await Promise.all([
