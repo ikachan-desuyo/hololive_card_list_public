@@ -392,10 +392,24 @@
           <option value="">📂 デッキ選択</option>
         </select>
         <button onclick="deleteDeck()">🗑️ 削除</button>
-        <button onclick="exportDecks()">💾 エクスポート</button>
+        <!-- エクスポートボタン -->
+        <button onclick="openExportDeckModal()">💾 エクスポート</button>
+
+        <!-- モーダル表示用（非表示） -->
+        <div id="exportModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+          background:#323232; padding:16px; border:1px solid #999; z-index:999; box-shadow:0 0 10px #aaa;">
+          <h3>📤 エクスポートするデッキを選択</h3>
+          <select id="exportDeckSelector">
+            <option value="">-- 選択してください --</option>
+          </select>
+          <div style="margin-top:10px;">
+            <button onclick="confirmExportDeck()">✅ 実行</button>
+            <button onclick="closeExportDeckModal()">❌ キャンセル</button>
+          </div>
+        </div>
         <label>
-          📁 インポート
-          <input type="file" id="importFile" onchange="importDecks()" />
+          <button onclick="triggerDeckImport()">📥 インポート</button>
+          <input type="file" id="importDeckFileHidden" style="display:none;" />
         </label>
       </div>
     </div>
@@ -522,28 +536,81 @@
           updateDeckUI();
         }
       
-        function exportDecks() {
-          const blob = new Blob([JSON.stringify(decks, null, 2)], {type: "application/json"});
+        function openExportDeckModal() {
+          const modal = document.getElementById("exportModal");
+          const selector = document.getElementById("exportDeckSelector");
+          selector.innerHTML = `<option value="">-- 選択してください --</option>` +
+            Object.keys(decks).map(name => `<option value="${name}">${name}</option>`).join("");
+
+          modal.style.display = "block";
+        }
+
+        function closeExportDeckModal() {
+          document.getElementById("exportModal").style.display = "none";
+        }
+
+        function confirmExportDeck() {
+          const deckName = document.getElementById("exportDeckSelector").value;
+          if (!deckName || !decks[deckName]) {
+            alert("デッキが選択されていません");
+            return;
+          }
+
+          const countMap = {};
+          decks[deckName].forEach(id => {
+            countMap[id] = (countMap[id] || 0) + 1;
+          });
+
+          const jsonText = JSON.stringify(countMap, null, 2);
+          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const blob = new Blob([bom, jsonText], { type: "application/json" });
+
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
-          link.download = "decks.json";
+          link.download = `${deckName}.json`;
           link.click();
+
+          closeExportDeckModal();
         }
       
-        function importDecks() {
-          const file = document.getElementById("importFile").files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = e => {
-            try {
-              decks = JSON.parse(e.target.result);
-              currentDeck = Object.keys(decks)[0] ?? null;
-              updateDeckUI();
-            } catch {
-              alert("読み込みに失敗しました");
-            }
+        function triggerDeckImport() {
+          const hiddenFileInput = document.getElementById("importDeckFileHidden");
+          hiddenFileInput.accept = ".json";
+          hiddenFileInput.onchange = () => {
+            const file = hiddenFileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = e => {
+              try {
+                const json = JSON.parse(e.target.result);
+                const deckName = file.name.replace(/\.json$/i, "").trim();
+                if (!deckName) {
+                  alert("ファイル名からデッキ名が取得できませんでした");
+                  return;
+                }
+
+                const ids = [];
+                Object.entries(json).forEach(([id, count]) => {
+                  const n = Math.max(0, parseInt(count) || 0);
+                  for (let i = 0; i < n; i++) ids.push(id);
+                });
+
+                decks = decks || {}; // ✅ 初期状態対応
+                decks[deckName] = ids;
+                currentDeck = deckName;
+
+                updateDeckUI(); // ✅ UI更新呼び出しを保証
+                alert(`デッキ「${deckName}」をインポートしました！`);
+              } catch {
+                alert("読み込みに失敗しました。ファイル形式や内容を確認してください。");
+              }
+            };
+
+            reader.readAsText(file);
           };
-          reader.readAsText(file);
+
+          hiddenFileInput.click();
         }
       
         function updateDeckUI() {
