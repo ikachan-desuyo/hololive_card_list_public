@@ -18,6 +18,7 @@
 
     h2 {
       margin-right: auto;
+      text-align: center;
     }
 
     .deck-header {
@@ -372,7 +373,7 @@
 <body>
     <div id="deckheader" class="deck-header">
       <button onclick="history.back()">← 前のページへ</button>
-      <h2>🧠 デッキ作成</h2>
+      <h2>デッキ作成</h2>
       <div class="top-nav">
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
@@ -560,7 +561,7 @@
           document.getElementById("cardSelectionArea").style.display = "block";
 
           // ✅ 選択枚数合計表示
-          document.getElementById("cardStats").textContent = `🧠 選択枚数：${decks[currentDeck].length}枚`;
+          document.getElementById("cardStats").textContent = `選択枚数：${decks[currentDeck].length}枚`;
 
           // ✅ デッキ構成分類（推し・エール・その他）
           function classifyDeckByType(deckIds) {
@@ -836,7 +837,7 @@
           const sorted = sortCards(filtered, sortMethod);
 
           const totalSelected = currentDeck && decks[currentDeck] ? decks[currentDeck].length : 0;
-          document.getElementById("cardStats").textContent = `🧠 選択枚数：${totalSelected}枚`;
+          document.getElementById("cardStats").textContent = `選択枚数：${totalSelected}枚`;
 
           sorted.forEach(card => {
             const selectedCount = countMap[card.id] || 0;
