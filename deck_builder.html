@@ -223,6 +223,32 @@
         background: #f0f0f0;
     }
 
+    .card-info {
+        flex-grow: 1;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+
+    .card-box {
+        display: flex;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px;
+        background: #fff;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .card-box:hover {
+        background: #f0f0f0;
+    }
+
     .card-box img {
         width: 100px;
         border-radius: 4px;
@@ -234,6 +260,25 @@
         flex-grow: 1;
         font-size: 14px;
         line-height: 1.5;
+    }
+
+    .mobile-layout .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .mobile-layout .card-box {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mobile-layout .card-box img {
+        width: 100%;
+        max-width: 160px;
+        margin-bottom: 8px;
+    }
+
+    .mobile-layout .card-info {
+        text-align: center;
     }
   </style>
 </head>
@@ -650,13 +695,17 @@
   };
 
   window.onload = async () => {
-  // 🌙 ダークモード状態をローカルストレージから取得
-    const isDark = localStorage.getItem("darkMode") === "true";
-    if (isDark) {
+    // ✅ スマホ幅かどうかを判定（幅600px以下をモバイルと定義）
+    if (window.innerWidth <= 600) {
+        document.body.classList.add("mobile-layout");
+    }
+
+    // 🌙 ダークモードの初期化
+    if (localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark");
     }
 
-    // 🎴 カードデータなどの読み込み処理
+    // 🎴 カードデータ読み込み
     try {
         const [cardRes, releaseRes] = await Promise.all([
         fetch("json_file/card_data.json"),
@@ -687,7 +736,7 @@
         console.error(err);
         alert("カードデータの読み込みに失敗しました！");
     }
-    };
+  };
 </script>
 </body>
 </html>
