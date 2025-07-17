@@ -23,10 +23,28 @@
 
     .deck-header {
       display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 1段目：左右中央並び */
+    .deck-nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .deck-title {
+      margin: 0 auto;
+      font-size: 18px;
+    }
+
+    /* 2段目：横並びコントロール群 */
+    .deck-controls {
+      display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      margin-bottom: 16px;
     }
 
     .deck-controls button,
@@ -377,24 +395,28 @@
   </style>
 </head>
 <body>
-    <div id="deckheader" class="deck-header">
+  <div id="deckheader" class="deck-header">
+
+    <!-- ✅ 1段目：ナビゲーションバー的配置 -->
+    <div class="deck-nav-row">
       <button onclick="history.back()">← 前のページへ</button>
-      <h2>デッキ作成</h2>
+      <h2 class="deck-title">デッキ作成</h2>
       <div class="top-nav">
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
-      <div class="deck-controls">
-        <button onclick="toggleDarkMode()" style="margin-bottom: 10px;">
-            🌗
-        </button>
-        <button onclick="createDeck()">➕ デッキ作成</button>
-        <select id="deckSelector" onchange="switchDeck()">
-          <option value="">📂 デッキ選択</option>
-        </select>
-        <button onclick="deleteDeck()">🗑️ 削除</button>
+    </div>
+  
+    <!-- ✅ 2段目：デッキ操作ボタン群 -->
+    <div class="deck-controls">
+      <button onclick="toggleDarkMode()">🌗</button>
+      <button onclick="createDeck()">➕ デッキ作成</button>
+      <select id="deckSelector" onchange="switchDeck()">
+        <option value="">📂 デッキ選択</option>
+      </select>
+      <button onclick="deleteDeck()">🗑️ 削除</button>
         <!-- エクスポートボタン -->
-        <button onclick="openExportDeckModal()">💾 エクスポート</button>
-
+      <button onclick="openExportDeckModal()">💾 エクスポート</button>
+  
         <!-- モーダル表示用（非表示） -->
         <div id="exportModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
           background:#323232; padding:16px; border:1px solid #999; z-index:999; box-shadow:0 0 10px #aaa;">
@@ -407,12 +429,12 @@
             <button onclick="closeExportDeckModal()">❌ キャンセル</button>
           </div>
         </div>
-        <label>
-          <button onclick="triggerDeckImport()">📥 インポート</button>
-          <input type="file" id="importDeckFileHidden" style="display:none;" />
-        </label>
-      </div>
+      <label>
+        <button onclick="triggerDeckImport()">📥 インポート</button>
+        <input type="file" id="importDeckFileHidden" style="display:none;" />
+      </label>
     </div>
+  </div>
   
     <!-- ✅ 視覚的デッキ一覧 -->
     <div id="deckList" class="deck-list"></div>
