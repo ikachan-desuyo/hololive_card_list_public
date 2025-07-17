@@ -52,7 +52,7 @@
     }
 
     .deck-box:hover {
-      background: #f0f0f0;
+      background: #20262e;
     }
 
     .deck-box img {
@@ -109,30 +109,10 @@
       gap: 12px;
     }
 
-    .card-item {
-      border: 1px solid #ccc;
-      padding: 6px;
-      border-radius: 6px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .card-item:hover {
-      background: #f0f0f0;
-    }
-
-    .card-item img {
-      width: 110px;
-      border-radius: 4px;
-      cursor: zoom-in;
-      background-color: #fff;
-      border: 1px solid #ddd;
-    }
-
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+      gap: 10px;
     }
 
     .card-box {
@@ -140,18 +120,18 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       padding: 1px;
-      background: #fff;
       align-items: center;
       cursor: pointer;
+      flex-direction: column;
     }
 
     .card-box:hover {
-      background: #f0f0f0;
+      background: #20262e;
     }
 
     .card-info {
       flex-grow: 1;
-      font-size: 1px;
+      font-size: 9px;
       line-height: 1.5;
     }
 
@@ -210,13 +190,6 @@
     body.dark {
       background-color: #222;
       color: #eee;
-    }
-
-    body.dark .deck-box,
-    body.dark .card-thumb,
-    body.dark .card-item {
-      border-color: #555;
-      background-color: #222;
     }
 
     body.dark select,
@@ -599,47 +572,58 @@
           const color = getCheckedFromChips("colorFilter");
           const bloom = getCheckedFromChips("bloomFilter");
           const product = document.getElementById("productFilter").value;
-      
+
           const container = document.getElementById("cardGallery");
           container.innerHTML = "";
-      
+          container.className = "card-grid"; // ✅ 統一構造へ変更
+
           const filtered = cards.filter(card => {
-      const count = card.owned;
-      const allText = [
-        card.name, card.id, card.rarity, card.color, card.bloom,
-        card.hp ?? card.life ?? "", card.product, card.card_type
-      ].join(" ").toLowerCase();
+            const count = card.owned;
+            const allText = [
+              card.name, card.id, card.rarity, card.color, card.bloom,
+              card.hp ?? card.life ?? "", card.product, card.card_type
+            ].join(" ").toLowerCase();
 
-      const matchOwned =
-        owned.length === 0 ||
-        (owned.includes("owned") && count > 0) ||
-        (owned.includes("unowned") && (!count || count === 0));
+            const matchOwned =
+              owned.length === 0 ||
+              (owned.includes("owned") && count > 0) ||
+              (owned.includes("unowned") && (!count || count === 0));
 
-      const match = {
-        rarity: rarity.length === 0 || rarity.includes(card.rarity),
-        color: color.length === 0 || color.includes(card.color),
-        bloom: bloom.length === 0 || bloom.includes(card.bloom),
-        product: !product || card.product === product,
-        keyword: !keyword || allText.includes(keyword)
-      };
+            const match = {
+              rarity: rarity.length === 0 || rarity.includes(card.rarity),
+              color: color.length === 0 || color.includes(card.color),
+              bloom: bloom.length === 0 || bloom.includes(card.bloom),
+              product: !product || card.product === product,
+              keyword: !keyword || allText.includes(keyword)
+            };
 
-      return matchOwned && !Object.values(match).includes(false);
-    });
+            return matchOwned && !Object.values(match).includes(false);
+          });
 
-    const sorted = sortCards(filtered, sortMethod);
-    sorted.forEach(card => {
-      const div = document.createElement("div");
-      div.className = "card-item";
-      div.onclick = () => addCardToDeck(card.id);
-      div.innerHTML = `
-        <img src="${card.image}" alt="${card.name}" />
-        <div><strong>${card.name}</strong></div>
-        <div>${card.id}</div>
-        <div>${card.card_type}</div>
-      `;
-      container.appendChild(div);
-    });
-  }
+          const sorted = sortCards(filtered, sortMethod);
+          sorted.forEach(card => {
+            const box = document.createElement("div");
+            box.className = "card-box";
+            box.onclick = () => addCardToDeck(card.id);
+
+            const img = document.createElement("img");
+            img.src = card.image;
+            img.alt = card.name;
+            img.onerror = () => { img.src = "images/placeholder.png"; };
+            box.appendChild(img);
+
+            const info = document.createElement("div");
+            info.className = "card-info";
+            info.innerHTML = `
+              <div style="font-weight:bold;">${card.name}</div>
+              <div style="font-weight:bold;">📄${card.id}</div>
+              <div style="font-weight:bold;">✨${card.rarity}🃏${card.owned ?? 0}枚</div>
+            `;
+            box.appendChild(info);
+
+            container.appendChild(box);
+          });
+        }
 
   // ✅ 起動時：JSON読み込み＋フィルター初期化
   window.onload = async () => {
