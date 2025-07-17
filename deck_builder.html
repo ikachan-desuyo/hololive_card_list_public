@@ -615,9 +615,11 @@
           const sorted = [...list];
           if (method === "release") {
             sorted.sort((a, b) => {
-              const da = releaseMap[a.id] ?? "9999-99-99";
-              const db = releaseMap[b.id] ?? "9999-99-99";
-              return da.localeCompare(db);
+              const ra = releaseMap[a.product] ?? "9999-12-31";
+              const rb = releaseMap[b.product] ?? "9999-12-31";
+              if (ra !== rb) return ra.localeCompare(rb);
+              if (a.product !== b.product) return a.product.localeCompare(b.product);
+              return a.id.localeCompare(b.id);
             });
           } else if (method === "id") {
             sorted.sort((a, b) => a.id.localeCompare(b.id));
