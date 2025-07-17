@@ -231,7 +231,7 @@
     #filtersWrapper {
       position: sticky;
       z-index: 10;
-      top: 60px; /* ← statsの高さ分ずらす（調整OK） */
+      top: 55px; /* ← statsの高さ分ずらす（調整OK） */
       background-color: #fff;
       padding: 4px 0;
     }
@@ -323,8 +323,38 @@
     }
 
     .mobile-layout #productFilter {
-      max-width: 100%;
+      max-width: 400px;
       font-size: 13px;
+    }
+
+    /* フィルター全体の文字サイズ */
+    .mobile-layout .filter-group legend {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    /* チップボタンサイズ（paddingと文字サイズ） */
+    .mobile-layout .chip {
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
+    /* セレクトボックスサイズ */
+    .mobile-layout select {
+      font-size: 13px;
+      padding: 4px 6px;
+    }
+
+    /* フィルター枠の余白・角丸 */
+    .mobile-layout .filter-group {
+      padding: 6px;
+      border-radius: 4px;
+    }
+
+    /* チップグループ間の隙間 */
+    .mobile-layout .chip-group {
+      gap: 6px;
     }
 
   </style>
