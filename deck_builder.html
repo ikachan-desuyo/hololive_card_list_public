@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>デッキビルダー</title>
+  <title>デッキ作成</title>
   <style>
     html, body {
         touch-action: manipulation;
@@ -255,7 +255,10 @@
 <body>
     <div id="deckheader" class="deck-header">
       <button onclick="history.back()">← 前のページへ</button>
-      <h2>🧠 デッキビルダー</h2>
+      <h2>🧠 デッキ作成</h2>
+      <div class="top-nav">
+        <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
+      </div>
       <div class="deck-controls">
         <button onclick="toggleDarkMode()" style="margin-bottom: 10px;">
             🌗 ダークモード切り替え
