@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>デッキビルダー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      font-size: 15px;
+      padding: 10px;
+    }
+
+    h2 {
+      margin-right: auto;
+    }
+
+    .deck-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .deck-controls button,
+    .deck-controls select,
+    .deck-controls input[type="file"] {
+      font-size: 14px;
+      padding: 6px 12px;
+    }
+
+    .deck-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .deck-box {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      width: 120px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .deck-box:hover {
+      background: #f0f0f0;
+    }
+
+    .deck-box img {
+      width: 80px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    #deckCardList {
+      margin-bottom: 20px;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 120px);
+      gap: 12px;
+    }
+
+    .card-grid img {
+      width: 100%;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    li {
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+    <div class="deck-header">
+      <h2>🧠 デッキビルダー</h2>
+      <div class="deck-controls">
+        <button onclick="history.back()">← 前のページへ</button>
+        <button onclick="createDeck()">➕ デッキ作成</button>
+        <select id="deckSelector" onchange="switchDeck()">
+          <option value="">📂 デッキ選択</option>
+        </select>
+        <button onclick="deleteDeck()">🗑️ 削除</button>
+        <button onclick="exportDecks()">💾 エクスポート</button>
+        <label>
+          📁 インポート
+          <input type="file" id="importFile" onchange="importDecks()" />
+        </label>
+      </div>
+    </div>
+  
+    <!-- ✅ 視覚的デッキ一覧 -->
+    <div id="deckList" class="deck-list"></div>
+  
+    <!-- ✅ 選択中デッキの中身 -->
+    <div id="deckView">
+      <h3>現在のデッキ: <span id="currentDeckName">未選択</span></h3>
+      <ul id="deckCardList"></ul>
+    </div>
+  
+    <!-- ✅ カード選択エリア -->
+    <div class="card-grid" id="cardGrid"></div>
+    <script>
+        let decks = {};
+        let currentDeck = null;
+    
+        function createDeck() {
+          const name = prompt("新しいデッキ名を入力してください");
+          if (!name || name.trim() === "") {
+            alert("デッキ名を入力してください");
+            return;
+          }
+          if (decks[name]) {
+            alert("同じ名前のデッキがすでに存在します");
+            return;
+          }
+          decks[name] = [];
+          currentDeck = name;
+          updateDeckUI();
+        }
+    
+        function switchDeck() {
+          const select = document.getElementById("deckSelector");
+          currentDeck = select.value;
+          updateDeckUI();
+        }
+    
+        function deleteDeck() {
+          if (!currentDeck) return;
+          if (!confirm(`「${currentDeck}」を削除しますか？`)) return;
+          delete decks[currentDeck];
+          currentDeck = null;
+          updateDeckUI();
+        }
+    
+        function addCardToDeck(cardId) {
+          if (!currentDeck) {
+            alert("先にデッキを選択してください");
+            return;
+          }
+          decks[currentDeck].push(cardId);
+          updateDeckUI();
+        }
+    
+        function exportDecks() {
+          const blob = new Blob([JSON.stringify(decks, null, 2)], {type: "application/json"});
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "decks.json";
+          link.click();
+        }
+    
+        function importDecks() {
+          const file = document.getElementById("importFile").files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = e => {
+            try {
+              decks = JSON.parse(e.target.result);
+              currentDeck = Object.keys(decks)[0] ?? null;
+              updateDeckUI();
+            } catch {
+              alert("読み込みに失敗しました");
+            }
+          };
+          reader.readAsText(file);
+        }
+    
+        function updateDeckUI() {
+          const select = document.getElementById("deckSelector");
+          select.innerHTML = `<option value="">📂 デッキ選択</option>` +
+            Object.keys(decks).map(name =>
+              `<option value="${name}" ${name === currentDeck ? "selected" : ""}>
+                ${name} (${decks[name].length})
+              </option>`).join("");
+    
+          document.getElementById("currentDeckName").textContent = currentDeck || "未選択";
+    
+          const list = document.getElementById("deckCardList");
+          list.innerHTML = currentDeck
+            ? decks[currentDeck].map(id => `<li>${id}</li>`).join("")
+            : "<li>デッキが選択されていません</li>";
+    
+          renderDeckList();
+        }
+    
+        function renderDeckList() {
+          const container = document.getElementById("deckList");
+          container.innerHTML = "";
+    
+          Object.entries(decks).forEach(([name, cardIds]) => {
+            const box = document.createElement("div");
+            box.className = "deck-box";
+            box.onclick = () => {
+              currentDeck = name;
+              updateDeckUI();
+            };
+    
+            const topCardId = cardIds[0] ?? "placeholder";
+    
+            box.innerHTML = `
+              <img src="images/${topCardId}.png" alt="${name}" />
+              <div style="font-weight:bold;">${name}</div>
+              <div>枚数: ${cardIds.length}</div>
+            `;
+            container.appendChild(box);
+          });
+        }
+    
+        // 仮カード一覧（本番は card_data.json を使う）
+        const dummyCards = ["card_001", "card_002", "card_003", "card_004", "card_005"];
+    
+        const grid = document.getElementById("cardGrid");
+        dummyCards.forEach(cardId => {
+          const img = document.createElement("img");
+          img.src = `images/${cardId}.png`;
+          img.alt = cardId;
+          img.onclick = () => addCardToDeck(cardId);
+          grid.appendChild(img);
+        });
+      </script>
+    </body>
+</html>
