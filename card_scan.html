@@ -31,6 +31,7 @@
     let canvas = document.getElementById('canvasOutput');
     let ctx = canvas.getContext('2d');
     let streaming = false;
+    let isProcessingOCR = false; // OCR処理中フラグ
 
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
@@ -60,7 +61,7 @@
       });
     }
 
-    async function processVideo() {
+    function processVideo() {
       if (!streaming) return;
 
       // ビデオフレームをCanvasに描画
@@ -99,21 +100,16 @@
           }
         }
 
-        if (maxContour) {
-          // 最小回転矩形を計算し、ROIを取得
+        if (maxContour && !isProcessingOCR) {
+          // OCRを非同期で実行
+          isProcessingOCR = true;
           const boundingBox = cv.boundingRect(maxContour);
           const roi = src.roi(boundingBox);
 
-          // 非同期でOCR処理を実行
-          Tesseract.recognize(roi.data, 'eng', {
-            logger: info => console.log(info) // ログを表示（デバッグ用）
-          }).then(result => {
-            // 認識文字列を表示
-            document.getElementById('recognizedText').innerText = result.data.text.trim();
-          }).catch(err => console.error("OCRエラー:", err));
-
-          // メモリ解放
-          roi.delete();
+          recognizeText(roi).then(() => {
+            roi.delete(); // メモリ解放
+            isProcessingOCR = false;
+          });
         }
 
         // 結果をCanvasに描画
@@ -128,6 +124,20 @@
 
       // 次のフレームを処理
       if (streaming) requestAnimationFrame(processVideo);
+    }
+
+    async function recognizeText(image) {
+      try {
+        // Tesseract.jsでOCRを実行
+        const result = await Tesseract.recognize(image.data, 'eng', {
+          logger: info => console.log(info) // ログを表示（デバッグ用）
+        });
+
+        // 認識文字列を更新
+        document.getElementById('recognizedText').innerText = result.data.text.trim();
+      } catch (err) {
+        console.error("OCRエラー:", err);
+      }
     }
   </script>
 </body>
