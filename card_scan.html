@@ -6,7 +6,7 @@
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
   <style>
-    video, canvas {
+    canvas {
       border: 1px solid black;
       display: block;
       margin: 10px auto;
@@ -22,16 +22,16 @@
 <body>
   <h1>リアルタイムOCRとカード枠検出</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
-  <video id="video" autoplay playsinline width="640" height="480"></video>
-  <canvas id="canvasOutput" width="640" height="480"></canvas>
+  <canvas id="canvasOutput"></canvas>
   <div id="ocrResult">認識文字列: <span id="recognizedText">-</span></div>
 
   <script>
-    let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
     let ctx = canvas.getContext('2d');
     let streaming = false;
     let isProcessingOCR = false; // OCR処理中フラグ
+    let videoWidth = 640; // 初期値
+    let videoHeight = 480; // 初期値
 
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
@@ -50,10 +50,20 @@
         }
       })
       .then(stream => {
+        const video = document.createElement('video');
         video.srcObject = stream;
         video.play();
-        streaming = true;
-        processVideo();
+
+        video.addEventListener('loadedmetadata', () => {
+          // 映像のアスペクト比を取得してCanvasのサイズを調整
+          videoWidth = video.videoWidth;
+          videoHeight = video.videoHeight;
+          canvas.width = videoWidth;
+          canvas.height = videoHeight;
+
+          streaming = true;
+          processVideo(video);
+        });
       })
       .catch(err => {
         console.error("カメラの起動に失敗しました: ", err);
@@ -61,7 +71,7 @@
       });
     }
 
-    function processVideo() {
+    function processVideo(video) {
       if (!streaming) return;
 
       // ビデオフレームをCanvasに描画
@@ -100,16 +110,22 @@
           }
         }
 
-        if (maxContour && !isProcessingOCR) {
-          // OCRを非同期で実行
-          isProcessingOCR = true;
-          const boundingBox = cv.boundingRect(maxContour);
-          const roi = src.roi(boundingBox);
+        if (maxContour) {
+          // 最大輪郭を赤線で描画
+          const color = new cv.Scalar(255, 0, 0, 255);
+          cv.drawContours(src, contours, -1, color, 2);
 
-          recognizeText(roi).then(() => {
-            roi.delete(); // メモリ解放
-            isProcessingOCR = false;
-          });
+          // OCRを非同期で実行
+          if (!isProcessingOCR) {
+            isProcessingOCR = true;
+            const boundingBox = cv.boundingRect(maxContour);
+            const roi = src.roi(boundingBox);
+
+            recognizeText(roi).then(() => {
+              roi.delete(); // メモリ解放
+              isProcessingOCR = false;
+            });
+          }
         }
 
         // 結果をCanvasに描画
@@ -123,7 +139,7 @@
       }
 
       // 次のフレームを処理
-      if (streaming) requestAnimationFrame(processVideo);
+      if (streaming) requestAnimationFrame(() => processVideo(video));
     }
 
     async function recognizeText(image) {
