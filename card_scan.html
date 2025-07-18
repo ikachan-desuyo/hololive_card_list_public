@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出とトリミング</title>
+  <title>カード枠検出とトリミング</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
     video {
@@ -22,7 +22,7 @@
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出とトリミング</h1>
+  <h1>カード枠検出とトリミング</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
@@ -34,7 +34,6 @@
     let canvas = document.getElementById('canvasOutput');
     let trimmedCanvas = document.getElementById('trimmedCanvas');
     let ctx = canvas.getContext('2d');
-    let trimmedCtx = trimmedCanvas.getContext('2d');
     let streaming = false;
 
     function onOpenCvReady() {
@@ -72,31 +71,6 @@
       });
     }
 
-    function calculateEdgeDensity(edges, contour) {
-      // 輪郭のバウンディングボックスを取得
-      let rect = cv.boundingRect(contour);
-      let roi = edges.roi(rect);
-
-      // エッジピクセルの数をカウント
-      let edgeCount = 0;
-      for (let y = 0; y < roi.rows; y++) {
-        for (let x = 0; x < roi.cols; x++) {
-          if (roi.ucharPtr(y, x)[0] > 0) {
-            edgeCount++;
-          }
-        }
-      }
-
-      // エッジ密度を計算
-      let area = rect.width * rect.height;
-      let density = edgeCount / area;
-
-      // メモリ解放
-      roi.delete();
-
-      return density;
-    }
-
     function processVideo() {
       if (!streaming) return;
 
@@ -123,24 +97,36 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大密度の輪郭を選択
-      let maxDensity = 0;
       let bestContour = null;
+      const targetAspectRatio = 88 / 63; // カードの縦横比（約1.4）
+      const tolerance = 0.1; // 縦横比の許容範囲（10%）
 
       for (let i = 0; i < contours.size(); ++i) {
         let contour = contours.get(i);
-        let density = calculateEdgeDensity(edges, contour);
 
-        if (density > maxDensity && density > 0.1) { // 0.1は閾値の例
-          maxDensity = density;
-          bestContour = contour;
+        // 多角形近似で輪郭を単純化
+        let approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
+
+        // 頂点が4つである場合（長方形を探す）
+        if (approx.rows === 4) {
+          let rect = cv.boundingRect(approx);
+
+          // 縦横比を計算
+          let aspectRatio = rect.height / rect.width;
+          if (Math.abs(aspectRatio - targetAspectRatio) < tolerance) {
+            bestContour = approx;
+            break; // 最初に見つかった適切な輪郭を使用
+          }
         }
+
+        approx.delete();
       }
 
       if (bestContour) {
         // 赤線で輪郭を表示
         let contoursColor = new cv.Scalar(255, 0, 0, 255);
-        cv.drawContours(src, contours, -1, contoursColor, 2);
+        cv.drawContours(src, new cv.MatVector([bestContour]), -1, contoursColor, 2);
       }
 
       // 結果をCanvasに描画
@@ -176,35 +162,39 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大密度の輪郭を選択
-      let maxDensity = 0;
       let bestContour = null;
+      const targetAspectRatio = 88 / 63; // カードの縦横比（約1.4）
+      const tolerance = 0.1;
 
       for (let i = 0; i < contours.size(); ++i) {
         let contour = contours.get(i);
-        let density = calculateEdgeDensity(edges, contour);
 
-        if (density > maxDensity && density > 0.1) { // 0.1は閾値の例
-          maxDensity = density;
-          bestContour = contour;
+        let approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
+
+        if (approx.rows === 4) {
+          let rect = cv.boundingRect(approx);
+          let aspectRatio = rect.height / rect.width;
+          if (Math.abs(aspectRatio - targetAspectRatio) < tolerance) {
+            bestContour = approx;
+            break;
+          }
         }
+
+        approx.delete();
       }
 
       if (bestContour) {
-        // トリミング用の領域を抽出
         let rect = cv.boundingRect(bestContour);
         let trimmed = src.roi(rect);
 
-        // 結果を別のキャンバスに描画
         trimmedCanvas.width = rect.width;
         trimmedCanvas.height = rect.height;
         cv.imshow(trimmedCanvas, trimmed);
 
-        // メモリ解放
         trimmed.delete();
       }
 
-      // メモリ解放
       src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
     });
