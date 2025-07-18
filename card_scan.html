@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出と赤線描画</title>
+  <title>リアルタイムカード枠検出と赤線描画（背面カメラ）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
     video, canvas {
@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出と赤線描画</h1>
+  <h1>リアルタイムカード枠検出と赤線描画（背面カメラ）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline width="640" height="480"></video>
   <canvas id="canvasOutput" width="640" height="480"></canvas>
@@ -35,16 +35,21 @@
     }
 
     function startCamera() {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          video.srcObject = stream;
-          video.play();
-          streaming = true;
-          processVideo();
-        })
-        .catch(err => {
-          console.error("カメラの起動に失敗しました: ", err);
-        });
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment" // 背面カメラを指定
+        }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+        video.play();
+        streaming = true;
+        processVideo();
+      })
+      .catch(err => {
+        console.error("カメラの起動に失敗しました: ", err);
+        alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
+      });
     }
 
     function processVideo() {
