@@ -61,70 +61,70 @@
     }
 
     async function processVideo() {
-      if (!streaming) return;
+  if (!streaming) return;
 
-      // ビデオフレームをCanvasに描画
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // ビデオフレームをCanvasに描画
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // OpenCVで画像処理
-      let src = cv.imread(canvas);
-      let gray = new cv.Mat();
-      let blurred = new cv.Mat();
-      let edges = new cv.Mat();
+  // OpenCVで画像処理
+  let src = cv.imread(canvas);
+  let gray = new cv.Mat();
+  let blurred = new cv.Mat();
+  let edges = new cv.Mat();
 
-      // グレースケール変換
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+  // グレースケール変換
+  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
-      // ぼかし処理
-      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+  // ぼかし処理
+  cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-      // エッジ検出
-      cv.Canny(blurred, edges, 50, 150);
+  // エッジ検出
+  cv.Canny(blurred, edges, 50, 150);
 
-      // 輪郭検出
-      let contours = new cv.MatVector();
-      let hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+  // 輪郭検出
+  let contours = new cv.MatVector();
+  let hierarchy = new cv.Mat();
+  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大面積の輪郭を探す
-      let maxArea = 0;
-      let maxContour = null;
-      for (let i = 0; i < contours.size(); ++i) {
-        let cnt = contours.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = cnt;
-        }
-      }
-
-      if (maxContour) {
-        // 最小回転矩形を計算し、ROIを取得
-        const boundingBox = cv.boundingRect(maxContour);
-        const roi = src.roi(boundingBox);
-
-        // Tesseract.jsでOCRを実行
-        const text = await Tesseract.recognize(roi.data, 'eng', {
-          logger: info => console.log(info) // ログを表示（デバッグ用）
-        }).then(result => result.data.text);
-
-        // 認識文字列を表示
-        document.getElementById('recognizedText').innerText = text.trim();
-
-        // メモリ解放
-        roi.delete();
-      }
-
-      // 結果をCanvasに描画
-      cv.imshow('canvasOutput', src);
-
-      // メモリ解放
-      src.delete(); gray.delete(); blurred.delete(); edges.delete();
-      contours.delete(); hierarchy.delete();
-
-      // 次のフレームを処理
-      if (streaming) requestAnimationFrame(processVideo);
+  // 最大面積の輪郭を探す
+  let maxArea = 0;
+  let maxContour = null;
+  for (let i = 0; i < contours.size(); ++i) {
+    let cnt = contours.get(i);
+    let area = cv.contourArea(cnt);
+    if (area > maxArea) {
+      maxArea = area;
+      maxContour = cnt;
     }
+  }
+
+  if (maxContour) {
+    // 最小回転矩形を計算し、ROIを取得
+    const boundingBox = cv.boundingRect(maxContour);
+    const roi = src.roi(boundingBox);
+
+    // OCR処理を非同期で実行
+    Tesseract.recognize(roi.data, 'eng', {
+      logger: info => console.log(info) // ログを表示（デバッグ用）
+    }).then(result => {
+      // 認識文字列を表示
+      document.getElementById('recognizedText').innerText = result.data.text.trim();
+    }).catch(err => console.error("OCRエラー:", err));
+
+    // メモリ解放
+    roi.delete();
+  }
+
+  // 結果をCanvasに描画
+  cv.imshow('canvasOutput', src);
+
+  // メモリ解放
+  src.delete(); gray.delete(); blurred.delete(); edges.delete();
+  contours.delete(); hierarchy.delete();
+
+  // 次のフレームを処理
+  if (streaming) requestAnimationFrame(processVideo);
+}
   </script>
 </body>
 </html>
