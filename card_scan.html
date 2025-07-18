@@ -2,152 +2,94 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>📸 カード枠検出＋角度補正</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- ✅ ローカルの OpenCV.js を読み込み -->
-  <script defer src="libs/opencv.js"></script>
+  <title>カード枠検出</title>
+  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 16px;
-      background: #f5f5f5;
-    }
     canvas {
-      border: 1px solid #ccc;
-      margin-top: 12px;
-      max-width: 100%;
-    }
-    #loading {
-      margin-top: 8px;
-      font-size: 14px;
-      color: #666;
-    }
-    #progress-bar {
-      width: 100%;
-      height: 6px;
-      background: #eee;
-      overflow: hidden;
-      position: relative;
-      margin-top: 8px;
-    }
-    #progress-fill {
-      width: 30%;
-      height: 100%;
-      background: #3b82f6;
-      animation: loadAnim 1.2s infinite;
-    }
-    @keyframes loadAnim {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(300%); }
+      border: 1px solid black;
     }
   </style>
 </head>
 <body>
-  <h2>📸 カード枠検出＋角度補正</h2>
-
-  <input type="file" accept="image/*" onchange="processCardImage(event)" />
-  <div id="loading">🔁 OpenCV読み込み確認中…</div>
-  <div id="progress-bar"><div id="progress-fill"></div></div>
-
-  <canvas id="inputCanvas"></canvas>
-  <canvas id="croppedCanvas"></canvas>
+  <h1>カード枠検出</h1>
+  <input type="file" id="fileInput" accept="image/*">
+  <br>
+  <canvas id="canvasOutput"></canvas>
 
   <script>
-    const inputCanvas = document.getElementById("inputCanvas");
-    const croppedCanvas = document.getElementById("croppedCanvas");
-    const loading = document.getElementById("loading");
-    document.getElementById("progress-bar").style.display = "block";
-
-    // ✅ OpenCV.js 読み込み完了後にメッセージ更新
-    cv['onRuntimeInitialized'] = () => {
-      document.getElementById("progress-bar").style.display = "none";
-      document.getElementById("loading").textContent = "✅ OpenCV読み込み完了！カード画像を選択してね";
-    };
-
-    function processCardImage(event) {
-      const file = event.target.files[0];
-      if (!file || typeof cv === "undefined") {
-        alert("OpenCV.jsが読み込まれていません。もう少し待ってみてください");
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => detectAndCropCard(img);
-      img.src = URL.createObjectURL(file);
+    function onOpenCvReady() {
+      cv['onRuntimeInitialized'] = () => {
+        console.log("✅ OpenCV.js initialized");
+        document.getElementById('fileInput').addEventListener('change', handleImageUpload);
+      };
     }
 
-    function detectAndCropCard(img) {
-      inputCanvas.width = img.width;
-      inputCanvas.height = img.height;
-      const ctx = inputCanvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-      const src = cv.imread(inputCanvas);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.getElementById('canvasOutput');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          detectCardFrame(canvas);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function detectCardFrame(canvas) {
+      const src = cv.imread(canvas);
+      const dst = new cv.Mat();
       const gray = new cv.Mat();
       const blurred = new cv.Mat();
       const edges = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-      cv.Canny(blurred, edges, 50, 150);
+
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+      cv.Canny(blurred, edges, 75, 200);
 
       const contours = new cv.MatVector();
       const hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      let bestContour = null;
-      let bestRect = null;
       let maxArea = 0;
-
-      // 🧠 精度補正：大きな長方形だけ抽出
-      for (let i = 0; i < contours.size(); i++) {
+      let maxContour = null;
+      for (let i = 0; i < contours.size(); ++i) {
         const cnt = contours.get(i);
         const area = cv.contourArea(cnt);
-        if (area < 50000) continue; // 小さい領域は除外
-
-        const rect = cv.minAreaRect(cnt);
-        const w = rect.size.width;
-        const h = rect.size.height;
-        const aspect = Math.max(w, h) / Math.min(w, h);
-        if (aspect > 3.5 || aspect < 1.0) continue; // 極端な形状は除外
-
         if (area > maxArea) {
           maxArea = area;
-          bestContour = cnt;
-          bestRect = rect;
+          maxContour = cnt;
         }
       }
 
-      if (!bestRect) {
-        loading.textContent = "❌ 有効なカード枠が見つかりませんでした";
-        return;
+      if (maxContour) {
+        const rect = cv.minAreaRect(maxContour);
+        const angle = rect.angle;
+        console.log("🔄 検出された角度:", angle);
+
+        const rotated = new cv.Mat();
+        const center = new cv.Point(src.cols / 2, src.rows / 2);
+        const M = cv.getRotationMatrix2D(center, angle, 1);
+        cv.warpAffine(src, rotated, M, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+
+        cv.imshow('canvasOutput', rotated);
+        rotated.delete();
+        M.delete();
+      } else {
+        console.warn("❌ 枠が検出できませんでした");
       }
 
-      const angle = bestRect.angle;
-      const center = bestRect.center;
-      const rotMat = cv.getRotationMatrix2D(center, angle, 1);
-      const rotated = new cv.Mat();
-      cv.warpAffine(src, rotated, rotMat, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR);
-
-      // ✂ 枠領域を正確に切り出し
-      const box = cv.RotatedRect.points(bestRect);
-      const xs = box.map(pt => pt.x);
-      const ys = box.map(pt => pt.y);
-      const minX = Math.max(Math.floor(Math.min(...xs)), 0);
-      const maxX = Math.min(Math.floor(Math.max(...xs)), rotated.cols);
-      const minY = Math.max(Math.floor(Math.min(...ys)), 0);
-      const maxY = Math.min(Math.floor(Math.max(...ys)), rotated.rows);
-      const rect = new cv.Rect(minX, minY, maxX - minX, maxY - minY);
-
-      const cropped = rotated.roi(rect);
-      croppedCanvas.width = rect.width;
-      croppedCanvas.height = rect.height;
-      cv.imshow(croppedCanvas, cropped);
-
-      loading.textContent = `✅ 枠検出・整列完了（角度 ${Math.round(angle)}°／サイズ ${rect.width}×${rect.height}）`;
-
-      // 後処理
-      src.delete(); gray.delete(); blurred.delete(); edges.delete();
-      contours.delete(); hierarchy.delete(); rotated.delete(); cropped.delete();
+      src.delete(); dst.delete(); gray.delete(); blurred.delete(); edges.delete();
+      contours.delete(); hierarchy.delete();
     }
   </script>
 </body>
