@@ -21,10 +21,7 @@
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
 
-      // 初期化開始
       statusEl.innerText = "🔄 OpenCV.js 初期化中...";
-
-      // OpenCV初期化完了時
       cv['onRuntimeInitialized'] = () => {
         statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
         document.getElementById('fileInput').addEventListener('change', handleImageUpload);
@@ -40,36 +37,45 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.getElementById('canvasOutput');
-          
-          // 元画像のサイズにCanvasを設定
           canvas.width = img.width;
           canvas.height = img.height;
 
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
 
-          detectCardFrame(canvas, img.width, img.height);
+          detectCardFrame(canvas);
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    function detectCardFrame(canvas, originalWidth, originalHeight) {
+    function detectCardFrame(canvas) {
       const src = cv.imread(canvas);
       const gray = new cv.Mat();
+      const equalized = new cv.Mat();
       const blurred = new cv.Mat();
       const edges = new cv.Mat();
 
-      // グレースケール変換とエッジ検出
+      // グレースケール変換
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-      cv.Canny(blurred, edges, 75, 200);
 
-      // 輪郭を検出
+      // ヒストグラム均等化
+      cv.equalizeHist(gray, equalized);
+
+      // ぼかし処理
+      cv.GaussianBlur(equalized, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+
+      // エッジ検出 (閾値を調整)
+      cv.Canny(blurred, edges, 50, 150);
+
+      // デバッグ表示: エッジ検出結果をCanvasに描画
+      cv.imshow('canvasOutput', edges);
+
+      // 輪郭を検出 (モードを変更)
       const contours = new cv.MatVector();
       const hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      cv.findContours(edges, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
 
       let maxArea = 0;
       let maxContour = null;
@@ -117,7 +123,7 @@
       }
 
       // メモリ解放
-      src.delete(); gray.delete(); blurred.delete(); edges.delete();
+      src.delete(); gray.delete(); equalized.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
     }
   </script>
