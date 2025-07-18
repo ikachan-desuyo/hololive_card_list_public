@@ -12,17 +12,24 @@
 </head>
 <body>
   <h1>カード枠検出</h1>
+  <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <input type="file" id="fileInput" accept="image/*">
   <br>
   <canvas id="canvasOutput"></canvas>
 
   <script>
     function onOpenCvReady() {
-      cv['onRuntimeInitialized'] = () => {
-        console.log("✅ OpenCV.js initialized");
-        document.getElementById('fileInput').addEventListener('change', handleImageUpload);
-      };
-    }
+  const statusEl = document.getElementById("opencv-status");
+
+  // 初期化開始
+  statusEl.innerText = "🔄 OpenCV.js 初期化中...";
+
+  // OpenCV初期化完了時
+  cv['onRuntimeInitialized'] = () => {
+    statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
+    document.getElementById('fileInput').addEventListener('change', handleImageUpload);
+  };
+}
 
     function handleImageUpload(event) {
       const file = event.target.files[0];
