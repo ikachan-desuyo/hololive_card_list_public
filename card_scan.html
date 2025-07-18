@@ -72,6 +72,31 @@
       });
     }
 
+    function calculateEdgeDensity(edges, contour) {
+      // 輪郭のバウンディングボックスを取得
+      let rect = cv.boundingRect(contour);
+      let roi = edges.roi(rect);
+
+      // エッジピクセルの数をカウント
+      let edgeCount = 0;
+      for (let y = 0; y < roi.rows; y++) {
+        for (let x = 0; x < roi.cols; x++) {
+          if (roi.ucharPtr(y, x)[0] > 0) {
+            edgeCount++;
+          }
+        }
+      }
+
+      // エッジ密度を計算
+      let area = rect.width * rect.height;
+      let density = edgeCount / area;
+
+      // メモリ解放
+      roi.delete();
+
+      return density;
+    }
+
     function processVideo() {
       if (!streaming) return;
 
@@ -98,19 +123,21 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大面積の輪郭を探す
-      let maxArea = 0;
-      let maxContour = null;
+      // 最大密度の輪郭を選択
+      let maxDensity = 0;
+      let bestContour = null;
+
       for (let i = 0; i < contours.size(); ++i) {
-        let cnt = contours.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = cnt;
+        let contour = contours.get(i);
+        let density = calculateEdgeDensity(edges, contour);
+
+        if (density > maxDensity && density > 0.1) { // 0.1は閾値の例
+          maxDensity = density;
+          bestContour = contour;
         }
       }
 
-      if (maxContour) {
+      if (bestContour) {
         // 赤線で輪郭を表示
         let contoursColor = new cv.Scalar(255, 0, 0, 255);
         cv.drawContours(src, contours, -1, contoursColor, 2);
@@ -149,21 +176,23 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大面積の輪郭を探す
-      let maxArea = 0;
-      let maxContour = null;
+      // 最大密度の輪郭を選択
+      let maxDensity = 0;
+      let bestContour = null;
+
       for (let i = 0; i < contours.size(); ++i) {
-        let cnt = contours.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = cnt;
+        let contour = contours.get(i);
+        let density = calculateEdgeDensity(edges, contour);
+
+        if (density > maxDensity && density > 0.1) { // 0.1は閾値の例
+          maxDensity = density;
+          bestContour = contour;
         }
       }
 
-      if (maxContour) {
+      if (bestContour) {
         // トリミング用の領域を抽出
-        let rect = cv.boundingRect(maxContour);
+        let rect = cv.boundingRect(bestContour);
         let trimmed = src.roi(rect);
 
         // 結果を別のキャンバスに描画
