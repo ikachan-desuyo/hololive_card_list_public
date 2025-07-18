@@ -2,21 +2,29 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出と赤線描画（背面カメラ）</title>
+  <title>リアルタイムOCRとカード枠検出</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
   <style>
     video, canvas {
       border: 1px solid black;
       display: block;
       margin: 10px auto;
     }
+    #ocrResult {
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出と赤線描画（背面カメラ）</h1>
+  <h1>リアルタイムOCRとカード枠検出</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline width="640" height="480"></video>
   <canvas id="canvasOutput" width="640" height="480"></canvas>
+  <div id="ocrResult">認識文字列: <span id="recognizedText">-</span></div>
 
   <script>
     let video = document.getElementById('video');
@@ -52,7 +60,7 @@
       });
     }
 
-    function processVideo() {
+    async function processVideo() {
       if (!streaming) return;
 
       // ビデオフレームをCanvasに描画
@@ -91,9 +99,20 @@
       }
 
       if (maxContour) {
-        // 赤線で輪郭を描画
-        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-        cv.drawContours(src, contours, -1, contoursColor, 2);
+        // 最小回転矩形を計算し、ROIを取得
+        const boundingBox = cv.boundingRect(maxContour);
+        const roi = src.roi(boundingBox);
+
+        // Tesseract.jsでOCRを実行
+        const text = await Tesseract.recognize(roi.data, 'eng', {
+          logger: info => console.log(info) // ログを表示（デバッグ用）
+        }).then(result => result.data.text);
+
+        // 認識文字列を表示
+        document.getElementById('recognizedText').innerText = text.trim();
+
+        // メモリ解放
+        roi.delete();
       }
 
       // 結果をCanvasに描画
