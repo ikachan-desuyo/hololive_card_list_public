@@ -19,17 +19,17 @@
 
   <script>
     function onOpenCvReady() {
-  const statusEl = document.getElementById("opencv-status");
+      const statusEl = document.getElementById("opencv-status");
 
-  // 初期化開始
-  statusEl.innerText = "🔄 OpenCV.js 初期化中...";
+      // 初期化開始
+      statusEl.innerText = "🔄 OpenCV.js 初期化中...";
 
-  // OpenCV初期化完了時
-  cv['onRuntimeInitialized'] = () => {
-    statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
-    document.getElementById('fileInput').addEventListener('change', handleImageUpload);
-  };
-}
+      // OpenCV初期化完了時
+      cv['onRuntimeInitialized'] = () => {
+        statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
+        document.getElementById('fileInput').addEventListener('change', handleImageUpload);
+      };
+    }
 
     function handleImageUpload(event) {
       const file = event.target.files[0];
@@ -54,21 +54,24 @@
 
     function detectCardFrame(canvas) {
       const src = cv.imread(canvas);
-      const dst = new cv.Mat();
       const gray = new cv.Mat();
       const blurred = new cv.Mat();
       const edges = new cv.Mat();
 
+      // グレースケール変換とエッジ検出
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
       cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
       cv.Canny(blurred, edges, 75, 200);
 
+      // 輪郭を検出
       const contours = new cv.MatVector();
       const hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
       let maxArea = 0;
       let maxContour = null;
+
+      // 最大面積の輪郭を探す
       for (let i = 0; i < contours.size(); ++i) {
         const cnt = contours.get(i);
         const area = cv.contourArea(cnt);
@@ -79,23 +82,34 @@
       }
 
       if (maxContour) {
+        // 最小回転矩形を計算
         const rect = cv.minAreaRect(maxContour);
         const angle = rect.angle;
         console.log("🔄 検出された角度:", angle);
 
+        // 画像の回転
         const rotated = new cv.Mat();
         const center = new cv.Point(src.cols / 2, src.rows / 2);
         const M = cv.getRotationMatrix2D(center, angle, 1);
         cv.warpAffine(src, rotated, M, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
 
-        cv.imshow('canvasOutput', rotated);
+        // トリミング処理
+        const boundingBox = cv.boundingRect(maxContour);
+        const cropped = rotated.roi(boundingBox);
+
+        // 結果を表示
+        cv.imshow('canvasOutput', cropped);
+
+        // メモリ解放
+        cropped.delete();
         rotated.delete();
         M.delete();
       } else {
         console.warn("❌ 枠が検出できませんでした");
       }
 
-      src.delete(); dst.delete(); gray.delete(); blurred.delete(); edges.delete();
+      // メモリ解放
+      src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
     }
   </script>
