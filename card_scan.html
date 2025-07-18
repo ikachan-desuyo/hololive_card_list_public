@@ -40,19 +40,22 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.getElementById('canvasOutput');
+          
+          // 元画像のサイズにCanvasを設定
           canvas.width = img.width;
           canvas.height = img.height;
+
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
 
-          detectCardFrame(canvas);
+          detectCardFrame(canvas, img.width, img.height);
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    function detectCardFrame(canvas) {
+    function detectCardFrame(canvas, originalWidth, originalHeight) {
       const src = cv.imread(canvas);
       const gray = new cv.Mat();
       const blurred = new cv.Mat();
@@ -97,7 +100,12 @@
         const boundingBox = cv.boundingRect(maxContour);
         const cropped = rotated.roi(boundingBox);
 
-        // 結果を表示
+        // トリミング後のCanvasサイズを調整
+        const canvasOutput = document.getElementById('canvasOutput');
+        canvasOutput.width = boundingBox.width;
+        canvasOutput.height = boundingBox.height;
+
+        // 結果をCanvasに描画
         cv.imshow('canvasOutput', cropped);
 
         // メモリ解放
