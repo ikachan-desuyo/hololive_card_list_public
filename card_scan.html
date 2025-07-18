@@ -50,9 +50,9 @@
 
         // 動画のメタデータがロードされた後にキャンバスサイズを調整
         video.addEventListener('loadedmetadata', () => {
-          // キャンバスの幅と高さを動画に合わせて設定
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+          // キャンバスの幅と高さを動画の2倍に設定
+          canvas.width = video.videoWidth * 2;
+          canvas.height = video.videoHeight * 2;
 
           // 処理開始
           processVideo();
