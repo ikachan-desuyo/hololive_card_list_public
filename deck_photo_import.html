@@ -17,7 +17,8 @@
 <body>
   <h2>📸 OCR カードスキャン</h2>
   <button onclick="history.back()">← 前のページへ</button>
-  <input type="file" accept="image/*" capture="environment" onchange="scanImageOCR(event)" />
+  <!-- ✅ 写真ライブラリから選択できるように変更 -->
+  <input type="file" accept="image/*" onchange="scanImageOCR(event)" />
   <div id="loading"></div>
   <div id="result" class="preview"></div>
 
