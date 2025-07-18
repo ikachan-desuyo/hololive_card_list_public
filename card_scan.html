@@ -39,12 +39,15 @@
         }
       })
       .then(stream => {
-        let video = document.createElement('video');
+        let video = document.createElement('video'); // 動的に video 要素を生成
         video.srcObject = stream;
         video.play();
         streaming = true;
 
         video.addEventListener('loadedmetadata', () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
           processVideo(video);
         });
       })
