@@ -2,88 +2,83 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>カード枠検出</title>
+  <title>リアルタイムカード枠検出</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
-    canvas {
+    video, canvas {
       border: 1px solid black;
+      display: block;
+      margin: 10px auto;
     }
   </style>
 </head>
 <body>
-  <h1>カード枠検出</h1>
+  <h1>リアルタイムカード枠検出</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
-  <input type="file" id="fileInput" accept="image/*">
-  <br>
-  <canvas id="canvasOutput"></canvas>
+  <video id="video" autoplay playsinline width="640" height="480"></video>
+  <canvas id="canvasOutput" width="640" height="480"></canvas>
 
   <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvasOutput');
+    let ctx = canvas.getContext('2d');
+    let streaming = false;
+
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
-
       statusEl.innerText = "🔄 OpenCV.js 初期化中...";
+
       cv['onRuntimeInitialized'] = () => {
         statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
-        document.getElementById('fileInput').addEventListener('change', handleImageUpload);
+        startCamera();
       };
     }
 
-    function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.getElementById('canvasOutput');
-          canvas.width = img.width;
-          canvas.height = img.height;
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-
-          detectCardFrame(canvas);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+          streaming = true;
+          processVideo();
+        })
+        .catch(err => {
+          console.error("カメラの起動に失敗しました: ", err);
+        });
     }
 
-    function detectCardFrame(canvas) {
-      const src = cv.imread(canvas);
-      const gray = new cv.Mat();
-      const equalized = new cv.Mat();
-      const blurred = new cv.Mat();
-      const edges = new cv.Mat();
+    function processVideo() {
+      if (!streaming) return;
+
+      // ビデオフレームをCanvasに描画
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // OpenCVで画像処理
+      let src = cv.imread(canvas);
+      let gray = new cv.Mat();
+      let blurred = new cv.Mat();
+      let edges = new cv.Mat();
 
       // グレースケール変換
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
-      // ヒストグラム均等化
-      cv.equalizeHist(gray, equalized);
-
       // ぼかし処理
-      cv.GaussianBlur(equalized, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-      // エッジ検出 (閾値を調整)
+      // エッジ検出
       cv.Canny(blurred, edges, 50, 150);
 
-      // デバッグ表示: エッジ検出結果をCanvasに描画
-      cv.imshow('canvasOutput', edges);
-
-      // 輪郭を検出 (モードを変更)
-      const contours = new cv.MatVector();
-      const hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
-
-      let maxArea = 0;
-      let maxContour = null;
+      // 輪郭検出
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
       // 最大面積の輪郭を探す
+      let maxArea = 0;
+      let maxContour = null;
       for (let i = 0; i < contours.size(); ++i) {
-        const cnt = contours.get(i);
-        const area = cv.contourArea(cnt);
+        let cnt = contours.get(i);
+        let area = cv.contourArea(cnt);
         if (area > maxArea) {
           maxArea = area;
           maxContour = cnt;
@@ -91,40 +86,24 @@
       }
 
       if (maxContour) {
-        // 最小回転矩形を計算
-        const rect = cv.minAreaRect(maxContour);
-        const angle = rect.angle;
-        console.log("🔄 検出された角度:", angle);
+        // 輪郭を描画
+        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
+        cv.drawContours(src, contours, -1, contoursColor, 2);
 
-        // 画像の回転
-        const rotated = new cv.Mat();
-        const center = new cv.Point(src.cols / 2, src.rows / 2);
-        const M = cv.getRotationMatrix2D(center, angle, 1);
-        cv.warpAffine(src, rotated, M, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-
-        // トリミング処理
-        const boundingBox = cv.boundingRect(maxContour);
-        const cropped = rotated.roi(boundingBox);
-
-        // トリミング後のCanvasサイズを調整
-        const canvasOutput = document.getElementById('canvasOutput');
-        canvasOutput.width = boundingBox.width;
-        canvasOutput.height = boundingBox.height;
-
-        // 結果をCanvasに描画
-        cv.imshow('canvasOutput', cropped);
-
-        // メモリ解放
-        cropped.delete();
-        rotated.delete();
-        M.delete();
-      } else {
-        console.warn("❌ 枠が検出できませんでした");
+        // 認識成功時の処理
+        console.log("カードが認識されました！");
+        streaming = false; // カメラ処理を停止
       }
 
+      // 結果をCanvasに描画
+      cv.imshow('canvasOutput', src);
+
       // メモリ解放
-      src.delete(); gray.delete(); equalized.delete(); blurred.delete(); edges.delete();
+      src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
+
+      // 次のフレームを処理
+      if (streaming) requestAnimationFrame(processVideo);
     }
   </script>
 </body>
