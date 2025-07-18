@@ -5,7 +5,7 @@
   <title>リアルタイムカード枠検出と赤線描画（背面カメラ）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
-    video, canvas {
+    canvas {
       border: 1px solid black;
       display: block;
       margin: 10px auto;
@@ -15,11 +15,9 @@
 <body>
   <h1>リアルタイムカード枠検出と赤線描画（背面カメラ）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
-  <video id="video" autoplay playsinline width="640" height="480"></video>
   <canvas id="canvasOutput" width="640" height="480"></canvas>
 
   <script>
-    let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
     let ctx = canvas.getContext('2d');
     let streaming = false;
@@ -41,10 +39,14 @@
         }
       })
       .then(stream => {
+        let video = document.createElement('video');
         video.srcObject = stream;
         video.play();
         streaming = true;
-        processVideo();
+
+        video.addEventListener('loadedmetadata', () => {
+          processVideo(video);
+        });
       })
       .catch(err => {
         console.error("カメラの起動に失敗しました: ", err);
@@ -52,7 +54,7 @@
       });
     }
 
-    function processVideo() {
+    function processVideo(video) {
       if (!streaming) return;
 
       // ビデオフレームをCanvasに描画
@@ -104,7 +106,7 @@
       contours.delete(); hierarchy.delete();
 
       // 次のフレームを処理
-      if (streaming) requestAnimationFrame(processVideo);
+      if (streaming) requestAnimationFrame(() => processVideo(video));
     }
   </script>
 </body>
