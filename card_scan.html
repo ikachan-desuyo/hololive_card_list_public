@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出</title>
+  <title>リアルタイムカード枠検出と赤線描画</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
     video, canvas {
@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出</h1>
+  <h1>リアルタイムカード枠検出と赤線描画</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline width="640" height="480"></video>
   <canvas id="canvasOutput" width="640" height="480"></canvas>
@@ -86,13 +86,9 @@
       }
 
       if (maxContour) {
-        // 輪郭を描画
+        // 赤線で輪郭を描画
         let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
         cv.drawContours(src, contours, -1, contoursColor, 2);
-
-        // 認識成功時の処理
-        console.log("カードが認識されました！");
-        streaming = false; // カメラ処理を停止
       }
 
       // 結果をCanvasに描画
