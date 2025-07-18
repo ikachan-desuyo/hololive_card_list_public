@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>📸 OCR カードスキャン</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 16px; background: #f9f9f9; }
+    h2 { margin-bottom: 12px; }
+    .preview { margin-top: 16px; padding: 10px; background: #fff; box-shadow: 0 0 8px rgba(0,0,0,0.05); border: 1px solid #ccc; }
+    .preview img { max-width: 100%; margin-bottom: 10px; border-radius: 4px; }
+    .error { color: red; font-weight: bold; }
+    #loading { margin-top: 8px; font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+  <h2>📸 OCR カードスキャン</h2>
+  <button onclick="history.back()">← 前のページへ</button>
+  <input type="file" accept="image/*" capture="environment" onchange="scanImageOCR(event)" />
+  <div id="loading"></div>
+  <div id="result" class="preview"></div>
+
+  <script>
+    let cardData = {};
+
+    // ✅ JSON読み込み
+    fetch('json_file/card_data.json')
+      .then(res => res.json())
+      .then(data => {
+        cardData = data;
+        console.log("✅ card_data.json loaded");
+      })
+      .catch(err => {
+        console.error("❌ Failed to load card_data.json", err);
+        alert("card_data.json を読み込めませんでした");
+      });
+
+    async function scanImageOCR(event) {
+      const file = event.target.files[0];
+      if (!file || !cardData) return;
+
+      const loading = document.getElementById("loading");
+      const result = document.getElementById("result");
+      result.innerHTML = "";
+      loading.textContent = "🔍 OCRでカードIDを読み取り中…";
+
+      const imageURL = URL.createObjectURL(file);
+
+      try {
+        const { data: { text } } = await Tesseract.recognize(imageURL, 'eng', {
+          logger: m => console.log(m)
+        });
+
+        const detected = extractCardId(text);
+        loading.textContent = "";
+
+        if (!detected) {
+          result.innerHTML = `<p class="error">カードIDを検出できませんでした</p>`;
+          return;
+        }
+
+        const card = cardData[detected];
+        if (!card) {
+          result.innerHTML = `<p class="error">ID一致なし：<code>${detected}</code></p>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <img src="${card.image_url}" alt="${card.image_alt || card.name}" />
+          <h3>${card.name}</h3>
+          <p>🗂 <strong>${card.card_type}</strong></p>
+          ${card.product ? `<p>📦 ${card.product}</p>` : ""}
+          ${card.rarity ? `<p>🎴 レアリティ：${card.rarity}</p>` : ""}
+          ${card.color ? `<p>🌈 カラー：${card.color}</p>` : ""}
+          ${card.hp ? `<p>❤️ HP：${card.hp}</p>` : ""}
+          ${card.bloom_level ? `<p>🌸 ブルーム：${card.bloom_level}</p>` : ""}
+          ${card.baton_touch ? `<p>🪄 バトンタッチ：${card.baton_touch}</p>` : ""}
+          ${card.tags ? `<p>🏷 タグ：${card.tags.join(", ")}</p>` : ""}
+          <h4>🧠 スキル</h4>
+          <ul>
+            ${(card.skills || []).map(skill => `
+              <li>
+                <strong>${skill.type}</strong>：
+                ${skill.name ? `<em>${skill.name}</em> - ` : ""}
+                ${skill.description || ""}
+              </li>
+            `).join("")}
+          </ul>
+        `;
+      } catch (err) {
+        loading.textContent = "";
+        result.innerHTML = `<p class="error">OCR処理に失敗しました</p>`;
+        console.error(err);
+      }
+    }
+
+    function extractCardId(text) {
+      const lines = text.split(/\r?\n/).map(line => line.trim());
+      const pattern = /h[A-Z]{2,}[0-9]{3}-[0-9]{3}[_A-Z]*[A-Z]/;
+      for (const line of lines) {
+        const match = line.match(pattern);
+        if (match) return match[0];
+      }
+      return null;
+    }
+  </script>
+</body>
+</html>

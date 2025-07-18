@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>📸 カードスキャン</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      background: #f9f9f9;
+    }
+    h2 { margin-bottom: 12px; }
+    .preview {
+      margin-top: 16px;
+      padding: 10px;
+      background: #fff;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      border: 1px solid #ccc;
+    }
+    .preview img {
+      max-width: 100%;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>📸 カードスキャン</h2>
+  <button onclick="history.back()">← 前のページへ</button>
+
+  <!-- カード画像スキャン -->
+  <input type="file" accept="image/*" capture="environment" onchange="scanCard(event)" />
+  <div id="result" class="preview"></div>
+
+  <script>
+    let cardData = {};
+
+    // ✅ ページ読み込み時にJSONをフェッチ
+    fetch('json_file/card_data.json')
+      .then(response => response.json())
+      .then(data => {
+        cardData = data;
+        console.log("✅ card_data.json 読み込み完了");
+      })
+      .catch(error => {
+        console.error("❌ JSON読み込み失敗", error);
+        alert("card_data.json が読み込めませんでした");
+      });
+
+    function scanCard(event) {
+      const file = event.target.files[0];
+      if (!file || !cardData) return;
+
+      const result = document.getElementById("result");
+      result.innerHTML = "🔍 読み取り中…";
+
+      const rawId = file.name.replace(/\.[^.]+$/, "");
+      const card = cardData[rawId];
+
+      if (!card) {
+        result.innerHTML = `<p class="error">カードが見つかりませんでした：ID <code>${rawId}</code></p>`;
+        return;
+      }
+
+      result.innerHTML = `
+        <img src="${card.image_url}" alt="${card.image_alt || card.name}" />
+        <h3>${card.name}</h3>
+        <p>🗂 <strong>${card.card_type}</strong></p>
+        ${card.product ? `<p>📦 ${card.product}</p>` : ""}
+        ${card.rarity ? `<p>🎴 レアリティ：${card.rarity}</p>` : ""}
+        ${card.color ? `<p>🌈 カラー：${card.color}</p>` : ""}
+        ${card.hp ? `<p>❤️ HP：${card.hp}</p>` : ""}
+        ${card.bloom_level ? `<p>🌸 ブルーム：${card.bloom_level}</p>` : ""}
+        ${card.baton_touch ? `<p>🪄 バトンタッチ：${card.baton_touch}</p>` : ""}
+        ${card.tags ? `<p>🏷 タグ：${card.tags.join(", ")}</p>` : ""}
+        <h4>🧠 スキル</h4>
+        <ul>
+          ${(card.skills || []).map(skill => `
+            <li>
+              <strong>${skill.type}</strong>：
+              ${skill.name ? `<em>${skill.name}</em> - ` : ""}
+              ${skill.description || ""}
+            </li>
+          `).join("")}
+        </ul>
+      `;
+    }
+  </script>
+</body>
+</html>
