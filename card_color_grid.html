@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>🎨 カラーグリッド可視化</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; padding: 16px; background: #f1f1f1; }
+    canvas { margin: 12px 0; box-shadow: 0 0 8px rgba(0,0,0,0.1); border: 1px solid #ccc; }
+    #gridCanvas { image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <h2>🎨 カード画像の色構成グリッド表示</h2>
+  <input type="file" accept="image/*" onchange="handleImage(event)">
+  <div>
+    <canvas id="imageCanvas"></canvas>
+    <canvas id="gridCanvas"></canvas>
+  </div>
+
+  <script>
+    const step = 5; // 🔹 グリッドサイズ（px）
+    const imageCanvas = document.getElementById("imageCanvas");
+    const gridCanvas = document.getElementById("gridCanvas");
+
+    function handleImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.onload = () => drawImageAndGrid(img);
+      img.src = URL.createObjectURL(file);
+    }
+
+    function drawImageAndGrid(img) {
+      // 📸 元画像表示
+      imageCanvas.width = img.width;
+      imageCanvas.height = img.height;
+      const ctx = imageCanvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      // 🌈 グリッド処理
+      gridCanvas.width = img.width;
+      gridCanvas.height = img.height;
+      const gridCtx = gridCanvas.getContext("2d");
+
+      for (let y = 0; y < img.height; y += step) {
+        for (let x = 0; x < img.width; x += step) {
+          const data = ctx.getImageData(x, y, step, step).data;
+          let r=0, g=0, b=0, count = 0;
+          for (let i=0; i<data.length; i+=4) {
+            r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+          }
+          r = Math.round(r / count);
+          g = Math.round(g / count);
+          b = Math.round(b / count);
+
+          gridCtx.fillStyle = `rgb(${r},${g},${b})`;
+          gridCtx.fillRect(x, y, step, step);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

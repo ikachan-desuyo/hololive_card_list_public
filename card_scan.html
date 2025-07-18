@@ -1,94 +1,113 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>📸 カードスキャン</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>📸 カード枠補正トリミング</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://docs.opencv.org/4.x/opencv.js" type="text/javascript"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 16px;
-      background: #f9f9f9;
-    }
-    h2 { margin-bottom: 12px; }
-    .preview {
-      margin-top: 16px;
-      padding: 10px;
-      background: #fff;
-      box-shadow: 0 0 8px rgba(0,0,0,0.05);
-      border: 1px solid #ccc;
-    }
-    .preview img {
-      max-width: 100%;
-      margin-bottom: 10px;
-      border-radius: 4px;
-    }
-    .error {
-      color: red;
-      font-weight: bold;
-    }
+    body { font-family: sans-serif; padding: 16px; background: #f3f3f3; }
+    canvas { border: 1px solid #ccc; margin-top: 12px; max-width: 100%; }
+    #loading { color: #666; font-size: 14px; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <h2>📸 カードスキャン</h2>
-  <button onclick="history.back()">← 前のページへ</button>
-
-  <!-- カード画像スキャン -->
-  <input type="file" accept="image/*" capture="environment" onchange="scanCard(event)" />
-  <div id="result" class="preview"></div>
+  <h2>📸 カード枠検出＋角度補正（精度フィルタ付き）</h2>
+  <input type="file" accept="image/*" onchange="processCardImage(event)" />
+  <div id="loading">🔁 OpenCV読み込み確認中…</div>
+  <canvas id="inputCanvas"></canvas>
+  <canvas id="croppedCanvas"></canvas>
 
   <script>
-    let cardData = {};
+    const inputCanvas = document.getElementById("inputCanvas");
+    const croppedCanvas = document.getElementById("croppedCanvas");
+    const loading = document.getElementById("loading");
 
-    // ✅ ページ読み込み時にJSONをフェッチ
-    fetch('json_file/card_data.json')
-      .then(response => response.json())
-      .then(data => {
-        cardData = data;
-        console.log("✅ card_data.json 読み込み完了");
-      })
-      .catch(error => {
-        console.error("❌ JSON読み込み失敗", error);
-        alert("card_data.json が読み込めませんでした");
-      });
-
-    function scanCard(event) {
+    async function processCardImage(event) {
       const file = event.target.files[0];
-      if (!file || !cardData) return;
-
-      const result = document.getElementById("result");
-      result.innerHTML = "🔍 読み取り中…";
-
-      const rawId = file.name.replace(/\.[^.]+$/, "");
-      const card = cardData[rawId];
-
-      if (!card) {
-        result.innerHTML = `<p class="error">カードが見つかりませんでした：ID <code>${rawId}</code></p>`;
+      if (!file || typeof cv === "undefined") {
+        alert("OpenCV.jsがまだ読み込まれていません。少し待ってからもう一度お試しください。");
         return;
       }
 
-      result.innerHTML = `
-        <img src="${card.image_url}" alt="${card.image_alt || card.name}" />
-        <h3>${card.name}</h3>
-        <p>🗂 <strong>${card.card_type}</strong></p>
-        ${card.product ? `<p>📦 ${card.product}</p>` : ""}
-        ${card.rarity ? `<p>🎴 レアリティ：${card.rarity}</p>` : ""}
-        ${card.color ? `<p>🌈 カラー：${card.color}</p>` : ""}
-        ${card.hp ? `<p>❤️ HP：${card.hp}</p>` : ""}
-        ${card.bloom_level ? `<p>🌸 ブルーム：${card.bloom_level}</p>` : ""}
-        ${card.baton_touch ? `<p>🪄 バトンタッチ：${card.baton_touch}</p>` : ""}
-        ${card.tags ? `<p>🏷 タグ：${card.tags.join(", ")}</p>` : ""}
-        <h4>🧠 スキル</h4>
-        <ul>
-          ${(card.skills || []).map(skill => `
-            <li>
-              <strong>${skill.type}</strong>：
-              ${skill.name ? `<em>${skill.name}</em> - ` : ""}
-              ${skill.description || ""}
-            </li>
-          `).join("")}
-        </ul>
-      `;
+      const img = new Image();
+      img.onload = () => detectAndCropCard(img);
+      img.src = URL.createObjectURL(file);
+    }
+
+    function detectAndCropCard(img) {
+      inputCanvas.width = img.width;
+      inputCanvas.height = img.height;
+      const ctx = inputCanvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      const src = cv.imread(inputCanvas);
+      const gray = new cv.Mat();
+      const blurred = new cv.Mat();
+      const edges = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+      cv.Canny(blurred, edges, 50, 150);
+
+      const contours = new cv.MatVector();
+      const hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+      let bestContour = null;
+      let bestRect = null;
+      let maxArea = 0;
+
+      // 🔎 輪郭ごとにフィルタ：面積＆縦横比
+      for (let i = 0; i < contours.size(); i++) {
+        const cnt = contours.get(i);
+        const area = cv.contourArea(cnt);
+        if (area < 50000) continue; // 小さい領域を除外
+
+        const rect = cv.minAreaRect(cnt);
+        const w = rect.size.width;
+        const h = rect.size.height;
+        const aspect = Math.max(w, h) / Math.min(w, h);
+        if (aspect > 3.0) continue; // 細長すぎるものは除外
+
+        if (area > maxArea) {
+          maxArea = area;
+          bestContour = cnt;
+          bestRect = rect;
+        }
+      }
+
+      if (!bestRect) {
+        loading.textContent = "❌ 有効なカード枠が検出できませんでした";
+        return;
+      }
+
+      const angle = bestRect.angle;
+      const center = bestRect.center;
+
+      // 🔄 回転補正
+      const rotMat = cv.getRotationMatrix2D(center, angle, 1);
+      const rotated = new cv.Mat();
+      cv.warpAffine(src, rotated, rotMat, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR);
+
+      // 🔳 切り出し座標計算
+      const box = cv.RotatedRect.points(bestRect);
+      const xs = box.map(pt => pt.x);
+      const ys = box.map(pt => pt.y);
+      const minX = Math.max(Math.floor(Math.min(...xs)), 0);
+      const maxX = Math.min(Math.floor(Math.max(...xs)), rotated.cols);
+      const minY = Math.max(Math.floor(Math.min(...ys)), 0);
+      const maxY = Math.min(Math.floor(Math.max(...ys)), rotated.rows);
+      const rect = new cv.Rect(minX, minY, maxX - minX, maxY - minY);
+
+      const cropped = rotated.roi(rect);
+      croppedCanvas.width = rect.width;
+      croppedCanvas.height = rect.height;
+      cv.imshow(croppedCanvas, cropped);
+      loading.textContent = `✅ トリミング成功（角度補正あり） size: ${rect.width}×${rect.height}`;
+
+      // 後始末
+      src.delete(); gray.delete(); blurred.delete(); edges.delete();
+      contours.delete(); hierarchy.delete(); rotated.delete(); cropped.delete();
     }
   </script>
 </body>
