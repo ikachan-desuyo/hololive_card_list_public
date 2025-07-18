@@ -69,11 +69,16 @@
     }
 
     function processVideo() {
-      if (!streaming) return;
+      if (!streaming) {
+        console.log("Streaming has stopped.");
+        return;
+      }
 
       try {
+        // ビデオフレームをCanvasに描画
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+        // OpenCVで画像処理
         let src = cv.imread(canvas);
         let gray = new cv.Mat();
         let blurred = new cv.Mat();
@@ -111,6 +116,7 @@
       } catch (error) {
         console.error("Error in processVideo:", error);
       } finally {
+        // 次のフレームを処理 (エラーがあっても続行)
         if (streaming) requestAnimationFrame(processVideo);
       }
     }
