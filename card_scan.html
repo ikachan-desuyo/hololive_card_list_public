@@ -2,19 +2,53 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>📸 カード枠補正トリミング</title>
+  <title>📸 カード枠検出＋角度補正</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script async src="https://docs.opencv.org/4.x/opencv.js" type="text/javascript"></script>
+  <!-- ✅ ローカルの OpenCV.js を読み込み -->
+  <script defer src="libs/opencv.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 16px; background: #f3f3f3; }
-    canvas { border: 1px solid #ccc; margin-top: 12px; max-width: 100%; }
-    #loading { color: #666; font-size: 14px; margin-top: 8px; }
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 12px;
+      max-width: 100%;
+    }
+    #loading {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #eee;
+      overflow: hidden;
+      position: relative;
+      margin-top: 8px;
+    }
+    #progress-fill {
+      width: 30%;
+      height: 100%;
+      background: #3b82f6;
+      animation: loadAnim 1.2s infinite;
+    }
+    @keyframes loadAnim {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
   </style>
 </head>
 <body>
-  <h2>📸 カード枠検出＋角度補正（精度フィルタ付き）</h2>
+  <h2>📸 カード枠検出＋角度補正</h2>
+
   <input type="file" accept="image/*" onchange="processCardImage(event)" />
   <div id="loading">🔁 OpenCV読み込み確認中…</div>
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+
   <canvas id="inputCanvas"></canvas>
   <canvas id="croppedCanvas"></canvas>
 
@@ -22,11 +56,18 @@
     const inputCanvas = document.getElementById("inputCanvas");
     const croppedCanvas = document.getElementById("croppedCanvas");
     const loading = document.getElementById("loading");
+    document.getElementById("progress-bar").style.display = "block";
 
-    async function processCardImage(event) {
+    // ✅ OpenCV.js 読み込み完了後にメッセージ更新
+    cv['onRuntimeInitialized'] = () => {
+      document.getElementById("progress-bar").style.display = "none";
+      document.getElementById("loading").textContent = "✅ OpenCV読み込み完了！カード画像を選択してね";
+    };
+
+    function processCardImage(event) {
       const file = event.target.files[0];
       if (!file || typeof cv === "undefined") {
-        alert("OpenCV.jsがまだ読み込まれていません。少し待ってからもう一度お試しください。");
+        alert("OpenCV.jsが読み込まれていません。もう少し待ってみてください");
         return;
       }
 
@@ -57,17 +98,17 @@
       let bestRect = null;
       let maxArea = 0;
 
-      // 🔎 輪郭ごとにフィルタ：面積＆縦横比
+      // 🧠 精度補正：大きな長方形だけ抽出
       for (let i = 0; i < contours.size(); i++) {
         const cnt = contours.get(i);
         const area = cv.contourArea(cnt);
-        if (area < 50000) continue; // 小さい領域を除外
+        if (area < 50000) continue; // 小さい領域は除外
 
         const rect = cv.minAreaRect(cnt);
         const w = rect.size.width;
         const h = rect.size.height;
         const aspect = Math.max(w, h) / Math.min(w, h);
-        if (aspect > 3.0) continue; // 細長すぎるものは除外
+        if (aspect > 3.5 || aspect < 1.0) continue; // 極端な形状は除外
 
         if (area > maxArea) {
           maxArea = area;
@@ -77,19 +118,17 @@
       }
 
       if (!bestRect) {
-        loading.textContent = "❌ 有効なカード枠が検出できませんでした";
+        loading.textContent = "❌ 有効なカード枠が見つかりませんでした";
         return;
       }
 
       const angle = bestRect.angle;
       const center = bestRect.center;
-
-      // 🔄 回転補正
       const rotMat = cv.getRotationMatrix2D(center, angle, 1);
       const rotated = new cv.Mat();
       cv.warpAffine(src, rotated, rotMat, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR);
 
-      // 🔳 切り出し座標計算
+      // ✂ 枠領域を正確に切り出し
       const box = cv.RotatedRect.points(bestRect);
       const xs = box.map(pt => pt.x);
       const ys = box.map(pt => pt.y);
@@ -103,9 +142,10 @@
       croppedCanvas.width = rect.width;
       croppedCanvas.height = rect.height;
       cv.imshow(croppedCanvas, cropped);
-      loading.textContent = `✅ トリミング成功（角度補正あり） size: ${rect.width}×${rect.height}`;
 
-      // 後始末
+      loading.textContent = `✅ 枠検出・整列完了（角度 ${Math.round(angle)}°／サイズ ${rect.width}×${rect.height}）`;
+
+      // 後処理
       src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete(); rotated.delete(); cropped.delete();
     }
