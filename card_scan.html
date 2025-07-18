@@ -5,7 +5,7 @@
   <title>リアルタイムカード枠検出と赤線描画（背面カメラ）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
-    canvas {
+    video, canvas {
       border: 1px solid black;
       display: block;
       margin: 10px auto;
@@ -15,9 +15,11 @@
 <body>
   <h1>リアルタイムカード枠検出と赤線描画（背面カメラ）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
+  <video id="video" autoplay playsinline width="640" height="480"></video>
   <canvas id="canvasOutput" width="640" height="480"></canvas>
 
   <script>
+    let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
     let ctx = canvas.getContext('2d');
     let streaming = false;
@@ -39,17 +41,10 @@
         }
       })
       .then(stream => {
-        let video = document.createElement('video'); // 動的に video 要素を生成
         video.srcObject = stream;
         video.play();
         streaming = true;
-
-        video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          processVideo(video);
-        });
+        processVideo();
       })
       .catch(err => {
         console.error("カメラの起動に失敗しました: ", err);
@@ -57,64 +52,59 @@
       });
     }
 
-    function processVideo(video) {
+    function processVideo() {
       if (!streaming) return;
 
-      try {
-        // ビデオフレームをCanvasに描画
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // ビデオフレームをCanvasに描画
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // OpenCVで画像処理
-        let src = cv.imread(canvas);
-        let gray = new cv.Mat();
-        let blurred = new cv.Mat();
-        let edges = new cv.Mat();
+      // OpenCVで画像処理
+      let src = cv.imread(canvas);
+      let gray = new cv.Mat();
+      let blurred = new cv.Mat();
+      let edges = new cv.Mat();
 
-        // グレースケール変換
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+      // グレースケール変換
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
-        // ぼかし処理
-        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+      // ぼかし処理
+      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-        // エッジ検出
-        cv.Canny(blurred, edges, 50, 150);
+      // エッジ検出
+      cv.Canny(blurred, edges, 50, 150);
 
-        // 輪郭検出
-        let contours = new cv.MatVector();
-        let hierarchy = new cv.Mat();
-        cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      // 輪郭検出
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-        // 最大面積の輪郭を探す
-        let maxArea = 0;
-        let maxContour = null;
-        for (let i = 0; i < contours.size(); ++i) {
-          let cnt = contours.get(i);
-          let area = cv.contourArea(cnt);
-          if (area > maxArea) {
-            maxArea = area;
-            maxContour = cnt;
-          }
+      // 最大面積の輪郭を探す
+      let maxArea = 0;
+      let maxContour = null;
+      for (let i = 0; i < contours.size(); ++i) {
+        let cnt = contours.get(i);
+        let area = cv.contourArea(cnt);
+        if (area > maxArea) {
+          maxArea = area;
+          maxContour = cnt;
         }
-
-        if (maxContour) {
-          // 赤線で輪郭を描画
-          let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-          cv.drawContours(src, contours, -1, contoursColor, 2);
-        }
-
-        // 結果をCanvasに描画
-        cv.imshow('canvasOutput', src);
-
-        // メモリ解放
-        src.delete(); gray.delete(); blurred.delete(); edges.delete();
-        contours.delete(); hierarchy.delete();
-
-      } catch (error) {
-        console.error("Error in processVideo:", error);
-      } finally {
-        // 次のフレームを処理 (エラーがあっても続行)
-        if (streaming) requestAnimationFrame(() => processVideo(video));
       }
+
+      if (maxContour) {
+        // 赤線で輪郭を描画
+        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
+        cv.drawContours(src, contours, -1, contoursColor, 2);
+      }
+
+      // 結果をCanvasに描画
+      cv.imshow('canvasOutput', src);
+
+      // メモリ解放
+      src.delete(); gray.delete(); blurred.delete(); edges.delete();
+      contours.delete(); hierarchy.delete();
+
+      // 次のフレームを処理
+      if (streaming) requestAnimationFrame(processVideo);
     }
   </script>
 </body>
