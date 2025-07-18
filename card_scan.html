@@ -5,7 +5,10 @@
   <title>リアルタイムカード枠検出と赤線描画（背面カメラ）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
-    video, canvas {
+    video {
+      display: none; /* 映像を非表示に設定 */
+    }
+    canvas {
       border: 1px solid black;
       display: block;
       margin: 10px auto;
@@ -15,8 +18,8 @@
 <body>
   <h1>リアルタイムカード枠検出と赤線描画（背面カメラ）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
-  <video id="video" autoplay playsinline width="640" height="480"></video>
-  <canvas id="canvasOutput" width="640" height="480"></canvas>
+  <video id="video" autoplay playsinline></video> <!-- 映像は非表示 -->
+  <canvas id="canvasOutput"></canvas> <!-- キャンバスサイズを動的に調整 -->
 
   <script>
     let video = document.getElementById('video');
@@ -44,7 +47,16 @@
         video.srcObject = stream;
         video.play();
         streaming = true;
-        processVideo();
+
+        // 動画のメタデータがロードされた後にキャンバスサイズを調整
+        video.addEventListener('loadedmetadata', () => {
+          // キャンバスの幅と高さを動画に合わせて設定
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // 処理開始
+          processVideo();
+        });
       })
       .catch(err => {
         console.error("カメラの起動に失敗しました: ", err);
