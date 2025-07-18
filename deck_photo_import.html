@@ -49,7 +49,7 @@
     const imageURL = URL.createObjectURL(file);
 
     try {
-        const { data: { text } } = await Tesseract.recognize(imageURL, 'ipn', {
+        const { data: { text } } = await Tesseract.recognize(imageURL, 'jpn', {
         logger: m => console.log(m)
         });
 
