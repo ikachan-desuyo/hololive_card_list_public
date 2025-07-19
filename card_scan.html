@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出とOCR（ボタンで実行）</title>
+  <title>リアルタイムカード枠検出とOCR（トリミング機能付き）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
@@ -13,15 +13,16 @@
       margin: 10px auto; 
     }
     #recognized-text { font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px; }
-    #ocr-button, #toggle-redline-button { display: block; margin: 30px auto; padding: 20px 40px; font-size: 24px; }
+    #ocr-button, #toggle-redline-button, #trim-button { display: block; margin: 20px auto; padding: 15px 30px; font-size: 20px; }
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出とOCR（ボタンで実行）</h1>
+  <h1>リアルタイムカード枠検出とOCR（トリミング機能付き）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
   <button id="toggle-redline-button">赤線モード切り替え</button>
+  <button id="trim-button">カードをトリミング</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
 
@@ -32,11 +33,13 @@
     let streaming = false;
     let textOutput = document.getElementById('text-output');
     let ocrButton = document.getElementById('ocr-button');
+    let trimButton = document.getElementById('trim-button');
     let toggleRedLineButton = document.getElementById('toggle-redline-button');
     let redLineMode = 0; // 0: 通常, 1: 赤線表示, 2: 赤線のみ
     let lastFrameTime = 0; // フレームレート制限用
     let processing = false; // 処理中フラグ
-    
+    let cardRect = null; // 検出されたカードの矩形領域
+
     toggleRedLineButton.addEventListener("click", () => {
       redLineMode = (redLineMode + 1) % 3;
       const modes = ["通常表示", "赤線表示", "赤線のみ"];
@@ -106,28 +109,31 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      if (redLineMode !== 0) {
-        let maxArea = 0;
-        let maxContour = null;
-        for (let i = 0; i < contours.size(); ++i) {
-          let cnt = contours.get(i);
-          let area = cv.contourArea(cnt);
-          if (area > maxArea) {
-            maxArea = area;
-            maxContour = cnt;
-          }
+      let maxArea = 0;
+      let maxContour = null;
+      for (let i = 0; i < contours.size(); ++i) {
+        let cnt = contours.get(i);
+        let area = cv.contourArea(cnt);
+        if (area > maxArea) {
+          maxArea = area;
+          maxContour = cnt;
         }
+      }
 
-        if (maxContour) {
-          let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-          if (redLineMode === 1) {
-            cv.drawContours(src, contours, -1, contoursColor, 2);
-          } else if (redLineMode === 2) {
-            let tempSrc = new cv.Mat.zeros(src.rows, src.cols, src.type());
-            cv.drawContours(tempSrc, contours, -1, contoursColor, 2);
-            src.delete();
-            src = tempSrc;
-          }
+      if (maxContour) {
+        cardRect = cv.boundingRect(maxContour);
+        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
+        if (redLineMode === 1) {
+          cv.rectangle(src, new cv.Point(cardRect.x, cardRect.y), 
+                       new cv.Point(cardRect.x + cardRect.width, cardRect.y + cardRect.height), 
+                       contoursColor, 2);
+        } else if (redLineMode === 2) {
+          let tempSrc = new cv.Mat.zeros(src.rows, src.cols, src.type());
+          cv.rectangle(tempSrc, new cv.Point(cardRect.x, cardRect.y), 
+                       new cv.Point(cardRect.x + cardRect.width, cardRect.y + cardRect.height), 
+                       contoursColor, 2);
+          src.delete();
+          src = tempSrc;
         }
       }
 
@@ -138,6 +144,25 @@
       processing = false;
       if (streaming) requestAnimationFrame(processVideo);
     }
+
+    trimButton.addEventListener('click', () => {
+      if (!cardRect) {
+        alert("カードの枠が検出されていません！");
+        return;
+      }
+      let trimmedCanvas = document.createElement('canvas');
+      trimmedCanvas.width = cardRect.width;
+      trimmedCanvas.height = cardRect.height;
+      let trimmedCtx = trimmedCanvas.getContext('2d');
+      trimmedCtx.drawImage(canvas, cardRect.x, cardRect.y, cardRect.width, cardRect.height, 0, 0, cardRect.width, cardRect.height);
+
+      // 新しいウィンドウでトリミング結果を表示
+      let newWindow = window.open("");
+      newWindow.document.write("<h1>トリミング結果</h1>");
+      let img = newWindow.document.createElement("img");
+      img.src = trimmedCanvas.toDataURL();
+      newWindow.document.body.appendChild(img);
+    });
 
     ocrButton.addEventListener('click', () => {
       Tesseract.recognize(canvas, 'jpn', {
