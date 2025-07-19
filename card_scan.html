@@ -20,7 +20,7 @@
       text-align: center;
       margin-top: 20px;
     }
-    #ocr-button {
+    #ocr-button, #toggle-redline-button {
       display: block;
       margin: 30px auto; /* ボタンの間隔をさらに広げる */
       padding: 20px 40px; /* ボタンのサイズをさらに大きくする */
@@ -33,6 +33,7 @@
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline></video> <!-- 映像は非表示 -->
   <canvas id="canvasOutput"></canvas> <!-- キャンバスサイズを動的に調整 -->
+  <button id="toggle-redline-button">赤線表示切り替え</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
 
@@ -43,6 +44,13 @@
     let streaming = false;
     let textOutput = document.getElementById('text-output');
     let ocrButton = document.getElementById('ocr-button');
+    let toggleRedLineButton = document.getElementById('toggle-redline-button');
+    let showRedLine = true; // 赤線表示の有無を制御するフラグ
+
+    toggleRedLineButton.addEventListener("click", () => {
+      showRedLine = !showRedLine;
+      toggleRedLineButton.innerText = showRedLine ? "赤線非表示" : "赤線表示";
+    });
 
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
@@ -106,22 +114,24 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      // 最大面積の輪郭を探す
-      let maxArea = 0;
-      let maxContour = null;
-      for (let i = 0; i < contours.size(); ++i) {
-        let cnt = contours.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = cnt;
+      if (showRedLine) {
+        // 最大面積の輪郭を探す
+        let maxArea = 0;
+        let maxContour = null;
+        for (let i = 0; i < contours.size(); ++i) {
+          let cnt = contours.get(i);
+          let area = cv.contourArea(cnt);
+          if (area > maxArea) {
+            maxArea = area;
+            maxContour = cnt;
+          }
         }
-      }
 
-      if (maxContour) {
-        // 赤線で輪郭を描画
-        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-        cv.drawContours(src, contours, -1, contoursColor, 2);
+        if (maxContour) {
+          // 赤線で輪郭を描画
+          let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
+          cv.drawContours(src, contours, -1, contoursColor, 2);
+        }
       }
 
       // 結果をCanvasに描画
