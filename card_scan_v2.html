@@ -2,102 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ホロライブカード枠検出</title>
+  <title>カード枠検出</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
-  <style>
-    video, canvas {
-      display: block;
-      margin: 10px auto;
-      border: 1px solid black;
-    }
-    button {
-      display: block;
-      margin: 10px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-  </style>
 </head>
 <body>
-  <h1>ホロライブカード枠検出</h1>
-  <div id="status" style="text-align: center; font-weight: bold;">OpenCV.jsを読み込み中...</div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
   <canvas id="canvasEdges" style="display: none;"></canvas>
   <canvas id="canvasCropped" style="display: none;"></canvas>
-  <button id="detect-button">カード枠を検出</button>
-  <button id="toggle-button">切り替え: 元映像</button>
-  <button id="crop-toggle-button">切り替え: トリミング結果</button>
-
   <script>
     let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
-    let canvasEdges = document.getElementById('canvasEdges');
-    let canvasCropped = document.getElementById('canvasCropped');
     let ctx = canvas.getContext('2d');
-    let ctxEdges = canvasEdges.getContext('2d');
-    let ctxCropped = canvasCropped.getContext('2d');
     let streaming = false;
-    let showEdges = false;
-    let showCropped = false;
 
     function onOpenCvReady() {
-      document.getElementById('status').innerText = "OpenCV.js 読み込み完了！";
       startCamera();
     }
 
     function startCamera() {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => {
+        .then((stream) => {
           video.srcObject = stream;
           video.play();
-          video.addEventListener('loadedmetadata', () => {
+          video.addEventListener("loadedmetadata", () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvasEdges.width = video.videoWidth;
-            canvasEdges.height = video.videoHeight;
-            canvasCropped.width = video.videoWidth;
-            canvasCropped.height = video.videoHeight;
             streaming = true;
           });
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("カメラの起動に失敗しました:", err);
-          alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
         });
     }
-
-    document.getElementById('detect-button').addEventListener('click', () => {
-      if (!streaming) return;
-      detectCardFrames();
-    });
-
-    document.getElementById('toggle-button').addEventListener('click', () => {
-      showEdges = !showEdges;
-      if (showEdges) {
-        canvas.style.display = 'none';
-        canvasEdges.style.display = 'block';
-        canvasCropped.style.display = 'none';
-        document.getElementById('toggle-button').innerText = '切り替え: エッジ映像';
-      } else {
-        canvas.style.display = 'block';
-        canvasEdges.style.display = 'none';
-        document.getElementById('toggle-button').innerText = '切り替え: 元映像';
-      }
-    });
-
-    document.getElementById('crop-toggle-button').addEventListener('click', () => {
-      showCropped = !showCropped;
-      if (showCropped) {
-        canvas.style.display = 'none';
-        canvasEdges.style.display = 'none';
-        canvasCropped.style.display = 'block';
-        document.getElementById('crop-toggle-button').innerText = '切り替え: トリミング結果';
-      } else {
-        canvasCropped.style.display = 'none';
-        document.getElementById('crop-toggle-button').innerText = '切り替え: 元映像';
-      }
-    });
 
     function detectCardFrames() {
       // ビデオフレームをキャンバスに描画
@@ -117,14 +54,15 @@
       cv.cvtColor(edges, edgeCanvasMat, cv.COLOR_GRAY2RGBA);
       cv.imshow('canvasEdges', edgeCanvasMat);
 
-      // 輪郭検出で四角形を特定
+      // 輪郭検出
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      let cardContours = [];
       const CARD_RATIO = 88 / 63; // 縦横比
+      const MIN_AREA = 5000; // 最小面積のしきい値
       let bestRect = null;
+
       for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
 
@@ -135,31 +73,34 @@
         // 四角形かつ縦横比がカードに近いものを選択
         if (approx.rows === 4) {
           let rect = cv.boundingRect(approx);
+          let area = rect.width * rect.height;
 
-          // 中心位置を考慮 (修正ポイント)
-          let centerX = rect.x + rect.width / 2;
-          let centerY = rect.y + rect.height / 2;
-          let frameCenterX = canvas.width / 2;
-          let frameCenterY = canvas.height / 2;
-          let distanceToCenter = Math.sqrt(
-            Math.pow(centerX - frameCenterX, 2) + Math.pow(centerY - frameCenterY, 2)
-          );
-
-          // 縦横比と位置でさらに絞り込む
+          // 面積が十分大きく、縦横比が許容範囲内の四角形を判定
           let aspectRatio = rect.height / rect.width;
-          if (0.9 * CARD_RATIO < aspectRatio && aspectRatio < 1.1 * CARD_RATIO) {
+          if (
+            area > MIN_AREA && 
+            0.95 * CARD_RATIO < aspectRatio && aspectRatio < 1.05 * CARD_RATIO
+          ) {
+            let centerX = rect.x + rect.width / 2;
+            let centerY = rect.y + rect.height / 2;
+            let frameCenterX = canvas.width / 2;
+            let frameCenterY = canvas.height / 2;
+
+            // 画面中心との距離を計算
+            let distanceToCenter = Math.sqrt(
+              Math.pow(centerX - frameCenterX, 2) + Math.pow(centerY - frameCenterY, 2)
+            );
+
+            // 中心に近い領域を優先
             if (
-              !bestRect ||
-              (rect.width * rect.height > bestRect.width * bestRect.height &&
-                distanceToCenter < canvas.width * 0.25) // 中心付近を優先
+              !bestRect || 
+              (distanceToCenter < canvas.width / 4 && area > bestRect.width * bestRect.height)
             ) {
-              bestRect = rect; // 最大のカード枠を選択
+              bestRect = rect;
             }
           }
-          approx.delete();
-        } else {
-          approx.delete();
         }
+        approx.delete();
       }
 
       if (bestRect) {
@@ -167,10 +108,9 @@
         let cropped = src.roi(bestRect);
         cv.imshow('canvasCropped', cropped);
         cropped.delete();
+      } else {
+        console.log("カード枠が見つかりませんでした。");
       }
-
-      // 検出結果をキャンバスに表示
-      cv.imshow('canvasOutput', src);
 
       // リソース解放
       src.delete();
