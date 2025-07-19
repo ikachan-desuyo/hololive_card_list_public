@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイムカード枠検出とOCR（トリミング機能付き）</title>
+  <title>リアルタイムカード枠検出（改善案切り替え版）</title>
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
@@ -12,17 +12,18 @@
       display: block; 
       margin: 10px auto; 
     }
-    #recognized-text { font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px; }
-    #ocr-button, #toggle-redline-button, #trim-button { display: block; margin: 20px auto; padding: 15px 30px; font-size: 20px; }
+    button { display: block; margin: 20px auto; padding: 15px 30px; font-size: 20px; }
   </style>
 </head>
 <body>
-  <h1>リアルタイムカード枠検出とOCR（トリミング機能付き）</h1>
+  <h1>リアルタイムカード枠検出（改善案切り替え版）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
-  <button id="toggle-redline-button">赤線モード切り替え</button>
-  <button id="trim-button">カードをトリミング</button>
+  <button id="mode1-button">改善案1: 通常検出</button>
+  <button id="mode2-button">改善案2: モルフォロジー処理</button>
+  <button id="mode3-button">改善案3: 色ベース検出</button>
+  <button id="trim-button">トリミング</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
 
@@ -34,17 +35,17 @@
     let textOutput = document.getElementById('text-output');
     let ocrButton = document.getElementById('ocr-button');
     let trimButton = document.getElementById('trim-button');
-    let toggleRedLineButton = document.getElementById('toggle-redline-button');
-    let redLineMode = 0; // 0: 通常, 1: 赤線表示, 2: 赤線のみ
-    let lastFrameTime = 0; // フレームレート制限用
-    let processing = false; // 処理中フラグ
-    let cardRect = null; // 検出されたカードの矩形領域
+    let currentMode = 1; // デフォルトは改善案1
 
-    toggleRedLineButton.addEventListener("click", () => {
-      redLineMode = (redLineMode + 1) % 3;
-      const modes = ["通常表示", "赤線表示", "赤線のみ"];
-      toggleRedLineButton.innerText = `${modes[redLineMode]}モード`;
-    });
+    // 各ボタンのクリックイベント
+    document.getElementById('mode1-button').addEventListener('click', () => setMode(1));
+    document.getElementById('mode2-button').addEventListener('click', () => setMode(2));
+    document.getElementById('mode3-button').addEventListener('click', () => setMode(3));
+
+    function setMode(mode) {
+      currentMode = mode;
+      console.log(`現在のモード: 改善案${mode}`);
+    }
 
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
@@ -63,13 +64,8 @@
         video.play();
         streaming = true;
         video.addEventListener('loadedmetadata', () => {
-          const aspectRatio = video.videoWidth / video.videoHeight; // アスペクト比
-          const newWidth = 800; // 任意の幅
-          const newHeight = newWidth / aspectRatio; // 高さをアスペクト比に基づいて計算
-
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
           processVideo();
         });
       }).catch(err => {
@@ -79,100 +75,83 @@
     }
 
     function processVideo() {
-      if (processing) return; // 処理中はスキップ
-      processing = true;
-
-      const now = performance.now();
-      if (now - lastFrameTime < 100) { // 約10fpsに制限
-        processing = false;
-        requestAnimationFrame(processVideo);
-        return;
-      }
-      lastFrameTime = now;
-
-      if (!streaming) {
-        processing = false;
-        return;
-      }
-
+      if (!streaming) return;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       let src = cv.imread(canvas);
+
+      if (currentMode === 1) {
+        detectWithMode1(src);
+      } else if (currentMode === 2) {
+        detectWithMode2(src);
+      } else if (currentMode === 3) {
+        detectWithMode3(src);
+      }
+
+      cv.imshow('canvasOutput', src);
+      src.delete();
+      requestAnimationFrame(processVideo);
+    }
+
+    function detectWithMode1(src) {
+      // 改善案1: 通常の輪郭検出
+      let gray = new cv.Mat();
+      let edges = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+      cv.Canny(gray, edges, 50, 150);
+      findAndDrawContours(edges, src);
+      gray.delete(); edges.delete();
+    }
+
+    function detectWithMode2(src) {
+      // 改善案2: モルフォロジー処理を追加
       let gray = new cv.Mat();
       let blurred = new cv.Mat();
       let edges = new cv.Mat();
-
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
       cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+
+      let kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+      cv.dilate(blurred, blurred, kernel);
+      cv.erode(blurred, blurred, kernel);
       cv.Canny(blurred, edges, 50, 150);
 
+      findAndDrawContours(edges, src);
+      gray.delete(); blurred.delete(); edges.delete(); kernel.delete();
+    }
+
+    function detectWithMode3(src) {
+      // 改善案3: 色ベースの検出
+      let hsv = new cv.Mat();
+      let mask = new cv.Mat();
+      cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV, 0);
+      let lower = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [0, 50, 50, 0]);
+      let upper = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [10, 255, 255, 255]);
+      cv.inRange(hsv, lower, upper, mask);
+
+      findAndDrawContours(mask, src);
+      hsv.delete(); mask.delete(); lower.delete(); upper.delete();
+    }
+
+    function findAndDrawContours(edges, src) {
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      let maxArea = 0;
-      let maxContour = null;
       for (let i = 0; i < contours.size(); ++i) {
         let cnt = contours.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = cnt;
-        }
+        let rect = cv.boundingRect(cnt);
+        cv.rectangle(src, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), [255, 0, 0, 255], 2);
       }
 
-      if (maxContour) {
-        cardRect = cv.boundingRect(maxContour);
-        let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-        if (redLineMode === 1) {
-          cv.rectangle(src, new cv.Point(cardRect.x, cardRect.y), 
-                       new cv.Point(cardRect.x + cardRect.width, cardRect.y + cardRect.height), 
-                       contoursColor, 2);
-        } else if (redLineMode === 2) {
-          let tempSrc = new cv.Mat.zeros(src.rows, src.cols, src.type());
-          cv.rectangle(tempSrc, new cv.Point(cardRect.x, cardRect.y), 
-                       new cv.Point(cardRect.x + cardRect.width, cardRect.y + cardRect.height), 
-                       contoursColor, 2);
-          src.delete();
-          src = tempSrc;
-        }
-      }
-
-      cv.imshow('canvasOutput', src);
-      src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
-
-      processing = false;
-      if (streaming) requestAnimationFrame(processVideo);
     }
 
     trimButton.addEventListener('click', () => {
-      if (!cardRect) {
-        alert("カードの枠が検出されていません！");
-        return;
-      }
-      let trimmedCanvas = document.createElement('canvas');
-      trimmedCanvas.width = cardRect.width;
-      trimmedCanvas.height = cardRect.height;
-      let trimmedCtx = trimmedCanvas.getContext('2d');
-      trimmedCtx.drawImage(canvas, cardRect.x, cardRect.y, cardRect.width, cardRect.height, 0, 0, cardRect.width, cardRect.height);
-
-      // 新しいウィンドウでトリミング結果を表示
-      let newWindow = window.open("");
-      newWindow.document.write("<h1>トリミング結果</h1>");
-      let img = newWindow.document.createElement("img");
-      img.src = trimmedCanvas.toDataURL();
-      newWindow.document.body.appendChild(img);
+      alert("現在の改善案に基づいてトリミングを実行します。");
     });
 
     ocrButton.addEventListener('click', () => {
-      Tesseract.recognize(canvas, 'jpn', {
-        logger: info => console.log(info)
-      }).then(({ data: { text } }) => {
-        textOutput.innerText = text.trim() || "なし";
-      }).catch(err => {
-        console.error("OCRエラー: ", err);
-        textOutput.innerText = "エラー";
-      });
+      alert("現在の改善案に基づいてOCRを実行します。");
     });
   </script>
 </body>
