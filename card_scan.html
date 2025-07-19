@@ -7,11 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     video { display: none; }
-    canvas { 
-      border: 1px solid black; 
-      display: block; 
-      margin: 10px auto; 
-    }
+    canvas { border: 1px solid black; display: block; margin: 10px auto; }
     button { display: block; margin: 20px auto; padding: 15px 30px; font-size: 20px; }
   </style>
 </head>
@@ -35,9 +31,8 @@
     let textOutput = document.getElementById('text-output');
     let ocrButton = document.getElementById('ocr-button');
     let trimButton = document.getElementById('trim-button');
-    let currentMode = 1; // デフォルトは改善案1
+    let currentMode = 1;
 
-    // 各ボタンのクリックイベント
     document.getElementById('mode1-button').addEventListener('click', () => setMode(1));
     document.getElementById('mode2-button').addEventListener('click', () => setMode(2));
     document.getElementById('mode3-button').addEventListener('click', () => setMode(3));
@@ -57,21 +52,21 @@
     }
 
     function startCamera() {
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      }).then(stream => {
-        video.srcObject = stream;
-        video.play();
-        streaming = true;
-        video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          processVideo();
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+          streaming = true;
+          video.addEventListener('loadedmetadata', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            processVideo();
+          });
+        })
+        .catch(err => {
+          console.error("カメラの起動に失敗しました: ", err);
+          alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
         });
-      }).catch(err => {
-        console.error("カメラの起動に失敗しました: ", err);
-        alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
-      });
     }
 
     function processVideo() {
@@ -93,7 +88,6 @@
     }
 
     function detectWithMode1(src) {
-      // 改善案1: 通常の輪郭検出
       let gray = new cv.Mat();
       let edges = new cv.Mat();
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
@@ -103,46 +97,39 @@
     }
 
     function detectWithMode2(src) {
-      // 改善案2: モルフォロジー処理を追加
       let gray = new cv.Mat();
       let blurred = new cv.Mat();
       let edges = new cv.Mat();
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
       cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-
       let kernel = cv.Mat.ones(5, 5, cv.CV_8U);
       cv.dilate(blurred, blurred, kernel);
       cv.erode(blurred, blurred, kernel);
       cv.Canny(blurred, edges, 50, 150);
-
       findAndDrawContours(edges, src);
       gray.delete(); blurred.delete(); edges.delete(); kernel.delete();
     }
 
     function detectWithMode3(src) {
-      // 改善案3: 色ベースの検出
       let hsv = new cv.Mat();
       let mask = new cv.Mat();
       cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV, 0);
-      let lower = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [0, 50, 50, 0]);
-      let upper = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [10, 255, 255, 255]);
+      let lower = new cv.Scalar(0, 50, 50, 0);
+      let upper = new cv.Scalar(10, 255, 255, 255);
       cv.inRange(hsv, lower, upper, mask);
-
       findAndDrawContours(mask, src);
-      hsv.delete(); mask.delete(); lower.delete(); upper.delete();
+      hsv.delete(); mask.delete();
     }
 
     function findAndDrawContours(edges, src) {
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
       for (let i = 0; i < contours.size(); ++i) {
         let cnt = contours.get(i);
         let rect = cv.boundingRect(cnt);
         cv.rectangle(src, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), [255, 0, 0, 255], 2);
       }
-
       contours.delete(); hierarchy.delete();
     }
 
