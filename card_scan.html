@@ -33,7 +33,7 @@
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
   <video id="video" autoplay playsinline></video> <!-- 映像は非表示 -->
   <canvas id="canvasOutput"></canvas> <!-- キャンバスサイズを動的に調整 -->
-  <button id="toggle-redline-button">赤線表示切り替え</button>
+  <button id="toggle-redline-button">赤線モード切り替え</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
 
@@ -45,11 +45,12 @@
     let textOutput = document.getElementById('text-output');
     let ocrButton = document.getElementById('ocr-button');
     let toggleRedLineButton = document.getElementById('toggle-redline-button');
-    let showRedLine = true; // 赤線表示の有無を制御するフラグ
+    let redLineMode = 0; // 0: 通常, 1: 赤線表示, 2: 赤線のみ
 
     toggleRedLineButton.addEventListener("click", () => {
-      showRedLine = !showRedLine;
-      toggleRedLineButton.innerText = showRedLine ? "赤線非表示" : "赤線表示";
+      redLineMode = (redLineMode + 1) % 3;
+      const modes = ["通常表示", "赤線表示", "赤線のみ"];
+      toggleRedLineButton.innerText = `${modes[redLineMode]}モード`;
     });
 
     function onOpenCvReady() {
@@ -114,7 +115,7 @@
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      if (showRedLine) {
+      if (redLineMode !== 0) {
         // 最大面積の輪郭を探す
         let maxArea = 0;
         let maxContour = null;
@@ -130,7 +131,14 @@
         if (maxContour) {
           // 赤線で輪郭を描画
           let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
-          cv.drawContours(src, contours, -1, contoursColor, 2);
+          if (redLineMode === 1) {
+            // 赤線を重ねて表示
+            cv.drawContours(src, contours, -1, contoursColor, 2);
+          } else if (redLineMode === 2) {
+            // 赤線のみ表示
+            src = new cv.Mat.zeros(src.rows, src.cols, src.type());
+            cv.drawContours(src, contours, -1, contoursColor, 2);
+          }
         }
       }
 
