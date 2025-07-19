@@ -6,33 +6,17 @@
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
-    video {
-      display: none; /* 映像を非表示に設定 */
-    }
-    canvas {
-      border: 1px solid black;
-      display: block;
-      margin: 10px auto;
-    }
-    #recognized-text {
-      font-size: 16px;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 20px;
-    }
-    #ocr-button, #toggle-redline-button {
-      display: block;
-      margin: 30px auto; /* ボタンの間隔をさらに広げる */
-      padding: 20px 40px; /* ボタンのサイズをさらに大きくする */
-      font-size: 24px; /* フォントサイズをさらに大きくする */
-    }
+    video { display: none; }
+    canvas { border: 1px solid black; display: block; margin: 10px auto; }
+    #recognized-text { font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px; }
+    #ocr-button, #toggle-redline-button { display: block; margin: 30px auto; padding: 20px 40px; font-size: 24px; }
   </style>
 </head>
 <body>
   <h1>リアルタイムカード枠検出とOCR（ボタンで実行）</h1>
   <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
-  <video id="video" autoplay playsinline></video> <!-- 映像は非表示 -->
-  <canvas id="canvasOutput"></canvas> <!-- キャンバスサイズを動的に調整 -->
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvasOutput"></canvas>
   <button id="toggle-redline-button">赤線モード切り替え</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
@@ -46,6 +30,7 @@
     let ocrButton = document.getElementById('ocr-button');
     let toggleRedLineButton = document.getElementById('toggle-redline-button');
     let redLineMode = 0; // 0: 通常, 1: 赤線表示, 2: 赤線のみ
+    let lastFrameTime = 0; // フレームレート制限用
 
     toggleRedLineButton.addEventListener("click", () => {
       redLineMode = (redLineMode + 1) % 3;
@@ -56,7 +41,6 @@
     function onOpenCvReady() {
       const statusEl = document.getElementById("opencv-status");
       statusEl.innerText = "🔄 OpenCV.js 初期化中...";
-
       cv['onRuntimeInitialized'] = () => {
         statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
         startCamera();
@@ -65,58 +49,47 @@
 
     function startCamera() {
       navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment" // 背面カメラを指定
-        }
-      })
-      .then(stream => {
+        video: { facingMode: "environment" }
+      }).then(stream => {
         video.srcObject = stream;
         video.play();
         streaming = true;
-
-        // 動画のメタデータがロードされた後にキャンバスサイズを調整
         video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth * 2;
-          canvas.height = video.videoHeight * 2;
-
-          // リアルタイム枠検出を開始
+          canvas.width = video.videoWidth / 2; // 解像度を半分に
+          canvas.height = video.videoHeight / 2;
           processVideo();
         });
-      })
-      .catch(err => {
+      }).catch(err => {
         console.error("カメラの起動に失敗しました: ", err);
         alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
       });
     }
 
     function processVideo() {
+      const now = performance.now();
+      if (now - lastFrameTime < 33) { // 約30fpsに制限
+        requestAnimationFrame(processVideo);
+        return;
+      }
+      lastFrameTime = now;
+
       if (!streaming) return;
 
-      // ビデオフレームをCanvasに描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // OpenCVで画像処理
       let src = cv.imread(canvas);
       let gray = new cv.Mat();
       let blurred = new cv.Mat();
       let edges = new cv.Mat();
 
-      // グレースケール変換
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-
-      // ぼかし処理
       cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-
-      // エッジ検出
       cv.Canny(blurred, edges, 50, 150);
 
-      // 輪郭検出
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
       if (redLineMode !== 0) {
-        // 最大面積の輪郭を探す
         let maxArea = 0;
         let maxContour = null;
         for (let i = 0; i < contours.size(); ++i) {
@@ -129,36 +102,27 @@
         }
 
         if (maxContour) {
-          // 赤線で輪郭を描画
           let contoursColor = new cv.Scalar(255, 0, 0, 255); // 赤色
           if (redLineMode === 1) {
-            // 赤線を重ねて表示
             cv.drawContours(src, contours, -1, contoursColor, 2);
           } else if (redLineMode === 2) {
-            // 赤線のみ表示
             src = new cv.Mat.zeros(src.rows, src.cols, src.type());
             cv.drawContours(src, contours, -1, contoursColor, 2);
           }
         }
       }
 
-      // 結果をCanvasに描画
       cv.imshow('canvasOutput', src);
-
-      // メモリ解放
       src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
 
-      // 次のフレームを処理
       if (streaming) requestAnimationFrame(processVideo);
     }
 
-    // OCRをボタンのクリック時に実行
     ocrButton.addEventListener('click', () => {
       Tesseract.recognize(canvas, 'jpn', {
-        logger: info => console.log(info) // ログ出力（進捗状況）
+        logger: info => console.log(info)
       }).then(({ data: { text } }) => {
-        // 認識した文字列を画面に表示
         textOutput.innerText = text.trim() || "なし";
       }).catch(err => {
         console.error("OCRエラー: ", err);
