@@ -135,9 +135,24 @@
         // 四角形かつ縦横比がカードに近いものを選択
         if (approx.rows === 4) {
           let rect = cv.boundingRect(approx);
+
+          // 中心位置を考慮 (修正ポイント)
+          let centerX = rect.x + rect.width / 2;
+          let centerY = rect.y + rect.height / 2;
+          let frameCenterX = canvas.width / 2;
+          let frameCenterY = canvas.height / 2;
+          let distanceToCenter = Math.sqrt(
+            Math.pow(centerX - frameCenterX, 2) + Math.pow(centerY - frameCenterY, 2)
+          );
+
+          // 縦横比と位置でさらに絞り込む
           let aspectRatio = rect.height / rect.width;
           if (0.9 * CARD_RATIO < aspectRatio && aspectRatio < 1.1 * CARD_RATIO) {
-            if (!bestRect || rect.width * rect.height > bestRect.width * bestRect.height) {
+            if (
+              !bestRect ||
+              (rect.width * rect.height > bestRect.width * bestRect.height &&
+                distanceToCenter < canvas.width * 0.25) // 中心付近を優先
+            ) {
               bestRect = rect; // 最大のカード枠を選択
             }
           }
