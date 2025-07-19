@@ -11,8 +11,6 @@
       border: 1px solid black; 
       display: block; 
       margin: 10px auto; 
-      width: 800px; /* 固定幅 */
-      height: 600px; /* 固定高さ */
     }
     #recognized-text { font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px; }
     #ocr-button, #toggle-redline-button { display: block; margin: 30px auto; padding: 20px 40px; font-size: 24px; }
@@ -62,8 +60,13 @@
         video.play();
         streaming = true;
         video.addEventListener('loadedmetadata', () => {
-          canvas.width = 800; // 固定幅
-          canvas.height = 600; // 固定高さ
+          const aspectRatio = video.videoWidth / video.videoHeight; // アスペクト比
+          const newWidth = 800; // 任意の幅
+          const newHeight = newWidth / aspectRatio; // 高さをアスペクト比に基づいて計算
+
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+
           processVideo();
         });
       }).catch(err => {
