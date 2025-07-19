@@ -1,22 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Detection System</title>
-    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
-    <style>
-        canvas, video {
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>ホロライブカード枠検出</title>
+  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+  <style>
+    video, canvas {
+      display: block;
+      margin: 10px auto;
+      border: 1px solid black;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Card Detection System</h1>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480"></canvas>
+  <h1>ホロライブカード枠検出</h1>
+  <div id="status" style="text-align: center; font-weight: bold;">OpenCV.jsを読み込み中...</div>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvasOutput"></canvas>
+  <button id="detect-button">カード枠を検出</button>
 
-    <script src="card_detection.js"></script>
+  <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvasOutput');
+    let ctx = canvas.getContext('2d');
+    let streaming = false;
+
+    function onOpenCvReady() {
+      document.getElementById('status').innerText = "OpenCV.js 読み込み完了！";
+      startCamera();
+    }
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+          video.addEventListener('loadedmetadata', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            streaming = true;
+          });
+        })
+        .catch(err => {
+          console.error("カメラの起動に失敗しました:", err);
+          alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
+        });
+    }
+
+    document.getElementById('detect-button').addEventListener('click', () => {
+      if (!streaming) return;
+      detectCardFrames();
+    });
+
+    function detectCardFrames() {
+      // ビデオフレームをキャンバスに描画
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let src = cv.imread(canvas);
+
+      // グレースケール変換
+      let gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+
+      // エッジ検出 (Canny)
+      let edges = new cv.Mat();
+      cv.Canny(gray, edges, 50, 150);
+
+      // Hough直線変換で直線を検出
+      let lines = new cv.Mat();
+      cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 50, 100, 10);
+
+      // 直線を描画
+      for (let i = 0; i < lines.rows; i++) {
+        let [x1, y1, x2, y2] = lines.data32S.slice(i * 4, (i + 1) * 4);
+        cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [0, 255, 0, 255], 2);
+      }
+
+      // 輪郭検出で四角形を特定
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+      let cardContours = [];
+      const CARD_RATIO = 88 / 63; // 縦横比
+      for (let i = 0; i < contours.size(); i++) {
+        let contour = contours.get(i);
+
+        // 輪郭を近似
+        let approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
+
+        // 四角形かつ縦横比がカードに近いものを選択
+        if (approx.rows === 4) {
+          let rect = cv.boundingRect(approx);
+          let aspectRatio = rect.height / rect.width;
+          if (0.9 * CARD_RATIO < aspectRatio && aspectRatio < 1.1 * CARD_RATIO) {
+            cardContours.push(approx);
+          } else {
+            approx.delete();
+          }
+        } else {
+          approx.delete();
+        }
+      }
+
+      // 検出されたカード枠を描画
+      for (let contour of cardContours) {
+        cv.drawContours(src, new cv.MatVector([contour]), -1, [255, 0, 0, 255], 2);
+      }
+
+      // 結果をキャンバスに表示
+      cv.imshow('canvasOutput', src);
+
+      // リソース解放
+      src.delete();
+      gray.delete();
+      edges.delete();
+      lines.delete();
+      contours.delete();
+      hierarchy.delete();
+    }
+  </script>
 </body>
 </html>
