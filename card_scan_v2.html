@@ -23,13 +23,18 @@
   <div id="status" style="text-align: center; font-weight: bold;">OpenCV.jsを読み込み中...</div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
+  <canvas id="canvasEdges" style="display: none;"></canvas>
   <button id="detect-button">カード枠を検出</button>
+  <button id="toggle-button">切り替え: 元映像</button>
 
   <script>
     let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
+    let canvasEdges = document.getElementById('canvasEdges');
     let ctx = canvas.getContext('2d');
+    let ctxEdges = canvasEdges.getContext('2d');
     let streaming = false;
+    let showEdges = false;
 
     function onOpenCvReady() {
       document.getElementById('status').innerText = "OpenCV.js 読み込み完了！";
@@ -44,6 +49,8 @@
           video.addEventListener('loadedmetadata', () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            canvasEdges.width = video.videoWidth;
+            canvasEdges.height = video.videoHeight;
             streaming = true;
           });
         })
@@ -58,6 +65,19 @@
       detectCardFrames();
     });
 
+    document.getElementById('toggle-button').addEventListener('click', () => {
+      showEdges = !showEdges;
+      if (showEdges) {
+        canvas.style.display = 'none';
+        canvasEdges.style.display = 'block';
+        document.getElementById('toggle-button').innerText = '切り替え: エッジ映像';
+      } else {
+        canvas.style.display = 'block';
+        canvasEdges.style.display = 'none';
+        document.getElementById('toggle-button').innerText = '切り替え: 元映像';
+      }
+    });
+
     function detectCardFrames() {
       // ビデオフレームをキャンバスに描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -70,6 +90,11 @@
       // エッジ検出 (Canny)
       let edges = new cv.Mat();
       cv.Canny(gray, edges, 50, 150);
+
+      // エッジ映像を描画
+      let edgeCanvasMat = new cv.Mat();
+      cv.cvtColor(edges, edgeCanvasMat, cv.COLOR_GRAY2RGBA);
+      cv.imshow('canvasEdges', edgeCanvasMat);
 
       // Hough直線変換で直線を検出
       let lines = new cv.Mat();
@@ -124,6 +149,7 @@
       lines.delete();
       contours.delete();
       hierarchy.delete();
+      edgeCanvasMat.delete();
     }
   </script>
 </body>
