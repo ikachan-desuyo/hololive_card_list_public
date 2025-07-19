@@ -1,84 +1,125 @@
-function detectCardFrames() {
-  // ビデオフレームをキャンバスに描画
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  let src = cv.imread(canvas);
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>カード枠検出</title>
+  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvasOutput"></canvas>
+  <canvas id="canvasEdges" style="display: none;"></canvas>
+  <canvas id="canvasCropped" style="display: none;"></canvas>
+  <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvasOutput');
+    let ctx = canvas.getContext('2d');
+    let streaming = false;
 
-  // グレースケール変換
-  let gray = new cv.Mat();
-  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-
-  // エッジ検出 (Canny)
-  let edges = new cv.Mat();
-  cv.Canny(gray, edges, 50, 150);
-
-  // エッジ映像を描画
-  let edgeCanvasMat = new cv.Mat();
-  cv.cvtColor(edges, edgeCanvasMat, cv.COLOR_GRAY2RGBA);
-  cv.imshow('canvasEdges', edgeCanvasMat);
-
-  // 輪郭検出
-  let contours = new cv.MatVector();
-  let hierarchy = new cv.Mat();
-  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-  const CARD_RATIO = 88 / 63; // 縦横比
-  const MIN_AREA = 5000; // 最小面積のしきい値
-  let bestRect = null;
-
-  for (let i = 0; i < contours.size(); i++) {
-    let contour = contours.get(i);
-
-    // 輪郭を近似
-    let approx = new cv.Mat();
-    cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
-
-    // 四角形かつ縦横比がカードに近いものを選択
-    if (approx.rows === 4) {
-      let rect = cv.boundingRect(approx);
-      let area = rect.width * rect.height;
-
-      // 面積が十分大きく、縦横比が許容範囲内の四角形を判定
-      let aspectRatio = rect.height / rect.width;
-      if (
-        area > MIN_AREA && // 最小面積を満たす
-        0.95 * CARD_RATIO < aspectRatio && aspectRatio < 1.05 * CARD_RATIO // 縦横比の条件
-      ) {
-        let centerX = rect.x + rect.width / 2;
-        let centerY = rect.y + rect.height / 2;
-        let frameCenterX = canvas.width / 2;
-        let frameCenterY = canvas.height / 2;
-
-        // 画面中心との距離を計算
-        let distanceToCenter = Math.sqrt(
-          Math.pow(centerX - frameCenterX, 2) + Math.pow(centerY - frameCenterY, 2)
-        );
-
-        // 中心に近い領域を優先
-        if (
-          !bestRect ||
-          (distanceToCenter < canvas.width / 4 && area > bestRect.width * bestRect.height)
-        ) {
-          bestRect = rect;
-        }
-      }
+    function onOpenCvReady() {
+      startCamera();
     }
-    approx.delete();
-  }
 
-  if (bestRect) {
-    // トリミング処理
-    let cropped = src.roi(bestRect);
-    cv.imshow('canvasCropped', cropped);
-    cropped.delete();
-  } else {
-    console.log("カード枠が見つかりませんでした。");
-  }
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then((stream) => {
+          video.srcObject = stream;
+          video.play();
+          video.addEventListener("loadedmetadata", () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            streaming = true;
+          });
+        })
+        .catch((err) => {
+          console.error("カメラの起動に失敗しました:", err);
+        });
+    }
 
-  // リソース解放
-  src.delete();
-  gray.delete();
-  edges.delete();
-  contours.delete();
-  hierarchy.delete();
-  edgeCanvasMat.delete();
-}
+    function detectCardFrames() {
+      // ビデオフレームをキャンバスに描画
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let src = cv.imread(canvas);
+
+      // グレースケール変換
+      let gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+
+      // エッジ検出 (Canny)
+      let edges = new cv.Mat();
+      cv.Canny(gray, edges, 50, 150);
+
+      // エッジ映像を描画
+      let edgeCanvasMat = new cv.Mat();
+      cv.cvtColor(edges, edgeCanvasMat, cv.COLOR_GRAY2RGBA);
+      cv.imshow('canvasEdges', edgeCanvasMat);
+
+      // 輪郭検出
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+      const CARD_RATIO = 88 / 63; // 縦横比
+      const MIN_AREA = 5000; // 最小面積のしきい値
+      let bestRect = null;
+
+      for (let i = 0; i < contours.size(); i++) {
+        let contour = contours.get(i);
+
+        // 輪郭を近似
+        let approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
+
+        // 四角形かつ縦横比がカードに近いものを選択
+        if (approx.rows === 4) {
+          let rect = cv.boundingRect(approx);
+          let area = rect.width * rect.height;
+
+          // 面積が十分大きく、縦横比が許容範囲内の四角形を判定
+          let aspectRatio = rect.height / rect.width;
+          if (
+            area > MIN_AREA && 
+            0.95 * CARD_RATIO < aspectRatio && aspectRatio < 1.05 * CARD_RATIO
+          ) {
+            let centerX = rect.x + rect.width / 2;
+            let centerY = rect.y + rect.height / 2;
+            let frameCenterX = canvas.width / 2;
+            let frameCenterY = canvas.height / 2;
+
+            // 画面中心との距離を計算
+            let distanceToCenter = Math.sqrt(
+              Math.pow(centerX - frameCenterX, 2) + Math.pow(centerY - frameCenterY, 2)
+            );
+
+            // 中心に近い領域を優先
+            if (
+              !bestRect || 
+              (distanceToCenter < canvas.width / 4 && area > bestRect.width * bestRect.height)
+            ) {
+              bestRect = rect;
+            }
+          }
+        }
+        approx.delete();
+      }
+
+      if (bestRect) {
+        // トリミング処理
+        let cropped = src.roi(bestRect);
+        cv.imshow('canvasCropped', cropped);
+        cropped.delete();
+      } else {
+        console.log("カード枠が見つかりませんでした。");
+      }
+
+      // リソース解放
+      src.delete();
+      gray.delete();
+      edges.delete();
+      contours.delete();
+      hierarchy.delete();
+      edgeCanvasMat.delete();
+    }
+  </script>
+</body>
+</html>
