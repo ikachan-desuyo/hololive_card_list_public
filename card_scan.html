@@ -22,6 +22,7 @@
   <canvas id="canvasOutput"></canvas>
   <button id="mode1-button">改善案1: 通常検出</button>
   <button id="mode2-button">改善案2: モルフォロジー処理</button>
+  <button id="mode3-button">改善案3: 色ベース検出</button>
   <button id="trim-button">トリミング</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
@@ -39,6 +40,7 @@
     // 各ボタンのクリックイベント
     document.getElementById('mode1-button').addEventListener('click', () => setMode(1));
     document.getElementById('mode2-button').addEventListener('click', () => setMode(2));
+    document.getElementById('mode3-button').addEventListener('click', () => setMode(3));
 
     function setMode(mode) {
       currentMode = mode;
@@ -81,6 +83,8 @@
         detectWithMode1(src);
       } else if (currentMode === 2) {
         detectWithMode2(src);
+      } else if (currentMode === 3) {
+        detectWithMode3(src);
       }
 
       cv.imshow('canvasOutput', src);
@@ -99,7 +103,7 @@
     }
 
     function detectWithMode2(src) {
-      // 改善案2: モルフォロジー処理 + 赤枠の結合
+      // 改善案2: モルフォロジー処理を追加
       let gray = new cv.Mat();
       let blurred = new cv.Mat();
       let edges = new cv.Mat();
@@ -111,62 +115,35 @@
       cv.erode(blurred, blurred, kernel);
       cv.Canny(blurred, edges, 50, 150);
 
-      mergeAndDrawContours(edges, src);
+      findAndDrawContours(edges, src);
       gray.delete(); blurred.delete(); edges.delete(); kernel.delete();
     }
 
-    function mergeAndDrawContours(edges, src) {
+    function detectWithMode3(src) {
+      // 改善案3: 色ベースの検出
+      let hsv = new cv.Mat();
+      let mask = new cv.Mat();
+      cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV, 0);
+      let lower = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [0, 50, 50, 0]);
+      let upper = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [10, 255, 255, 255]);
+      cv.inRange(hsv, lower, upper, mask);
+
+      findAndDrawContours(mask, src);
+      hsv.delete(); mask.delete(); lower.delete(); upper.delete();
+    }
+
+    function findAndDrawContours(edges, src) {
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
       cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      let boundingRects = [];
-      for (let i = 0; i < contours.size(); i++) {
-        let rect = cv.boundingRect(contours.get(i));
-        boundingRects.push(rect);
-      }
-
-      let mergedRects = mergeRectangles(boundingRects);
-
-      for (let rect of mergedRects) {
+      for (let i = 0; i < contours.size(); ++i) {
+        let cnt = contours.get(i);
+        let rect = cv.boundingRect(cnt);
         cv.rectangle(src, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), [255, 0, 0, 255], 2);
       }
 
       contours.delete(); hierarchy.delete();
-    }
-
-    function mergeRectangles(rects) {
-      let merged = [];
-      while (rects.length > 0) {
-        let rect = rects.pop();
-        let hasMerged = false;
-
-        for (let i = 0; i < merged.length; i++) {
-          if (isOverlapping(rect, merged[i])) {
-            merged[i] = combineRects(rect, merged[i]);
-            hasMerged = true;
-            break;
-          }
-        }
-
-        if (!hasMerged) {
-          merged.push(rect);
-        }
-      }
-      return merged;
-    }
-
-    function isOverlapping(rect1, rect2) {
-      return !(rect1.x + rect1.width < rect2.x || rect2.x + rect2.width < rect1.x ||
-               rect1.y + rect1.height < rect2.y || rect2.y + rect2.height < rect1.y);
-    }
-
-    function combineRects(rect1, rect2) {
-      let x = Math.min(rect1.x, rect2.x);
-      let y = Math.min(rect1.y, rect2.y);
-      let width = Math.max(rect1.x + rect1.width, rect2.x + rect2.width) - x;
-      let height = Math.max(rect1.y + rect1.height, rect2.y + rect2.height) - y;
-      return { x, y, width, height };
     }
 
     trimButton.addEventListener('click', () => {
