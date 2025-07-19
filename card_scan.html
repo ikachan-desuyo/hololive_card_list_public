@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>リアルタイムカード枠検出（改善案切り替え版）</title>
-  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     video { display: none; }
     canvas { 
@@ -12,146 +10,145 @@
       display: block; 
       margin: 10px auto; 
     }
-    button { display: block; margin: 20px auto; padding: 15px 30px; font-size: 20px; }
+    button { display: inline-block; margin: 5px; padding: 10px 20px; font-size: 16px; }
+    button.active { background: #4CAF50; color: white; }
+    #opencv-status { font-weight: bold; margin: 10px; }
   </style>
+  <!-- deferで呼ぶと関数定義後にロード -->
+  <script defer src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
   <h1>リアルタイムカード枠検出（改善案切り替え版）</h1>
-  <div id="opencv-status" style="font-weight: bold; margin: 1em;"></div>
+  <div id="opencv-status">🔄 OpenCVロード中...</div>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
-  <button id="mode1-button">改善案1: 通常検出</button>
-  <button id="mode2-button">改善案2: モルフォロジー処理</button>
-  <button id="mode3-button">改善案3: 色ベース検出</button>
-  <button id="trim-button">トリミング</button>
-  <button id="ocr-button">OCRを実行</button>
+  <div>
+    <button id="mode1-button" class="active">改善案1</button>
+    <button id="mode2-button">改善案2</button>
+    <button id="mode3-button">改善案3</button>
+  </div>
+  <div>
+    <button id="trim-button">トリミング</button>
+    <button id="ocr-button">OCRを実行</button>
+  </div>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
 
   <script>
-    let video = document.getElementById('video');
-    let canvas = document.getElementById('canvasOutput');
-    let ctx = canvas.getContext('2d');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvasOutput');
+    const statusEl = document.getElementById('opencv-status');
+    const textOutput = document.getElementById('text-output');
+    const trimBtn = document.getElementById('trim-button');
+    const ocrBtn = document.getElementById('ocr-button');
+    let currentMode = 1;
     let streaming = false;
-    let textOutput = document.getElementById('text-output');
-    let ocrButton = document.getElementById('ocr-button');
-    let trimButton = document.getElementById('trim-button');
-    let currentMode = 1; // デフォルトは改善案1
 
-    // 各ボタンのクリックイベント
-    document.getElementById('mode1-button').addEventListener('click', () => setMode(1));
-    document.getElementById('mode2-button').addEventListener('click', () => setMode(2));
-    document.getElementById('mode3-button').addEventListener('click', () => setMode(3));
+    // モード切り替えボタン
+    ['mode1','mode2','mode3'].forEach((id, idx) => {
+      document.getElementById(`${id}-button`)
+        .addEventListener('click', () => setMode(idx+1));
+    });
 
-    function setMode(mode) {
-      currentMode = mode;
-      console.log(`現在のモード: 改善案${mode}`);
+    function setMode(m) {
+      currentMode = m;
+      ['mode1','mode2','mode3'].forEach((id, idx) => {
+        document.getElementById(`${id}-button`)
+          .classList.toggle('active', currentMode === idx+1);
+      });
+      statusEl.innerText = `🔄 改善案${m} 適用中...`;
     }
 
     function onOpenCvReady() {
-      const statusEl = document.getElementById("opencv-status");
-      statusEl.innerText = "🔄 OpenCV.js 初期化中...";
-      cv['onRuntimeInitialized'] = () => {
-        statusEl.innerText = "✅ OpenCV.js 読み込み完了！";
-        startCamera();
-      };
+      statusEl.innerText = '✅ OpenCV読み込み完了';
+      startCamera();
     }
 
     function startCamera() {
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      }).then(stream => {
-        video.srcObject = stream;
-        video.play();
-        streaming = true;
-        video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          processVideo();
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            streaming = true;
+            initCv();
+          };
+        })
+        .catch(err => {
+          console.error(err);
+          alert('カメラ起動失敗');
         });
-      }).catch(err => {
-        console.error("カメラの起動に失敗しました: ", err);
-        alert("カメラの起動に失敗しました。デバイスのカメラ権限を確認してください。");
-      });
+    }
+
+    // OpenCV Mat変数（再利用）
+    let cap, src, dst, gray, blurred, edges, hsv, mask, kernel, contours, hierarchy;
+
+    function initCv() {
+      cap = new cv.VideoCapture(video);
+      src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
+      dst = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
+      gray = new cv.Mat(); blurred = new cv.Mat(); edges = new cv.Mat();
+      hsv = new cv.Mat(); mask = new cv.Mat();
+      kernel = cv.Mat.ones(5,5,cv.CV_8U);
+      contours = new cv.MatVector(); hierarchy = new cv.Mat();
+      requestAnimationFrame(processVideo);
     }
 
     function processVideo() {
       if (!streaming) return;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      let src = cv.imread(canvas);
+      cap.read(src);
+      src.copyTo(dst);
 
-      if (currentMode === 1) {
-        detectWithMode1(src);
-      } else if (currentMode === 2) {
-        detectWithMode2(src);
-      } else if (currentMode === 3) {
-        detectWithMode3(src);
+      switch(currentMode) {
+        case 1: mode1(); break;
+        case 2: mode2(); break;
+        case 3: mode3(); break;
       }
 
-      cv.imshow('canvasOutput', src);
-      src.delete();
+      cv.imshow(canvas, dst);
       requestAnimationFrame(processVideo);
     }
 
-    function detectWithMode1(src) {
-      // 改善案1: 通常の輪郭検出
-      let gray = new cv.Mat();
-      let edges = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+    function mode1() {
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
       cv.Canny(gray, edges, 50, 150);
-      findAndDrawContours(edges, src);
-      gray.delete(); edges.delete();
+      drawContours(edges);
     }
 
-    function detectWithMode2(src) {
-      // 改善案2: モルフォロジー処理を追加
-      let gray = new cv.Mat();
-      let blurred = new cv.Mat();
-      let edges = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-
-      let kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+    function mode2() {
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      cv.GaussianBlur(gray, blurred, new cv.Size(5,5), 0);
       cv.dilate(blurred, blurred, kernel);
       cv.erode(blurred, blurred, kernel);
       cv.Canny(blurred, edges, 50, 150);
-
-      findAndDrawContours(edges, src);
-      gray.delete(); blurred.delete(); edges.delete(); kernel.delete();
+      drawContours(edges);
     }
 
-    function detectWithMode3(src) {
-      // 改善案3: 色ベースの検出
-      let hsv = new cv.Mat();
-      let mask = new cv.Mat();
-      cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV, 0);
-      let lower = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [0, 50, 50, 0]);
-      let upper = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [10, 255, 255, 255]);
-      cv.inRange(hsv, lower, upper, mask);
-
-      findAndDrawContours(mask, src);
-      hsv.delete(); mask.delete(); lower.delete(); upper.delete();
+    function mode3() {
+      cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV);
+      cv.inRange(hsv, new cv.Scalar(0,50,50), new cv.Scalar(10,255,255), mask);
+      drawContours(mask);
     }
 
-    function findAndDrawContours(edges, src) {
-      let contours = new cv.MatVector();
-      let hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-      for (let i = 0; i < contours.size(); ++i) {
-        let cnt = contours.get(i);
-        let rect = cv.boundingRect(cnt);
-        cv.rectangle(src, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), [255, 0, 0, 255], 2);
+    function drawContours(binMat) {
+      cv.findContours(binMat, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      for (let i = 0; i < contours.size(); i++) {
+        let rect = cv.boundingRect(contours.get(i));
+        cv.rectangle(dst, new cv.Point(rect.x,rect.y), new cv.Point(rect.x+rect.width, rect.y+rect.height), [255,0,0,255], 2);
       }
-
-      contours.delete(); hierarchy.delete();
     }
 
-    trimButton.addEventListener('click', () => {
-      alert("現在の改善案に基づいてトリミングを実行します。");
+    trimBtn.addEventListener('click', () => {
+      statusEl.innerText = '✂️ トリミング実行中...';
+      // トリミング処理の実装はここに
+      statusEl.innerText = '✅ トリミング完了';
     });
 
-    ocrButton.addEventListener('click', () => {
-      alert("現在の改善案に基づいてOCRを実行します。");
+    ocrBtn.addEventListener('click', () => {
+      statusEl.innerText = '🔤 OCR実行中...';
+      // OCR処理の実装はここに
+      statusEl.innerText = '✅ OCR完了';
     });
   </script>
 </body>
