@@ -55,8 +55,8 @@
         video.play();
         streaming = true;
         video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth / 2; // 解像度を半分に
-          canvas.height = video.videoHeight / 2;
+          canvas.width = video.videoWidth; // 解像度を元のサイズに
+          canvas.height = video.videoHeight;
           processVideo();
         });
       }).catch(err => {
