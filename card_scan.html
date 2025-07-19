@@ -7,7 +7,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     video { display: none; }
-    canvas { border: 1px solid black; display: block; margin: 10px auto; }
+    canvas { 
+      border: 1px solid black; 
+      display: block; 
+      margin: 10px auto; 
+      width: 800px; /* 固定幅 */
+      height: 600px; /* 固定高さ */
+    }
     #recognized-text { font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px; }
     #ocr-button, #toggle-redline-button { display: block; margin: 30px auto; padding: 20px 40px; font-size: 24px; }
   </style>
@@ -56,8 +62,8 @@
         video.play();
         streaming = true;
         video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth; // 解像度を元のサイズに
-          canvas.height = video.videoHeight;
+          canvas.width = 800; // 固定幅
+          canvas.height = 600; // 固定高さ
           processVideo();
         });
       }).catch(err => {
