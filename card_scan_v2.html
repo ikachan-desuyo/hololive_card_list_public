@@ -24,17 +24,22 @@
   <video id="video" autoplay playsinline></video>
   <canvas id="canvasOutput"></canvas>
   <canvas id="canvasEdges" style="display: none;"></canvas>
+  <canvas id="canvasCropped" style="display: none;"></canvas>
   <button id="detect-button">カード枠を検出</button>
   <button id="toggle-button">切り替え: 元映像</button>
+  <button id="crop-toggle-button">切り替え: トリミング結果</button>
 
   <script>
     let video = document.getElementById('video');
     let canvas = document.getElementById('canvasOutput');
     let canvasEdges = document.getElementById('canvasEdges');
+    let canvasCropped = document.getElementById('canvasCropped');
     let ctx = canvas.getContext('2d');
     let ctxEdges = canvasEdges.getContext('2d');
+    let ctxCropped = canvasCropped.getContext('2d');
     let streaming = false;
     let showEdges = false;
+    let showCropped = false;
 
     function onOpenCvReady() {
       document.getElementById('status').innerText = "OpenCV.js 読み込み完了！";
@@ -51,6 +56,8 @@
             canvas.height = video.videoHeight;
             canvasEdges.width = video.videoWidth;
             canvasEdges.height = video.videoHeight;
+            canvasCropped.width = video.videoWidth;
+            canvasCropped.height = video.videoHeight;
             streaming = true;
           });
         })
@@ -70,11 +77,25 @@
       if (showEdges) {
         canvas.style.display = 'none';
         canvasEdges.style.display = 'block';
+        canvasCropped.style.display = 'none';
         document.getElementById('toggle-button').innerText = '切り替え: エッジ映像';
       } else {
         canvas.style.display = 'block';
         canvasEdges.style.display = 'none';
         document.getElementById('toggle-button').innerText = '切り替え: 元映像';
+      }
+    });
+
+    document.getElementById('crop-toggle-button').addEventListener('click', () => {
+      showCropped = !showCropped;
+      if (showCropped) {
+        canvas.style.display = 'none';
+        canvasEdges.style.display = 'none';
+        canvasCropped.style.display = 'block';
+        document.getElementById('crop-toggle-button').innerText = '切り替え: トリミング結果';
+      } else {
+        canvasCropped.style.display = 'none';
+        document.getElementById('crop-toggle-button').innerText = '切り替え: 元映像';
       }
     });
 
@@ -96,16 +117,6 @@
       cv.cvtColor(edges, edgeCanvasMat, cv.COLOR_GRAY2RGBA);
       cv.imshow('canvasEdges', edgeCanvasMat);
 
-      // Hough直線変換で直線を検出
-      let lines = new cv.Mat();
-      cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 50, 100, 10);
-
-      // 直線を描画
-      for (let i = 0; i < lines.rows; i++) {
-        let [x1, y1, x2, y2] = lines.data32S.slice(i * 4, (i + 1) * 4);
-        cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [0, 255, 0, 255], 2);
-      }
-
       // 輪郭検出で四角形を特定
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
@@ -113,6 +124,7 @@
 
       let cardContours = [];
       const CARD_RATIO = 88 / 63; // 縦横比
+      let bestRect = null;
       for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
 
@@ -125,28 +137,30 @@
           let rect = cv.boundingRect(approx);
           let aspectRatio = rect.height / rect.width;
           if (0.9 * CARD_RATIO < aspectRatio && aspectRatio < 1.1 * CARD_RATIO) {
-            cardContours.push(approx);
-          } else {
-            approx.delete();
+            if (!bestRect || rect.width * rect.height > bestRect.width * bestRect.height) {
+              bestRect = rect; // 最大のカード枠を選択
+            }
           }
+          approx.delete();
         } else {
           approx.delete();
         }
       }
 
-      // 検出されたカード枠を描画
-      for (let contour of cardContours) {
-        cv.drawContours(src, new cv.MatVector([contour]), -1, [255, 0, 0, 255], 2);
+      if (bestRect) {
+        // トリミング処理
+        let cropped = src.roi(bestRect);
+        cv.imshow('canvasCropped', cropped);
+        cropped.delete();
       }
 
-      // 結果をキャンバスに表示
+      // 検出結果をキャンバスに表示
       cv.imshow('canvasOutput', src);
 
       // リソース解放
       src.delete();
       gray.delete();
       edges.delete();
-      lines.delete();
       contours.delete();
       hierarchy.delete();
       edgeCanvasMat.delete();
