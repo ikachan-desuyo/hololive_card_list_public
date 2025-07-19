@@ -22,7 +22,6 @@
   <canvas id="canvasOutput"></canvas>
   <button id="mode1-button">改善案1: 通常検出</button>
   <button id="mode2-button">改善案2: モルフォロジー処理</button>
-  <button id="mode3-button">改善案3: 色ベース検出</button>
   <button id="trim-button">トリミング</button>
   <button id="ocr-button">OCRを実行</button>
   <div id="recognized-text">読み取った文字列: <span id="text-output">なし</span></div>
@@ -40,7 +39,6 @@
     // 各ボタンのクリックイベント
     document.getElementById('mode1-button').addEventListener('click', () => setMode(1));
     document.getElementById('mode2-button').addEventListener('click', () => setMode(2));
-    document.getElementById('mode3-button').addEventListener('click', () => setMode(3));
 
     function setMode(mode) {
       currentMode = mode;
@@ -83,8 +81,6 @@
         detectWithMode1(src);
       } else if (currentMode === 2) {
         detectWithMode2(src);
-      } else if (currentMode === 3) {
-        detectWithMode3(src);
       }
 
       cv.imshow('canvasOutput', src);
@@ -117,19 +113,6 @@
 
       mergeAndDrawContours(edges, src);
       gray.delete(); blurred.delete(); edges.delete(); kernel.delete();
-    }
-
-    function detectWithMode3(src) {
-      // 改善案3: 色ベースの検出
-      let hsv = new cv.Mat();
-      let mask = new cv.Mat();
-      cv.cvtColor(src, hsv, cv.COLOR_RGBA2HSV, 0);
-      let lower = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [0, 50, 50, 0]);
-      let upper = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [10, 255, 255, 255]);
-      cv.inRange(hsv, lower, upper, mask);
-
-      findAndDrawContours(mask, src);
-      hsv.delete(); mask.delete(); lower.delete(); upper.delete();
     }
 
     function mergeAndDrawContours(edges, src) {
