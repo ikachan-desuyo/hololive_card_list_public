@@ -31,7 +31,8 @@
     let toggleRedLineButton = document.getElementById('toggle-redline-button');
     let redLineMode = 0; // 0: 通常, 1: 赤線表示, 2: 赤線のみ
     let lastFrameTime = 0; // フレームレート制限用
-
+    let processing = false; // 処理中フラグ
+    
     toggleRedLineButton.addEventListener("click", () => {
       redLineMode = (redLineMode + 1) % 3;
       const modes = ["通常表示", "赤線表示", "赤線のみ"];
@@ -66,14 +67,21 @@
     }
 
     function processVideo() {
+      if (processing) return; // 処理中はスキップ
+      processing = true;
+
       const now = performance.now();
-      if (now - lastFrameTime < 33) { // 約30fpsに制限
+      if (now - lastFrameTime < 100) { // 約10fpsに制限
+        processing = false;
         requestAnimationFrame(processVideo);
         return;
       }
       lastFrameTime = now;
 
-      if (!streaming) return;
+      if (!streaming) {
+        processing = false;
+        return;
+      }
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       let src = cv.imread(canvas);
@@ -106,8 +114,10 @@
           if (redLineMode === 1) {
             cv.drawContours(src, contours, -1, contoursColor, 2);
           } else if (redLineMode === 2) {
-            src = new cv.Mat.zeros(src.rows, src.cols, src.type());
-            cv.drawContours(src, contours, -1, contoursColor, 2);
+            let tempSrc = new cv.Mat.zeros(src.rows, src.cols, src.type());
+            cv.drawContours(tempSrc, contours, -1, contoursColor, 2);
+            src.delete();
+            src = tempSrc;
           }
         }
       }
@@ -116,6 +126,7 @@
       src.delete(); gray.delete(); blurred.delete(); edges.delete();
       contours.delete(); hierarchy.delete();
 
+      processing = false;
       if (streaming) requestAnimationFrame(processVideo);
     }
 
