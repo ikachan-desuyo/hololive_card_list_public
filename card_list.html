@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.3 - Fixed mobile sticky controls and dark mode background -->
+<!-- Version: 2.4 - Enhanced mobile sticky controls background fix -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -492,6 +492,26 @@
         background: #222 !important;
         border-color: #444 !important;
         box-shadow: 0 2px 4px rgba(255,255,255,0.1) !important;
+      }
+
+      /* モバイル環境でのさらなる強化 */
+      .sticky-controls,
+      .sticky-controls * {
+        background: #fff !important;
+      }
+
+      .dark .sticky-controls,
+      .dark .sticky-controls * {
+        background: #222 !important;
+        color: #eee !important;
+      }
+
+      .dark .sticky-controls input,
+      .dark .sticky-controls select,
+      .dark .sticky-controls button {
+        background: #444 !important;
+        color: #eee !important;
+        border-color: #666 !important;
       }
 
       .sticky-controls .top-controls-row {
