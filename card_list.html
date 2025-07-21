@@ -141,6 +141,7 @@
       align-items: center;
       gap: 4px;
       flex-wrap: wrap;
+      width: 100%;
     }
 
     .mobile-layout .top-controls button {
@@ -148,6 +149,17 @@
       padding: 4px 6px;
       flex: 1;
       min-width: 0;
+    }
+
+    /* CSV機能ボタンを確実に表示 */
+    .mobile-layout .top-controls-row button {
+      display: block !important;
+      visibility: visible !important;
+      font-size: 12px;
+      padding: 4px 8px;
+      margin: 2px;
+      flex: 1;
+      white-space: nowrap;
     }
 
     .mobile-layout .top-controls input,
@@ -410,8 +422,30 @@
       }
     }
 
+    /* モバイル版での確実な表示 */
+    @media (max-width: 540px) {
+      .top-controls-row {
+        display: flex !important;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+
+      .top-controls-row button {
+        flex: 1;
+        font-size: 11px;
+        padding: 4px 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
     /* CSV機能のモバイル対応 */
-    @media (max-width: 768px) {
+    @media (max-width: 540px) {
       #csvPanel {
         margin: 5px 0 !important;
         padding: 10px !important;
@@ -878,6 +912,16 @@
     return window.innerWidth <= 540;
   }
 
+  function updateMobileLayout() {
+    if (isMobileScreen()) {
+      document.body.classList.add("mobile-layout");
+    } else {
+      document.body.classList.remove("mobile-layout");
+    }
+  }
+
+  window.addEventListener("resize", updateMobileLayout);
+
   window.addEventListener("scroll", () => {
     if (viewMode === "compact" || viewMode === "table") {
       const bottom = window.innerHeight + window.scrollY;
@@ -893,9 +937,7 @@
     if (localStorage.getItem("darkMode") === "true") {
       document.body.classList.add("dark");
     }
-    if (isMobileScreen()) {
-      document.body.classList.add("mobile-layout");
-    }
+    updateMobileLayout();
 
     try {
       // Try to load from localStorage first (for offline use)
