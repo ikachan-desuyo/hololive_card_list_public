@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.3 - Filter improvements matching deck builder -->
+<!-- Version: 2.4 - Fixed dark mode button size and filter functionality -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <meta name="cache-bust" content="v2.3-20250122">
   <title>カード詳細検索ページ</title>
   <style>
     body {
@@ -268,6 +269,23 @@
       font-weight: bold;
     }
 
+    /* ダークモード時のチップスタイル */
+    .dark .chip {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .dark .chip:hover {
+      background: #555;
+    }
+
+    .dark .chip.selected {
+      background: #007acc;
+      color: #fff;
+      border-color: #005999;
+    }
+
     /* モバイル対応 */
     @media (max-width: 768px) {
       body {
@@ -348,7 +366,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索</h2>
-        <button onclick="toggleDarkMode()" style="padding: 4px 8px; font-size: 16px; min-width: auto;">🌗</button>
+        <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
       </div>
       <div class="nav-row">
         <div class="controls">
@@ -448,7 +466,6 @@
         const group = btn.parentElement;
         const allBtn = group.querySelector(".all-chip");
         if (allBtn) allBtn.classList.remove("selected");
-
         btn.classList.toggle("selected");
         renderTable();
       }
@@ -594,7 +611,7 @@
       populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
       populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
       populateChipGroup("cardTypeFilter", [...cardTypeSet].sort(), true, true);
-      populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false, false);
+      populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], true, true);
 
       populateSelect("productFilter", productSet, "収録商品");
       populateSelect("tagsFilter", tagSet, "タグ（選択）");
@@ -679,7 +696,7 @@
 
       const filtered = cards.filter(card => {
         const count = card.owned;
-        const matchOwned =
+        const matchOwned = 
           ownedStates.length === 0 ||
           (ownedStates.includes("owned") && count > 0) ||
           (ownedStates.includes("unowned") && (!count || count == 0));
