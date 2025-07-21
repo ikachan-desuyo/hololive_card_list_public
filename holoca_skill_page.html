@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.5-FORCE-UPDATE - Fixed filters and forced cache clear -->
+<!-- Version: 2.5-STABLE - Fixed infinite reload loop -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -367,7 +367,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.5-UPDATED]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.5-STABLE]</span>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
       </div>
@@ -747,7 +747,7 @@
     }
 
     window.onload = async () => {
-      console.log('🔥 HOLOCA SKILL PAGE v2.5 - FORCE UPDATE LOADED 🔥');
+      console.log('✅ HOLOCA SKILL PAGE v2.5-STABLE - FIXED RELOAD LOOP ✅');
       console.log('⏰ Loaded at:', new Date().toLocaleString());
       
       if (localStorage.getItem("darkMode") === "true") {
@@ -844,37 +844,29 @@
       }
     };
 
-    // Service Worker registration with force update
+    // Service Worker registration (fixed infinite reload)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          // Unregister existing service workers first
-          const existingRegistrations = await navigator.serviceWorker.getRegistrations();
-          for (const registration of existingRegistrations) {
-            await registration.unregister();
-            console.log('Unregistered old SW:', registration);
-          }
-          
-          // Register new service worker
+          // Register service worker normally
           const registration = await navigator.serviceWorker.register('./sw.js');
           console.log('SW registered: ', registration);
           
-          // Force update check
-          registration.update();
+          // Only update if needed (not on first load)
+          if (registration.waiting) {
+            // There's an update waiting
+            console.log('SW update available');
+          }
           
-          // Listen for updates
+          // Listen for updates more carefully
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    // New content available, auto-reload
-                    console.log('New SW installed, reloading...');
-                    window.location.reload();
-                  } else {
-                    console.log('SW installed for the first time');
-                  }
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content available - but don't auto-reload to prevent loops
+                  console.log('New SW installed but not auto-reloading to prevent loops');
+                  // Optionally show a manual reload button or notification
                 }
               });
             }
