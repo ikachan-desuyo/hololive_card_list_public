@@ -23,11 +23,52 @@
       background: #333 !important;
       border-color: #666 !important;
     }
-    .dark #csvPanel h4 {
-      color: #aaa !important;
-    }
-  
-    .container {
+      .dark #csvPanel h4 {
+        color: #aaa !important;
+      }
+
+      /* CSV機能パネルのベーススタイル */
+      #csvPanel {
+        border: 2px solid #667eea;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+        background: #f8f9ff;
+      }
+
+      #csvPanel h4 {
+        margin: 0 0 10px 0;
+        color: #667eea;
+      }
+
+      #csvPanel textarea {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        box-sizing: border-box;
+      }
+
+      #csvPanel .button-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      #csvPanel .csv-button {
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: white;
+      }
+
+      #csvPanel .import-btn { background: #4CAF50; }
+      #csvPanel .export-btn { background: #2196F3; }
+      #csvPanel .clear-btn { background: #f44336; }    .container {
       max-width: none;
       width: fit-content;
       margin: 0 auto;
@@ -368,6 +409,38 @@
         order: 1; /* 最後に配置 */
       }
     }
+
+    /* CSV機能のモバイル対応 */
+    @media (max-width: 768px) {
+      #csvPanel {
+        margin: 5px 0 !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+      }
+
+      #csvPanel h4 {
+        font-size: 14px !important;
+        margin-bottom: 8px !important;
+      }
+
+      #csvPanel textarea {
+        font-size: 11px !important;
+        padding: 6px !important;
+        margin-bottom: 6px !important;
+      }
+
+      #csvPanel .button-group {
+        flex-direction: column !important;
+        gap: 4px !important;
+      }
+
+      #csvPanel .csv-button {
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+    }
   </style>
 </head>
 <body>
@@ -436,14 +509,14 @@
       </div>
 
       <!-- CSV機能パネル（初期非表示） -->
-      <div id="csvPanel" style="display:none; border: 2px solid #667eea; border-radius: 10px; padding: 15px; margin: 10px 0; background: #f8f9ff;">
-        <h4 style="margin: 0 0 10px 0; color: #667eea;">📄 CSV機能</h4>
-        <div style="margin-bottom: 10px;">
-          <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 12px;"></textarea>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button onclick="importCSV()" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">📥 CSVインポート</button>
-            <button onclick="exportCSV()" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">📤 所持CSV取得</button>
-            <button onclick="clearCSVInput()" style="background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">🗑️ クリア</button>
+      <div id="csvPanel" style="display:none;">
+        <h4>📄 CSV機能</h4>
+        <div>
+          <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください"></textarea>
+          <div class="button-group">
+            <button onclick="importCSV()" class="csv-button import-btn">📥 CSVインポート</button>
+            <button onclick="exportCSV()" class="csv-button export-btn">📤 所持CSV取得</button>
+            <button onclick="clearCSVInput()" class="csv-button clear-btn">🗑️ クリア</button>
           </div>
         </div>
       </div>

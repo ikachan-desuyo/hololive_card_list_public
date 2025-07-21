@@ -60,6 +60,11 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .top-bar .nav-row:last-child {
+      margin-bottom: 0;
     }
 
     .top-bar button {
@@ -67,6 +72,23 @@
       font-size: 14px;
       cursor: pointer;
       border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      margin-right: 5px;
+    }
+
+    .dark .top-bar button {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .top-bar button:hover {
+      background: #f0f0f0;
+    }
+
+    .dark .top-bar button:hover {
+      background: #555;
     }
 
     h2 {
@@ -268,6 +290,38 @@
       select {
         max-width: 180px; /* モバイルでセレクトボックスを短く */
       }
+
+      .top-bar .nav-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .top-bar .nav-row > div {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .top-bar button {
+        font-size: 12px;
+        padding: 5px 8px;
+        margin-right: 0;
+      }
+
+      .controls {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .controls input,
+      .controls select,
+      .controls button {
+        width: 100%;
+        box-sizing: border-box;
+      }
     }
   </style>
 </head>
@@ -275,10 +329,16 @@
   <div class="container">
     <div class="top-bar">
       <div class="nav-row">
-        <button onclick="history.back()">← 前のページへ</button>
-        <h2>カード詳細検索</h2>
+        <div>
+          <button onclick="location.href='index.html'">🏠 ホーム</button>
+          <button onclick="location.href='card_list.html'">🃏 カード一覧</button>
+          <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
+        </div>
+        <h2 style="margin: 0;">カード詳細検索</h2>
+        <button onclick="toggleDarkMode()">🌗</button>
+      </div>
+      <div class="nav-row">
         <div class="controls">
-          <button onclick="toggleDarkMode()">🌗 モード切替</button>
           <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
           <select id="sortMethod" onchange="renderTable()">
             <option value="release" selected>発売日順</option>
