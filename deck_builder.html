@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
+<!-- Version: 2.1 - Updated with navigation and offline support -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>デッキ作成</title>
   <style>
     html, body {
@@ -401,16 +405,17 @@
 
     <!-- ✅ 1段目：ナビゲーションバー的配置 -->
     <div class="deck-nav-row">
-      <button onclick="history.back()">← 前のページへ</button>
-      <h2 class="deck-title">デッキ作成</h2>
-      <div class="top-nav">
+      <div>
+        <button onclick="location.href='index.html'">🏠 ホーム</button>
+        <button onclick="location.href='card_list.html'">🃏 カード一覧</button>
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
+      <h2 class="deck-title">デッキ作成</h2>
+      <button onclick="toggleDarkMode()">🌗</button>
     </div>
   
     <!-- ✅ 2段目：デッキ操作ボタン群 -->
     <div class="deck-controls">
-      <button onclick="toggleDarkMode()">🌗</button>
       <button onclick="createDeck()">➕ デッキ作成</button>
       <select id="deckSelector" onchange="switchDeck()">
         <option value="">📂 デッキ選択</option>
@@ -1045,12 +1050,38 @@
   // ✅ 起動時：JSON読み込み＋フィルター初期化
   window.onload = async () => {
     try {
-      const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-      ]);
-      const rawData = await cardRes.json();
-      releaseMap = await releaseRes.json();
+      // Try to load from localStorage first (for offline use)
+      const cachedCardData = localStorage.getItem('cardData');
+      const cachedReleaseData = localStorage.getItem('releaseData');
+      const cacheTimestamp = localStorage.getItem('dataTimestamp');
+      const now = Date.now();
+      const cacheAge = now - (parseInt(cacheTimestamp) || 0);
+      const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      let rawData, releaseMapData;
+
+      // Use cached data if available and not too old, or if offline
+      if (cachedCardData && cachedReleaseData && (cacheAge < maxCacheAge || !navigator.onLine)) {
+        console.log('Using cached data');
+        rawData = JSON.parse(cachedCardData);
+        releaseMapData = JSON.parse(cachedReleaseData);
+      } else {
+        // Fetch fresh data
+        console.log('Fetching fresh data');
+        const [cardRes, releaseRes] = await Promise.all([
+          fetch("json_file/card_data.json"),
+          fetch("json_file/release_dates.json")
+        ]);
+        rawData = await cardRes.json();
+        releaseMapData = await releaseRes.json();
+
+        // Cache the data
+        localStorage.setItem('cardData', JSON.stringify(rawData));
+        localStorage.setItem('releaseData', JSON.stringify(releaseMapData));
+        localStorage.setItem('dataTimestamp', now.toString());
+      }
+
+      releaseMap = releaseMapData;
 
       cards = Object.entries(rawData).map(([key, card]) => ({
         id: key,
@@ -1097,15 +1128,64 @@
         console.warn("保存されたデッキの読み込みに失敗しました");
         }
     }
-    // 🎴 カードデータ読み込み
+    // 🎴 カードデータ読み込み (オフライン対応)
     try {
-        const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-        ]);
-        const rawData = await cardRes.json();
-        releaseMap = await releaseRes.json();
+        let rawData, releaseMapData;
+        
+        // オフライン時のためにlocalStorageから読み込み試行
+        const cachedCardData = localStorage.getItem('cached_card_data');
+        const cachedReleaseData = localStorage.getItem('cached_release_data');
+        const cacheTime = localStorage.getItem('cache_timestamp');
+        
+        // キャッシュが24時間以内なら使用、そうでなければ新しいデータを取得
+        const isCacheValid = cacheTime && (Date.now() - parseInt(cacheTime) < 24 * 60 * 60 * 1000);
+        
+        if (navigator.onLine && !isCacheValid) {
+            // オンライン時は最新データを取得してキャッシュ
+            try {
+                const [cardRes, releaseRes] = await Promise.all([
+                    fetch("json_file/card_data.json"),
+                    fetch("json_file/release_dates.json")
+                ]);
+                
+                rawData = await cardRes.json();
+                releaseMapData = await releaseRes.json();
+                
+                // データをキャッシュに保存
+                localStorage.setItem('cached_card_data', JSON.stringify(rawData));
+                localStorage.setItem('cached_release_data', JSON.stringify(releaseMapData));
+                localStorage.setItem('cache_timestamp', Date.now().toString());
+            } catch (fetchError) {
+                console.warn('オンラインデータの取得に失敗:', fetchError);
+                // フェッチに失敗した場合はキャッシュデータにフォールバック
+                if (cachedCardData && cachedReleaseData) {
+                    rawData = JSON.parse(cachedCardData);
+                    releaseMapData = JSON.parse(cachedReleaseData);
+                } else {
+                    throw new Error('データの取得に失敗し、キャッシュも利用できません');
+                }
+            }
+        } else if (cachedCardData && cachedReleaseData) {
+            // キャッシュからデータを読み込み
+            rawData = JSON.parse(cachedCardData);
+            releaseMapData = JSON.parse(cachedReleaseData);
+        } else {
+            // キャッシュがない場合は強制的にフェッチ
+            const [cardRes, releaseRes] = await Promise.all([
+                fetch("json_file/card_data.json"),
+                fetch("json_file/release_dates.json")
+            ]);
+            
+            rawData = await cardRes.json();
+            releaseMapData = await releaseRes.json();
+            
+            // 初回キャッシュ保存
+            localStorage.setItem('cached_card_data', JSON.stringify(rawData));
+            localStorage.setItem('cached_release_data', JSON.stringify(releaseMapData));
+            localStorage.setItem('cache_timestamp', Date.now().toString());
+        }
 
+        releaseMap = releaseMapData;
         cards = Object.entries(rawData).map(([key, card]) => ({
         id: key,
         name: card.name,
@@ -1124,11 +1204,66 @@
 
         setupFilterChips();
         updateDeckUI();
+        
+        // データ読み込み成功をコンソールに記録
+        console.log('カードデータ読み込み完了:', {
+            cardCount: cards.length,
+            dataSource: navigator.onLine && !isCacheValid ? 'オンライン' : 'キャッシュ',
+            cacheAge: cacheTime ? `${Math.round((Date.now() - parseInt(cacheTime)) / (60 * 60 * 1000))}時間` : '新規'
+        });
     } catch (err) {
-        console.error(err);
-        alert("カードデータの読み込みに失敗しました！");
+        console.error('カードデータ読み込みエラー:', err);
+        alert("カードデータの読み込みに失敗しました！オフライン時は過去にアクセスした際のデータが必要です。");
     }
+
+    // 🔄 Service Worker登録 & アップデート検出
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('sw.js');
+            console.log('Service Worker登録成功:', registration);
+            
+            // アップデート検出
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // 新しいバージョンが利用可能
+                            if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            console.error('Service Worker登録失敗:', error);
+        }
+    }
+
+    // 🌐 オンライン/オフライン状態の表示管理
+    function updateOnlineStatus() {
+        const statusElement = document.getElementById('offline-status');
+        if (statusElement) {
+            if (navigator.onLine) {
+                statusElement.textContent = '🟢 オンライン';
+                statusElement.style.color = '#4CAF50';
+            } else {
+                statusElement.textContent = '🔴 オフライン';
+                statusElement.style.color = '#F44336';
+            }
+        }
+    }
+
+    // ネットワーク状態変更とページロード時のステータス更新
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('load', updateOnlineStatus);
   };
 </script>
+
+<!-- オンライン/オフライン状態表示 -->
+<div id="offline-status" style="position: fixed; bottom: 10px; right: 10px; font-size: 12px; padding: 5px 10px; border-radius: 5px; background: rgba(255,255,255,0.9); z-index: 1000;"></div>
+
 </body>
 </html>

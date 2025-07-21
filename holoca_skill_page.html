@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.1 - Updated with offline support and mobile fixes -->
+<!-- Version: 2.3 - Filter improvements matching deck builder -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -219,15 +219,15 @@
     }
 
     select {
-      font-size: 15px;
+      font-size: 14px;
       padding: 6px;
-      max-width: 240px;
+      max-width: 200px;
     }
 
     input[type="text"] {
-      font-size: 15px;
+      font-size: 14px;
       padding: 6px;
-      width: 240px;
+      width: 200px;
     }
 
     img.skill-icon {
@@ -288,11 +288,11 @@
       }
       
       input[type="text"] {
-        width: 180px; /* モバイルで入力フィールドを短く */
+        width: 160px; /* モバイルで入力フィールドを短く */
       }
       
       select {
-        max-width: 180px; /* モバイルでセレクトボックスを短く */
+        max-width: 160px; /* モバイルでセレクトボックスを短く */
       }
 
       .top-bar .nav-row {
@@ -348,18 +348,18 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索</h2>
-        <button onclick="toggleDarkMode()">🌗</button>
+        <button onclick="toggleDarkMode()" style="padding: 4px 8px; font-size: 16px; min-width: auto;">🌗</button>
       </div>
       <div class="nav-row">
         <div class="controls">
-          <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" />
-          <select id="sortMethod" onchange="renderTable()">
+          <input type="text" id="keywordSearch" placeholder="すべての項目から検索..." oninput="renderTable()" style="width: 200px; font-size: 14px;" />
+          <select id="sortMethod" onchange="renderTable()" style="font-size: 14px;">
             <option value="release" selected>発売日順</option>
             <option value="id">カード番号順</option>
             <option value="name">名前順</option>
             <option value="rarity">レアリティ順</option>
           </select>
-          <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+          <button onclick="toggleFilters()" style="font-size: 14px;">🔽 フィルター表示／非表示</button>
         </div>
       </div>
       <div id="filtersWrapper">
@@ -381,6 +381,11 @@
         <fieldset class="filter-group">
           <legend>Bloom</legend>
           <div id="bloomFilter" class="chip-group"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>カードタイプ</legend>
+          <div id="cardTypeFilter" class="chip-group"></div>
         </fieldset>
 
         <fieldset class="filter-group">
@@ -530,7 +535,7 @@
         return sorted;
       }
       function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set();
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set(), cardTypeSet = new Set();
         cards.forEach(c => {
           raritySet.add(c.rarity);
           colorSet.add(c.color);
@@ -539,6 +544,9 @@
             productSet.add(c.product);
           }
           c.tags.forEach(tag => tagSet.add(tag));
+          // カードタイプを「・」で分割
+          const typeParts = c.card_type?.split("・") ?? [];
+          typeParts.forEach(part => cardTypeSet.add(part.trim()));
         });
 
       function populateSelect(id, items, label) {
@@ -575,7 +583,7 @@
           const btn = document.createElement("button");
           const label = id === "ownedStateChipGroup" ? ownedLabelMap[val] ?? val : val;
           btn.textContent = label;
-          btn.className = "chip" + ((id === "ownedStateChipGroup") ? " selected" : "");
+          btn.className = "chip";
           btn.dataset.value = val;
           btn.onclick = () => toggleChip(btn);
           container.appendChild(btn);
@@ -585,7 +593,8 @@
       populateChipGroup("rarityFilter", [...raritySet].sort(), true, true);
       populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
       populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
-      populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false, true);
+      populateChipGroup("cardTypeFilter", [...cardTypeSet].sort(), true, true);
+      populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false, false);
 
       populateSelect("productFilter", productSet, "収録商品");
       populateSelect("tagsFilter", tagSet, "タグ（選択）");
@@ -661,6 +670,7 @@
       const rarity = getCheckedFromChips("rarityFilter");
       const color = getCheckedFromChips("colorFilter");
       const bloom = getCheckedFromChips("bloomFilter");
+      const cardType = getCheckedFromChips("cardTypeFilter");
       const product = document.getElementById("productFilter").value.toLowerCase();
       const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
 
@@ -685,6 +695,7 @@
           rarity: rarity.length === 0 || rarity.includes(card.rarity),
           color: color.length === 0 || color.includes(card.color),
           bloom: bloom.length === 0 || bloom.includes(card.bloom),
+          cardType: cardType.length === 0 || cardType.some(type => card.card_type?.includes(type)),
           product: !product || card.product.toLowerCase().includes(product),
           keyword: !keyword || allText.includes(keyword),
           tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)

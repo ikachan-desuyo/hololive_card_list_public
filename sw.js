@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v2.1'; // バージョンアップでキャッシュ更新を強制
+const CACHE_NAME = 'hololive-card-tool-v2.2'; // バージョンアップでキャッシュ更新を強制
 const urlsToCache = [
   './',
   './index.html',
