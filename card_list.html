@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
+<!-- Version: 2.1 - Updated with mobile CSV fixes -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>ホロライブカード一覧</title>
   <style>
     body {
@@ -913,10 +917,13 @@
   }
 
   function updateMobileLayout() {
+    const wasMobile = document.body.classList.contains("mobile-layout");
     if (isMobileScreen()) {
       document.body.classList.add("mobile-layout");
+      if (!wasMobile) console.log('Switched to mobile layout');
     } else {
       document.body.classList.remove("mobile-layout");
+      if (wasMobile) console.log('Switched to desktop layout');
     }
   }
 
@@ -1033,6 +1040,18 @@
       navigator.serviceWorker.register('./sw.js')
         .then((registration) => {
           console.log('SW registered: ', registration);
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New content available, reload the page
+                if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                  window.location.reload();
+                }
+              }
+            });
+          });
         })
         .catch((registrationError) => {
           console.log('SW registration failed: ', registrationError);

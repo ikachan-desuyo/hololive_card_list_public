@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
+<!-- Version: 2.1 - Updated with offline support and mobile fixes -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>カード詳細検索ページ</title>
   <style>
     body {
@@ -323,6 +327,15 @@
         box-sizing: border-box;
       }
     }
+
+    /* モバイル用のJS制御クラス */
+    .mobile-layout .top-bar {
+      padding: 5px;
+    }
+
+    .mobile-layout .container {
+      padding: 5px;
+    }
   </style>
 </head>
 <body>
@@ -418,6 +431,9 @@
         max-height:100dvh;
         object-fit:contain;">
     </div>
+
+    <div id="offline-status" style="position: fixed; bottom: 10px; right: 10px; font-size: 12px; padding: 5px 10px; border-radius: 5px; background: rgba(255,255,255,0.9);"></div>
+
     <script>
       let cards = [];
       let releaseMap = {};
@@ -455,6 +471,20 @@
         document.body.classList.toggle("dark");
         localStorage.setItem("darkMode", document.body.classList.contains("dark"));
       }
+
+      function isMobileScreen() {
+        return window.innerWidth <= 540;
+      }
+
+      function updateMobileLayout() {
+        if (isMobileScreen()) {
+          document.body.classList.add("mobile-layout");
+        } else {
+          document.body.classList.remove("mobile-layout");
+        }
+      }
+
+      window.addEventListener("resize", updateMobileLayout);
     
       function selectAll(id) {
         document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
@@ -689,14 +719,42 @@
       if (localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark");
       }
+      
+      updateMobileLayout();
 
       try {
-        const [cardRes, releaseRes] = await Promise.all([
-          fetch("json_file/card_data.json"),
-          fetch("json_file/release_dates.json")
-        ]);
-        const rawData = await cardRes.json();
-        releaseMap = await releaseRes.json();
+        // Try to load from localStorage first (for offline use)
+        const cachedCardData = localStorage.getItem('cardData');
+        const cachedReleaseData = localStorage.getItem('releaseData');
+        const cacheTimestamp = localStorage.getItem('dataTimestamp');
+        const now = Date.now();
+        const cacheAge = now - (parseInt(cacheTimestamp) || 0);
+        const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
+
+        let rawData, releaseMapData;
+
+        // Use cached data if available and not too old, or if offline
+        if (cachedCardData && cachedReleaseData && (cacheAge < maxCacheAge || !navigator.onLine)) {
+          console.log('Using cached data');
+          rawData = JSON.parse(cachedCardData);
+          releaseMapData = JSON.parse(cachedReleaseData);
+        } else {
+          // Fetch fresh data
+          console.log('Fetching fresh data');
+          const [cardRes, releaseRes] = await Promise.all([
+            fetch("json_file/card_data.json"),
+            fetch("json_file/release_dates.json")
+          ]);
+          rawData = await cardRes.json();
+          releaseMapData = await releaseRes.json();
+
+          // Cache the data
+          localStorage.setItem('cardData', JSON.stringify(rawData));
+          localStorage.setItem('releaseData', JSON.stringify(releaseMapData));
+          localStorage.setItem('dataTimestamp', now.toString());
+        }
+
+        releaseMap = releaseMapData;
 
         cards = Object.entries(rawData).map(([key, card]) => ({
           id: key,
@@ -718,9 +776,81 @@
         renderTable();
       } catch (err) {
         console.error(err);
-        alert("データの読み込みに失敗しました！");
+        
+        // Try to load from localStorage as fallback
+        const cachedCardData = localStorage.getItem('cardData');
+        const cachedReleaseData = localStorage.getItem('releaseData');
+        
+        if (cachedCardData && cachedReleaseData) {
+          console.log('Network failed, using cached data as fallback');
+          const rawData = JSON.parse(cachedCardData);
+          releaseMap = JSON.parse(cachedReleaseData);
+          
+          cards = Object.entries(rawData).map(([key, card]) => ({
+            id: key,
+            name: card.name,
+            rarity: card.rarity ?? "-",
+            color: card.color ?? "-",
+            bloom: card.bloom_level ?? "-",
+            hp: card.hp ?? null,
+            life: card.life ?? null,
+            product: card.product ?? "-",
+            tags: card.tags ?? [],
+            skills: card.skills ?? [],
+            image: card.image_url,
+            owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+            card_type: card.card_type ?? "-"
+          }));
+
+          setupFilters();
+          renderTable();
+        } else {
+          alert("データの読み込みに失敗しました！インターネット接続を確認してください。");
+        }
       }
     };
+
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content available, reload the page
+                  if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+
+    // Online/Offline status
+    function updateOnlineStatus() {
+      const statusElement = document.getElementById('offline-status');
+      if (navigator.onLine) {
+        statusElement.textContent = '🟢 オンライン';
+        statusElement.style.color = '#4CAF50';
+      } else {
+        statusElement.textContent = '🔴 オフライン';
+        statusElement.style.color = '#F44336';
+      }
+    }
+
+    // Update status on page load and network changes
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('load', updateOnlineStatus);
 
     window.addEventListener("scroll", () => {
       const bottom = window.innerHeight + window.scrollY;
