@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.3-LOGO-REMOVAL - Removed logo container and cleaned up design -->
+<!-- Version: 3.4-MOBILE-UPDATE-FIX - Enhanced mobile browser update mechanism -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -211,7 +211,7 @@
 <body>
   <div class="container">
     <h1>ホロライブカードゲーム<br>管理ツール
-      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;">[v3.3-LOGO-REMOVAL]</span>
+      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;">[v3.4-MOBILE-UPDATE-FIX]</span>
     </h1>
 
     <div class="menu-grid">
@@ -278,9 +278,14 @@
     // Service Worker registration with update notification
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js', {
+          updateViaCache: 'none' // モバイル向け：キャッシュを使わず常に最新をチェック
+        })
           .then((registration) => {
             console.log('SW registered: ', registration);
+            
+            // モバイル向け：即座に更新チェック
+            registration.update();
             
             // Check for waiting service worker
             if (registration.waiting) {
@@ -313,6 +318,21 @@
             console.log('SW registration failed: ', registrationError);
           });
       });
+    }
+
+    // モバイル向け：定期的な更新チェック（5分間隔）
+    if ('serviceWorker' in navigator && /Mobi|Android/i.test(navigator.userAgent)) {
+      setInterval(async () => {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            await registration.update();
+            console.log('Mobile: Periodic update check completed');
+          }
+        } catch (error) {
+          console.log('Mobile: Periodic update check failed:', error);
+        }
+      }, 5 * 60 * 1000); // 5分間隔
     }
 
     // Online/Offline status
@@ -366,8 +386,15 @@
       try {
         btnEl.disabled = true;
         btnEl.textContent = '🔄 確認中...';
-        statusEl.textContent = '更新を確認しています...';
+        statusEl.textContent = 'モバイル向け更新確認中...';
         statusEl.style.color = '#2196f3';
+
+        // モバイル向け：全キャッシュをクリアして強制更新
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+          console.log('Mobile: All caches cleared');
+        }
 
         // Force check for updates
         await serviceWorkerRegistration.update();
@@ -385,6 +412,10 @@
                   cacheNames.map(cacheName => caches.delete(cacheName))
                 ).then(() => {
                   serviceWorkerRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
+                  // モバイル向け：強制リロード
+                  setTimeout(() => {
+                    window.location.href = window.location.href + '?v=' + Date.now();
+                  }, 500);
                 });
               });
             }
@@ -395,7 +426,7 @@
           
           btnEl.disabled = false;
           btnEl.textContent = '🔄 更新確認';
-        }, 2000);
+        }, 3000); // モバイル向けに少し長めに待機
 
       } catch (error) {
         console.error('Update check failed:', error);

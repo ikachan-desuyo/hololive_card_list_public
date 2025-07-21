@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.3-logo-removal-clean'; // ロゴ削除・デザイン整理
+const CACHE_NAME = 'hololive-card-tool-v3.4-mobile-force-update'; // モバイル強制更新対応
 const urlsToCache = [
   './',
   './index.html',
@@ -33,7 +33,7 @@ const urlsToCache = [
   './images/tokkou_50_yellow.png'
 ];
 
-// Install event - cache resources (removed skipWaiting to prevent loops)
+// Install event - cache resources and immediately take control
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
@@ -41,6 +41,11 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        // モバイル向け：即座に有効化
+        console.log('Mobile: Force skip waiting');
+        self.skipWaiting();
       })
       .catch((error) => {
         console.log('Cache failed:', error);
