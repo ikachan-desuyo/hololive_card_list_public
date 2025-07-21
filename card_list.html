@@ -19,6 +19,13 @@
     .dark input, .dark select, .dark textarea {
       background: #444; color: #eee; border-color: #666;
     }
+    .dark #csvPanel {
+      background: #333 !important;
+      border-color: #666 !important;
+    }
+    .dark #csvPanel h4 {
+      color: #aaa !important;
+    }
   
     .container {
       max-width: none;
@@ -390,6 +397,10 @@
           <!-- フィルター表示/非表示を最後に -->
           <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
         </div>
+        
+        <div class="top-controls-row">
+          <button onclick="toggleCSVPanel()">📄 CSV機能</button>
+        </div>
       </div>
 
       <div id="filtersWrapper">
@@ -423,6 +434,19 @@
           </select>
         </fieldset>
       </div>
+
+      <!-- CSV機能パネル（初期非表示） -->
+      <div id="csvPanel" style="display:none; border: 2px solid #667eea; border-radius: 10px; padding: 15px; margin: 10px 0; background: #f8f9ff;">
+        <h4 style="margin: 0 0 10px 0; color: #667eea;">📄 CSV機能</h4>
+        <div style="margin-bottom: 10px;">
+          <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 12px;"></textarea>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button onclick="importCSV()" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">📥 CSVインポート</button>
+            <button onclick="exportCSV()" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">📤 所持CSV取得</button>
+            <button onclick="clearCSVInput()" style="background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">🗑️ クリア</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="sticky-info">
@@ -448,13 +472,6 @@
 
     <!-- ✅ 簡易表示領域（スマホ最適化済） -->
     <div id="cardPreviewArea" style="display:none;"></div>
-
-    <h3>CSVインポート・エクスポート</h3>
-    <div class="controls">
-      <textarea id="csvInput" rows="4" placeholder="id,枚数 のCSVを貼り付けてください"></textarea>
-      <button onclick="importCSV()">📥 CSVインポート</button>
-      <button onclick="exportCSV()">📤 所持CSVをコピー</button>
-    </div>
 
     <!-- ✅ 画像ズーム表示モーダル -->
     <div id="imageModal" onclick="hideImageModal()" style="
@@ -550,6 +567,21 @@
           el.style.display = "none";
           toggleBtn.textContent = "🔽 フィルター表示";
         }
+      }
+
+      function toggleCSVPanel() {
+        const el = document.getElementById("csvPanel");
+        const isHidden = window.getComputedStyle(el).display === "none";
+        
+        if (isHidden) {
+          el.style.display = "block";
+        } else {
+          el.style.display = "none";
+        }
+      }
+
+      function clearCSVInput() {
+        document.getElementById("csvInput").value = "";
       }
     
       function toggleDarkMode() {

@@ -11,6 +11,7 @@
       font-size: 15px;
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
+      padding-bottom: 50px; /* 最下部に余白を追加 */
     }
 
     .dark {
@@ -36,7 +37,7 @@
       max-width: none;
       width: fit-content;
       margin: 0 auto;
-      padding: 10px;
+      padding: 10px 10px 30px 10px; /* 下部に余白を追加 */
     }
 
     .top-bar {
@@ -119,6 +120,7 @@
       border-collapse: collapse;
       width: 100%;
       table-layout: auto;
+      margin-bottom: 30px; /* テーブル下部に余白を追加 */
     }
 
     thead {
@@ -238,6 +240,34 @@
 
     .chip.all-chip {
       font-weight: bold;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: 80px; /* モバイルでは更に余白を増やす */
+      }
+      
+      .container {
+        padding: 5px 5px 50px 5px; /* モバイルでコンパクトに、但し下部余白は確保 */
+      }
+      
+      table {
+        margin-bottom: 50px; /* モバイルでテーブル下部余白を増やす */
+      }
+      
+      th, td {
+        padding: 6px 4px; /* モバイルでセル内の余白を調整 */
+        font-size: 13px;
+      }
+      
+      input[type="text"] {
+        width: 180px; /* モバイルで入力フィールドを短く */
+      }
+      
+      select {
+        max-width: 180px; /* モバイルでセレクトボックスを短く */
+      }
     }
   </style>
 </head>
