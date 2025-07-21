@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v2.6-mobile-layout'; // モバイルレイアウト修正
+const CACHE_NAME = 'hololive-card-tool-v2.7-update-notification'; // 更新通知機能復活
 const urlsToCache = [
   './',
   './index.html',
@@ -49,20 +49,33 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches more carefully
+// Listen for skip waiting message from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Received SKIP_WAITING message, taking control');
+    self.skipWaiting();
+  }
+});
+
+// Activate event - clean up old caches and claim clients when skip waiting
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Delete all old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Claim clients when activated after skip waiting
+      self.clients.claim()
+    ])
   );
 });
 

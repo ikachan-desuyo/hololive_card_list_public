@@ -296,12 +296,39 @@
   </div>
 
   <script>
-    // Service Worker registration
+    // Service Worker registration with update notification
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then((registration) => {
             console.log('SW registered: ', registration);
+            
+            // Check for waiting service worker
+            if (registration.waiting) {
+              console.log('SW update available');
+              if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                registration.waiting.postMessage({type: 'SKIP_WAITING'});
+              }
+            }
+            
+            // Listen for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                      newWorker.postMessage({type: 'SKIP_WAITING'});
+                    }
+                  }
+                });
+              }
+            });
+
+            // Listen for controller change
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              window.location.reload();
+            });
           })
           .catch((registrationError) => {
             console.log('SW registration failed: ', registrationError);
