@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.1 - Updated with mobile CSV fixes -->
+<!-- Version: 2.2 - Improved mobile layout with CSV on top and selective sticky -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -80,14 +80,28 @@
     }
   
     .container-top {
+      background: #fff;
+      border-bottom: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    /* 検索・ソート・フィルター行のみをsticky固定 */
+    .sticky-controls {
       position: sticky;
       top: 0;
       background: #fff;
       z-index: 100;
-      border-bottom: 1px solid #ccc;
-      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      padding: 8px 0;
+      margin-bottom: 10px;
     }
+
     .dark .container-top {
+      background: #222;
+      border-color: #444;
+    }
+
+    .dark .sticky-controls {
       background: #222;
       border-color: #444;
     }
@@ -345,6 +359,16 @@
       padding: 6px 0;
       line-height: 1.1;
     }
+
+    .mobile-layout .sticky-controls {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 100;
+      border-bottom: 1px solid #ddd;
+      padding: 6px 8px;
+      margin: 0 -8px 10px -8px;
+    }
   
     .mobile-layout #cardPreviewArea div > div div {
       font-size: 10px;
@@ -355,6 +379,11 @@
       padding: 6px 0;
       line-height: 1.1;
       color: #b9b8b8;
+    }
+
+    .dark .mobile-layout .sticky-controls {
+      background: #222;
+      border-color: #444;
     }
   
     .dark .mobile-layout #cardPreviewArea div > div div {
@@ -450,6 +479,11 @@
 
     /* CSV機能のモバイル対応 */
     @media (max-width: 540px) {
+      .csv-row {
+        order: -1; /* CSV機能を最上部に表示 */
+        margin-bottom: 8px;
+      }
+
       #csvPanel {
         margin: 5px 0 !important;
         padding: 10px !important;
@@ -490,6 +524,11 @@
           <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>      <div class="top-controls">
+        <!-- CSV機能を最上部に移動 -->
+        <div class="top-controls-row csv-row">
+          <button onclick="toggleCSVPanel()">📄 CSV機能</button>
+        </div>
+        
         <!-- その他のコントロール -->
         <div class="top-controls-row">
           <button onclick="setViewMode('table')">🧾 表モード</button>
@@ -497,7 +536,8 @@
           <button onclick="toggleDarkMode()">🌗</button>
         </div>
         
-        <div class="top-controls-row">
+        <!-- 固定対象：検索・ソート・フィルターのみ -->
+        <div class="top-controls-row sticky-controls">
           <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
           <select id="sortMethod" onchange="renderTable()">
             <option value="release" selected>発売日順</option>
@@ -507,10 +547,6 @@
           </select>
           <!-- フィルター表示/非表示を最後に -->
           <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
-        </div>
-        
-        <div class="top-controls-row">
-          <button onclick="toggleCSVPanel()">📄 CSV機能</button>
         </div>
       </div>
 
