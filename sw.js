@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.2-manual-update-check'; // 手動更新確認機能追加
+const CACHE_NAME = 'hololive-card-tool-v3.3-logo-removal-clean'; // ロゴ削除・デザイン整理
 const urlsToCache = [
   './',
   './index.html',
