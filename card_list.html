@@ -793,12 +793,38 @@
     }
 
     try {
-      const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-      ]);
-      const cardRaw = await cardRes.json();
-      releaseMap = await releaseRes.json();
+      // Try to load from localStorage first (for offline use)
+      const cachedCardData = localStorage.getItem('cardData');
+      const cachedReleaseData = localStorage.getItem('releaseData');
+      const cacheTimestamp = localStorage.getItem('dataTimestamp');
+      const now = Date.now();
+      const cacheAge = now - (parseInt(cacheTimestamp) || 0);
+      const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      let cardRaw, releaseMapData;
+
+      // Use cached data if available and not too old, or if offline
+      if (cachedCardData && cachedReleaseData && (cacheAge < maxCacheAge || !navigator.onLine)) {
+        console.log('Using cached data');
+        cardRaw = JSON.parse(cachedCardData);
+        releaseMapData = JSON.parse(cachedReleaseData);
+      } else {
+        // Fetch fresh data
+        console.log('Fetching fresh data');
+        const [cardRes, releaseRes] = await Promise.all([
+          fetch("json_file/card_data.json"),
+          fetch("json_file/release_dates.json")
+        ]);
+        cardRaw = await cardRes.json();
+        releaseMapData = await releaseRes.json();
+
+        // Cache the data
+        localStorage.setItem('cardData', JSON.stringify(cardRaw));
+        localStorage.setItem('releaseData', JSON.stringify(releaseMapData));
+        localStorage.setItem('dataTimestamp', now.toString());
+      }
+
+      releaseMap = releaseMapData;
 
       cards = Object.entries(cardRaw).map(([key, card]) => ({
         id: key,
@@ -818,9 +844,70 @@
       renderTable();
     } catch (err) {
       console.error(err);
-      alert("データの読み込みに失敗しました！");
+      
+      // Try to load from localStorage as fallback
+      const cachedCardData = localStorage.getItem('cardData');
+      const cachedReleaseData = localStorage.getItem('releaseData');
+      
+      if (cachedCardData && cachedReleaseData) {
+        console.log('Network failed, using cached data as fallback');
+        const cardRaw = JSON.parse(cachedCardData);
+        releaseMap = JSON.parse(cachedReleaseData);
+        
+        cards = Object.entries(cardRaw).map(([key, card]) => ({
+          id: key,
+          name: card.name,
+          rarity: card.rarity ?? "-",
+          color: card.color ?? "-",
+          bloom: card.bloom_level ?? "-",
+          hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
+          product: card.product,
+          image: card.image_url,
+          url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
+          owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
+          card_type: card.card_type ?? "-"
+        }));
+
+        setupFilters();
+        renderTable();
+        
+        // Show offline message
+        document.getElementById("offline-status").textContent = "⚠️ オフライン - 保存されたデータを使用中";
+        document.getElementById("offline-status").style.color = "#FF9800";
+      } else {
+        alert("データの読み込みに失敗しました！インターネット接続を確認してください。");
+      }
     }
   };
+
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    });
+  }
+
+  // Online/Offline status
+  function updateOnlineStatus() {
+    const statusElement = document.getElementById('offline-status');
+    if (navigator.onLine) {
+      statusElement.textContent = '🟢 オンライン - 最新データを取得中';
+      statusElement.style.color = '#4CAF50';
+    } else {
+      statusElement.textContent = '🔴 オフライン - キャッシュデータを使用中';
+      statusElement.style.color = '#F44336';
+    }
+  }
+
+  // Update status on page load and network changes
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
 </script>
 </body>
 </html>

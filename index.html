@@ -286,9 +286,42 @@
     </div>
 
     <div class="footer">
-      <p>© 2025 ホロライブカードゲーム管理ツール</p>
+      <p>© 2025 Hololive Card Game Management Tool</p>
       <p>このツールは非公式のファンメイドツールです</p>
+      <p id="offline-status" style="font-size: 0.8em; margin-top: 10px;"></p>
     </div>
   </div>
+
+  <script>
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+
+    // Online/Offline status
+    function updateOnlineStatus() {
+      const statusElement = document.getElementById('offline-status');
+      if (navigator.onLine) {
+        statusElement.textContent = '🟢 オンライン - 最新データを取得中';
+        statusElement.style.color = '#4CAF50';
+      } else {
+        statusElement.textContent = '🔴 オフライン - キャッシュデータを使用中';
+        statusElement.style.color = '#F44336';
+      }
+    }
+
+    // Update status on page load and network changes
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('load', updateOnlineStatus);
+  </script>
 </body>
 </html>
