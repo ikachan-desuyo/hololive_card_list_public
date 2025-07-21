@@ -1,6 +1,13 @@
 # 📚 Hololive Card Web Tools
 
-## 🗂 Hololive Card List (`index.html`)
+## 🏠 Main Page (`index.html`)
+
+Landing page with navigation to all available tools:
+- **Card List**: Browse and manage your card collection
+- **Card Detail Search**: Advanced search with detailed filters
+- **Deck Builder**: Create and manage card decks
+
+## 🗂 Hololive Card List (`card_list.html`)
 
 A responsive card list tool for browsing, filtering, and managing your Hololive cards.
 

@@ -3,826 +3,292 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ホロライブカード一覧</title>
+  <title>ホロライブカードゲーム管理ツール</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      font-size: 15px;
-      transition: background 0.3s, color 0.3s;
-      overflow-x: hidden;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #333;
     }
-  
-    .dark { background: #222; color: #eee; }
-    .dark table { background: #333; }
-    .dark th, .dark td { border-color: #666; }
-    .dark input, .dark select, .dark textarea {
-      background: #444; color: #eee; border-color: #666;
-    }
-  
+
     .container {
-      max-width: none;
-      width: fit-content;
-      margin: 0 auto;
-      padding: 10px;
-    }
-  
-    .container-top {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      z-index: 100;
-      border-bottom: 1px solid #ccc;
-      padding: 10px;
-    }
-    .dark .container-top {
-      background: #222;
-      border-color: #444;
-    }
-  
-    h2 {
+      max-width: 600px;
+      width: 90%;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
       text-align: center;
-      margin-bottom: 10px;
-      margin-top: 0;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo-container {
+      margin-bottom: 30px;
       position: relative;
     }
-  
-    .top-nav {
+
+    .logo {
+      max-width: 200px;
+      height: auto;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: white;
+      padding: 10px;
+    }
+
+    .logo:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo-glow {
       position: absolute;
-      top: 0;
-      right: 10px;
-    }
-  
-    .top-controls {
-      display: flex;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    /* モバイル専用のボタン配置調整 */
-    .mobile-layout .top-nav {
-      position: static;
-      text-align: center;
-      margin-bottom: 10px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 120px;
+      background: radial-gradient(ellipse, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: -1;
+      animation: pulse 3s ease-in-out infinite;
     }
 
-    .mobile-layout .top-nav button {
-      font-size: 12px;
-      padding: 4px 8px;
-      margin: 0 2px;
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.1);
+      }
     }
 
-    .mobile-layout h2 {
-      font-size: 16px;
-      margin-bottom: 8px;
-      margin-top: 0;
-      position: static;
-    }
-
-    .mobile-layout .top-controls {
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .mobile-layout .top-controls-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .mobile-layout .top-controls button {
-      font-size: 12px;
-      padding: 4px 6px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .mobile-layout .top-controls input,
-    .mobile-layout .top-controls select {
-      font-size: 12px;
-      padding: 4px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .mobile-layout #nameSearch {
-      min-width: 120px;
-    }
-
-    .mobile-layout #sortMethod {
-      min-width: 80px;
-    }
-  
-    .filter-group {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 6px;
-      margin-bottom: 2px;
-    }
-  
-    .dark .filter-group {
-      border-color: #666;
-    }
-  
-    #filtersWrapper {
-      display: none;
-      transition: all 0.3s ease;
-    }
-  
-    .sticky-info {
-      background: #fff;
-      padding: 10px 0;
-      font-size: 13px;
-      border-bottom: 1px solid #ccc;
-      text-align: center;
-    }
-  
-    .dark .sticky-info {
-      background: #222;
-      border-color: #444;
-    }
-  
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      table-layout: auto;
-    }
-  
-    thead {
-      position: sticky;
-      top: 0;
-      background: #f8f8f8;
-      z-index: 50;
-    }
-  
-    .dark thead {
-      background: #333;
-    }
-  
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      font-size: 15px;
-      vertical-align: top;
-    }
-  
-    input[type="number"] {
-      width: 32px;
-      text-align: center;
-    }
-  
-    img {
-      width: 60px;
-      border-radius: 4px;
-      cursor: zoom-in;
-      background-color: #fff;
-      border: 1px solid #ddd;
-    }
-  
-    /* ✅ プレビュー（簡易）表示全体レイアウト */
-    #cardPreviewArea {
-      padding: 8px;
-    }
-  
-    #cardPreviewArea > div {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: flex-start;
-    }
-  
-    #cardPreviewArea div > div {
-      flex: 0 0 auto;
-      width: calc((100vw - 48px) / 4);
-      max-width: 96px;
-      padding: 4px;
-      box-sizing: border-box;
-      background: transparent;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-    }
-  
-    #cardPreviewArea img {
-      width: 100%;
-      border-radius: 4px;
-      cursor: zoom-in;
-      background: #fff;
-      border: 1px solid #ccc;
-    }
-  
-    #cardPreviewArea div > div div {
-      font-size: 11px;
-      line-height: 1.3;
-      color: #333;
-      margin-top: 4px;
-      background: none;
-      border: none;
-      padding: 0;
-      overflow-wrap: break-word;
-    }
-
-    .dark #cardPreviewArea div > div div {
-      font-size: 11px;
-      line-height: 1.3;
-      color: #b9b8b8;
-      margin-top: 4px;
-      background: none;
-      border: none;
-      padding: 0;
-      overflow-wrap: break-word;
-    }
-
-    .chip-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .chip {
-      padding: 2px 10px;
-      border: 1px solid #aaa;
-      border-radius: 16px;
-      background: #f0f0f0;
-      cursor: pointer;
-      font-size: 14px;
-      user-select: none;
-      transition: 0.2s;
-    }
-
-    .chip:hover {
-      background: #ddd;
-    }
-
-    .chip.selected {
-      background: #0095ff;
-      color: #fff;
-      border-color: #007acc;
-    }
-
-    .chip.all-chip {
+    h1 {
+      font-size: 2.2em;
+      margin: 20px 0;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       font-weight: bold;
     }
-  
-    /* ✅ スマホ専用表示レイアウト追加調整 */
-    .mobile-layout #cardPreviewArea div > div {
-      width: calc((100vw - 32px) / 4);
-      max-width: 95px;
-      margin: 0.2px;
-    }
-  
-    .mobile-layout .sticky-info {
-      font-size: 11.5px;
-      padding: 6px 0;
-      line-height: 1.1;
-    }
-  
-    .mobile-layout #cardPreviewArea div > div div {
-      font-size: 10px;
+
+    .subtitle {
+      font-size: 1.1em;
+      color: #666;
+      margin-bottom: 40px;
+      line-height: 1.6;
     }
 
-    .dark .mobile-layout .sticky-info {
-      font-size: 11.5px;
-      padding: 6px 0;
-      line-height: 1.1;
-      color: #b9b8b8;
-    }
-  
-    .dark .mobile-layout #cardPreviewArea div > div div {
-      font-size: 10px;
-      color: #b9b8b8;
-    }
-  
-    .mobile-layout .container-top {
-      padding: 4px 6px 6px 6px;
-    }
-  
-    .mobile-layout .top-controls {
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-  
-    .mobile-layout h2 {
-      font-size: 17px;
-      margin-bottom: 6px;
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
     }
 
-    /* ✅ スマホレイアウト時、フィルターのラベル全体に適用 */
-    .mobile-layout .filter-group label {
-      font-size: 13px;
-      line-height: 1.4;
+    .menu-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 2px solid transparent;
+      border-radius: 15px;
+      padding: 30px 20px;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* ✅ ラベル内のテキストにも直接適用（構造によって必要） */
-    .mobile-layout .filter-group label > span,
-    .mobile-layout .filter-group label > div,
-    .mobile-layout .filter-group label > text,
-    .mobile-layout .filter-group label * {
-      font-size: 13px !important;
-    }
-
-    /* スマホレイアウト時、チェックボックスラベルのテキストサイズを縮小 */
-    .mobile-layout .filter-row label {
-      font-size: 12px !important;
-      line-height: 1.2;
-    }
-
-    /* スマホで収録商品セレクトを画面幅に合わせる */
-    .mobile-layout #productFilter {
+    .menu-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
       width: 100%;
-      max-width: calc(100vw - 32px); /* 左右の余白分を調整 */
-      font-size: 13px;
-    }
-    
-    .mobile-layout #cardPreviewArea > div {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: flex-start;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
     }
 
-    /* デスクトップ版では通常の配置を維持 */
-    @media (min-width: 541px) {
-      .top-controls-row {
-        display: contents;
+    .menu-card:hover::before {
+      left: 100%;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+      border-color: #667eea;
+    }
+
+    .menu-icon {
+      font-size: 3em;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .menu-title {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .menu-description {
+      font-size: 0.95em;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      color: #888;
+      font-size: 0.9em;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      .container {
+        padding: 30px 20px;
+        margin: 20px;
       }
-      
-      .top-controls {
-        flex-direction: row !important;
-        justify-content: flex-end !important;
+
+      .logo {
+        max-width: 160px;
       }
-      
-      #filterToggleBtn {
-        order: 1; /* 最後に配置 */
+
+      .logo-glow {
+        width: 180px;
+        height: 100px;
+      }
+
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .subtitle {
+        font-size: 1em;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-card {
+        padding: 25px 15px;
+      }
+
+      .menu-icon {
+        font-size: 2.5em;
+      }
+
+      .menu-title {
+        font-size: 1.2em;
+      }
+    }
+
+    /* ダークモード対応 */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      }
+
+      .container {
+        background: rgba(44, 62, 80, 0.95);
+        color: #ecf0f1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .logo-glow {
+        background: radial-gradient(ellipse, rgba(52, 152, 219, 0.4) 0%, transparent 70%);
+      }
+
+      .menu-card {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: #ecf0f1;
+      }
+
+      .menu-card:hover {
+        border-color: #3498db;
+      }
+
+      .menu-title {
+        color: #ecf0f1;
+      }
+
+      .menu-description {
+        color: #bdc3c7;
+      }
+
+      .subtitle {
+        color: #bdc3c7;
+      }
+
+      .footer {
+        color: #95a5a6;
+        border-top-color: rgba(255, 255, 255, 0.1);
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="container-top">
-      <h2>ホロライブカード一覧</h2>
-      
-      <div class="top-nav">
-        <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
-        <button onclick="location.href='deck_builder.html'">🧠 デッキ作成</button>
-      </div>
+    <div class="logo-container">
+      <div class="logo-glow"></div>
+      <img src="images/Logo_-_Hololive_Official_Card_Game.png" alt="ホロライブオフィシャルカードゲーム" class="logo">
+    </div>
+    
+    <h1>ホロライブカードゲーム<br>管理ツール</h1>
+    
+    <p class="subtitle">
+      あなたのホロライブカードコレクションを<br>
+      効率的に管理・検索できるツールです
+    </p>
 
-      <div class="top-controls">
-        <!-- その他のコントロール -->
-        <div class="top-controls-row">
-          <button onclick="setViewMode('table')">🧾 表モード</button>
-          <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
-          <button onclick="toggleDarkMode()">🌗 モード切替</button>
+    <div class="menu-grid">
+      <a href="card_list.html" class="menu-card">
+        <span class="menu-icon">🃏</span>
+        <div class="menu-title">カード一覧</div>
+        <div class="menu-description">
+          全カードの一覧表示・検索・フィルタリング機能。所持状況の管理やCSVでのデータ管理が可能です。
         </div>
-        
-        <div class="top-controls-row">
-          <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-          <select id="sortMethod" onchange="renderTable()">
-            <option value="release" selected>発売日順</option>
-            <option value="id">カード番号順</option>
-            <option value="name">名前順</option>
-            <option value="rarity">レアリティ順</option>
-          </select>
-          <!-- フィルター表示/非表示を最後に -->
-          <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
+      </a>
+
+      <a href="holoca_skill_page.html" class="menu-card">
+        <span class="menu-icon">🗂️</span>
+        <div class="menu-title">カード詳細検索</div>
+        <div class="menu-description">
+          詳細な条件でカードを検索。スキル・能力・コストなど様々な条件で絞り込めます。
         </div>
-      </div>
+      </a>
 
-      <div id="filtersWrapper">
-        <fieldset class="filter-group">
-          <legend>所持状態</legend>
-          <div id="ownedStateChipGroup" class="chip-group">
-            <button class="chip selected" data-value="owned" onclick="toggleChip(this)">所持あり</button>
-            <button class="chip selected" data-value="unowned" onclick="toggleChip(this)">所持なし</button>
-          </div>
-        </fieldset>
-        
-        <fieldset class="filter-group">
-          <legend>レアリティ</legend>
-          <div id="rarityFilter" class="chip-group"></div>
-        </fieldset>
-        
-        <fieldset class="filter-group">
-          <legend>色</legend>
-          <div id="colorFilter" class="chip-group"></div>
-        </fieldset>
-        
-        <fieldset class="filter-group">
-          <legend>Bloom</legend>
-          <div id="bloomFilter" class="chip-group"></div>
-        </fieldset>
-
-        <fieldset class="filter-group">
-          <legend>収録商品</legend>
-          <select id="productFilter" onchange="renderTable()">
-            <option value="">収録商品（選択）</option>
-          </select>
-        </fieldset>
-      </div>
+      <a href="deck_builder.html" class="menu-card">
+        <span class="menu-icon">🧠</span>
+        <div class="menu-title">デッキ作成</div>
+        <div class="menu-description">
+          戦略的なデッキを構築。カードの組み合わせを考えながら最適なデッキを作成できます。
+        </div>
+      </a>
     </div>
 
-    <div class="sticky-info">
-      <div id="countDisplay" style="font-weight:bold;"></div>
-      <div id="typeDisplay" style="font-weight:bold;"></div>
+    <div class="footer">
+      <p>© 2025 ホロライブカードゲーム管理ツール</p>
+      <p>このツールは非公式のファンメイドツールです</p>
     </div>
-
-    <table id="cardTable">
-      <thead>
-        <tr>
-          <th>画像</th>
-          <th>名前／番号／カードタイプ</th>
-          <th>レア</th>
-          <th>色</th>
-          <th>Bloom</th>
-          <th>HP</th>
-          <th>収録</th>
-          <th>枚数</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- ✅ 簡易表示領域（スマホ最適化済） -->
-    <div id="cardPreviewArea" style="display:none;"></div>
-
-    <h3>CSVインポート・エクスポート</h3>
-    <div class="controls">
-      <textarea id="csvInput" rows="4" placeholder="id,枚数 のCSVを貼り付けてください"></textarea>
-      <button onclick="importCSV()">📥 CSVインポート</button>
-      <button onclick="exportCSV()">📤 所持CSVをコピー</button>
-    </div>
-
-    <!-- ✅ 画像ズーム表示モーダル -->
-    <div id="imageModal" onclick="hideImageModal()" style="
-      display:none;
-      position:fixed;
-      top:0; left:0;
-      width:100vw; height:100vh;
-      background:rgba(0,0,0,0.85);
-      text-align:center;
-      z-index:1000;
-      cursor:zoom-out;">
-      <img src="" style="
-        margin-top:5vh;
-        width:100%;
-        height:auto;
-        max-height:100dvh;
-        object-fit:contain;">
-    </div>
-    <script>
-      let cards = [];
-      let releaseMap = {};
-      let viewMode = "compact";
-      let renderLimit = 100;
-
-      const ownedLabelMap = {
-        owned: "所持あり",
-        unowned: "所持なし"
-      };
-    
-      function populateChipGroup(id, items, withAllButton = false, selectAllByDefault = true) {
-        const container = document.getElementById(id);
-        container.innerHTML = "";
-        container.classList.add("chip-group");
-
-        if (withAllButton) {
-          const allBtn = document.createElement("button");
-          allBtn.textContent = "すべて";
-          allBtn.className = "chip all-chip" + (selectAllByDefault ? " selected" : "");
-          allBtn.dataset.value = "ALL";
-          allBtn.onclick = () => selectAllChip(allBtn);
-          container.appendChild(allBtn);
-        }
-
-        items.forEach(val => {
-          const btn = document.createElement("button");
-          // ✅ 所持状態だけ日本語ラベルに変換
-          const label = id === "ownedStateChipGroup" ? ownedLabelMap[val] ?? val : val;
-          btn.textContent = label;
-          btn.className = "chip";
-          btn.dataset.value = val;
-          btn.onclick = () => toggleChip(btn);
-          container.appendChild(btn);
-        });
-      }
-
-      function toggleChip(btn) {
-        const group = btn.parentElement;
-        const allBtn = group.querySelector(".all-chip");
-        if (allBtn) allBtn.classList.remove("selected");
-
-        btn.classList.toggle("selected");
-        renderTable();
-      }
-
-      function selectAllChip(allBtn) {
-        const group = allBtn.parentElement;
-        group.querySelectorAll(".chip").forEach(btn => btn.classList.remove("selected"));
-        allBtn.classList.add("selected");
-        renderTable();
-      }
-
-      function getCheckedFromChips(id) {
-        const allSelected = document.querySelector(`#${id} .chip.all-chip.selected`);
-        if (allSelected) return [];
-        return [...document.querySelectorAll(`#${id} .chip.selected:not(.all-chip)`)].map(btn => btn.dataset.value);
-      }
-
-      function setViewMode(mode) {
-        viewMode = mode;
-        renderLimit = 100;
-        renderTable();
-      }
-    
-      function toggleFilters() {
-        const el = document.getElementById("filtersWrapper");
-        const toggleBtn = document.getElementById("filterToggleBtn");
-        const isHidden = window.getComputedStyle(el).display === "none";
-        
-        if (isHidden) {
-          el.style.display = "block";
-          toggleBtn.textContent = "🔼 フィルター非表示";
-        } else {
-          el.style.display = "none";
-          toggleBtn.textContent = "🔽 フィルター表示";
-        }
-      }
-    
-      function toggleDarkMode() {
-        document.body.classList.toggle("dark");
-        localStorage.setItem("darkMode", document.body.classList.contains("dark"));
-      }
-    
-      function selectAll(id) {
-        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = true);
-        renderTable();
-      }
-    
-      function clearAll(id) {
-        document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
-        renderTable();
-      }
-    
-      function showImageModal(src) {
-        const modal = document.getElementById("imageModal");
-        modal.querySelector("img").src = src;
-        modal.style.display = "block";
-      }
-    
-      function hideImageModal() {
-        document.getElementById("imageModal").style.display = "none";
-      }
-      
-      function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
-        cards.forEach(c => {
-          raritySet.add(c.rarity);
-          colorSet.add(c.color);
-          bloomSet.add(c.bloom);
-          if (!c.product.includes(",")) {
-            productSet.add(c.product);
-          }
-        });
-
-        populateChipGroup("rarityFilter", [...raritySet].sort(), true, true);
-        populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
-        populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
-        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false); // ←両方選択のまま
-
-        const select = document.getElementById("productFilter");
-        select.innerHTML = `<option value="">すべての商品</option>`;
-        [...productSet].sort().forEach(val => {
-          const opt = document.createElement("option");
-          opt.value = val;
-          opt.textContent = val;
-          select.appendChild(opt);
-        });
-      }
-      
-      function sortCards(cards) {
-        const method = document.getElementById("sortMethod")?.value ?? "release";
-        let sorted = [...cards];
-        if (method === "release") {
-          sorted.sort((a, b) => {
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
-            if (ra !== rb) return ra.localeCompare(rb);
-            if (a.product !== b.product) return a.product.localeCompare(b.product);
-            return a.id.localeCompare(b.id);
-          });
-        } else if (method === "id") {
-          sorted.sort((a, b) => a.id.localeCompare(b.id));
-        } else if (method === "name") {
-          sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
-        } else if (method === "rarity") {
-          const rank = { "SR": 3, "R": 2, "N": 1 };
-          sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
-        }
-        return sorted;
-      }
-    </script>
-<script>
-  function renderTable() {
-    const keyword = document.getElementById("nameSearch").value.toLowerCase();
-    const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
-    const ownedStates = getCheckedFromChips("ownedStateChipGroup");
-    const rarity = getCheckedFromChips("rarityFilter");
-    const color = getCheckedFromChips("colorFilter");
-    const bloom = getCheckedFromChips("bloomFilter");
-    const product = document.getElementById("productFilter").value.toLowerCase();
-
-    const tableArea = document.getElementById("cardTable");
-    const previewArea = document.getElementById("cardPreviewArea");
-
-    const filtered = cards.filter(card => {
-      const count = card.owned;
-      const matchOwned =
-        ownedStates.length === 0 ||
-        (ownedStates.includes("owned") && count > 0) ||
-        (ownedStates.includes("unowned") && (!count || count == 0));
-      if (!matchOwned) return false;
-
-      const match = {
-        name: !keyword || card.name.toLowerCase().includes(keyword),
-        rarity: rarity.length === 0 || rarity.includes(card.rarity),
-        color: color.length === 0 || color.includes(card.color),
-        bloom: bloom.length === 0 || bloom.includes(card.bloom),
-        product: !product || card.product.toLowerCase().includes(product)
-      };
-      return !Object.values(match).includes(false);
-    });
-
-    const sortedCards = sortCards(filtered);
-    const displayCards = sortedCards.slice(0, renderLimit); // ← 表示分だけ
-
-    const tbody = tableArea.querySelector("tbody");
-    tbody.innerHTML = "";
-
-    // ✅ 統計は filtered ベースで全件集計
-    const shown = filtered.length;
-    const ownedTypes = filtered.filter(c => c.owned > 0).length;
-    const ownedCount = filtered.reduce((sum, c) => sum + (c.owned ?? 0), 0);
-    const ratio = shown > 0 ? Math.round((ownedTypes / shown) * 100) : 0;
-
-    if (viewMode === "table") {
-      previewArea.style.display = "none";
-      tableArea.style.display = "";
-
-      displayCards.forEach(card => {
-        const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-        const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><img src="${card.image}" loading="lazy" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-          <td>
-            <div style="font-weight: bold;">${card.name}</div>
-            <div style="font-size:13px;">📄 ${card.id}<br>🃏 ${card.card_type}</div>
-          </td>
-          <td>${card.rarity}</td>
-          <td>${card.color}</td>
-          <td>${bloomText}</td>
-          <td>${card.hp ?? "-"}</td>
-          <td>${productText}</td>
-          <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      // ✅ フィルター後全件の統計を表示
-      document.getElementById("countDisplay").textContent =
-        `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
-      document.getElementById("typeDisplay").textContent = ``;
-      return;
-    }
-
-    // ✅ 簡易モードはそのまま
-    tableArea.style.display = "none";
-    previewArea.innerHTML = "";
-    previewArea.style.display = "block";
-
-    const container = document.createElement("div");
-    const isMobile = document.body.classList.contains("mobile-layout");
-    const columns = isMobile ? 4 : Math.floor(window.innerWidth / 160);
-    const cardWidth = isMobile ? Math.floor((window.innerWidth - 32) / columns) : 160;
-
-    displayCards.forEach(card => {
-      const box = document.createElement("div");
-      box.style.width = `${cardWidth}px`;
-
-      const img = document.createElement("img");
-      img.src = card.image;
-      img.alt = card.name;
-      img.loading = "lazy";
-      img.style.width = "100%";
-      img.style.cursor = "zoom-in";
-      img.onclick = () => showImageModal(card.image);
-
-      const info = document.createElement("div");
-      info.innerHTML = `
-        <div style="font-weight:bold;">${card.name}</div>
-        <div style="font-size:11px;">📄${card.id}</div>
-        <div style="font-size:11px;">✨${card.rarity}🃏${card.owned ?? 0}枚</div>
-      `;
-      box.appendChild(img);
-      box.appendChild(info);
-      container.appendChild(box);
-    });
-
-    previewArea.appendChild(container);
-
-    // ✅ 統計表示（簡易モードも全件ベース）
-    document.getElementById("countDisplay").textContent =
-      `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
-    document.getElementById("typeDisplay").textContent = "";
-  }
-
-  function updateOwned(id, value) {
-    const num = Math.max(0, parseInt(value) || 0);
-    localStorage.setItem("count_" + id, num);
-    const card = cards.find(c => c.id === id);
-    if (card) card.owned = num;
-    renderTable();
-  }
-
-  function importCSV() {
-    const input = document.getElementById("csvInput").value.trim().split("\n");
-    input.forEach(line => {
-      const [id, count] = line.split(",");
-      const num = Math.max(0, parseInt(count) || 0);
-      localStorage.setItem("count_" + id, num);
-      const card = cards.find(c => c.id === id);
-      if (card) card.owned = num;
-    });
-    renderTable();
-    alert("CSVを反映しました！");
-  }
-
-  function exportCSV() {
-    const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
-    navigator.clipboard.writeText(lines.join("\n"))
-      .then(() => alert("所持CSVをコピーしました"))
-      .catch(() => alert("コピーに失敗しました"));
-  }
-
-  function isMobileScreen() {
-    return window.innerWidth <= 540;
-  }
-
-  window.addEventListener("scroll", () => {
-    if (viewMode === "compact" || viewMode === "table") {
-      const bottom = window.innerHeight + window.scrollY;
-      const docHeight = document.body.offsetHeight;
-      if (bottom >= docHeight - 100) {
-        renderLimit += 40;
-        renderTable();
-      }
-    }
-  });
-
-  window.onload = async () => {
-    if (localStorage.getItem("darkMode") === "true") {
-      document.body.classList.add("dark");
-    }
-    if (isMobileScreen()) {
-      document.body.classList.add("mobile-layout");
-    }
-
-    try {
-      const [cardRes, releaseRes] = await Promise.all([
-        fetch("json_file/card_data.json"),
-        fetch("json_file/release_dates.json")
-      ]);
-      const cardRaw = await cardRes.json();
-      releaseMap = await releaseRes.json();
-
-      cards = Object.entries(cardRaw).map(([key, card]) => ({
-        id: key,
-        name: card.name,
-        rarity: card.rarity ?? "-",
-        color: card.color ?? "-",
-        bloom: card.bloom_level ?? "-",
-        hp: card.card_type === "ホロメン" ? card.hp : card.life ?? "-",
-        product: card.product,
-        image: card.image_url,
-        url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
-        owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-        card_type: card.card_type ?? "-"
-      }));
-
-      setupFilters();
-      renderTable();
-    } catch (err) {
-      console.error(err);
-      alert("データの読み込みに失敗しました！");
-    }
-  };
-</script>
+  </div>
 </body>
 </html>
