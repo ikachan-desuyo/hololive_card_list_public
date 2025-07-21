@@ -59,6 +59,62 @@
       gap: 10px;
       margin-bottom: 10px;
     }
+
+    /* モバイル専用のボタン配置調整 */
+    .mobile-layout .top-nav {
+      position: static;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .mobile-layout .top-nav button {
+      font-size: 12px;
+      padding: 4px 8px;
+      margin: 0 2px;
+    }
+
+    .mobile-layout h2 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      position: static;
+    }
+
+    .mobile-layout .top-controls {
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .mobile-layout .top-controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .mobile-layout .top-controls button {
+      font-size: 12px;
+      padding: 4px 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mobile-layout .top-controls input,
+    .mobile-layout .top-controls select {
+      font-size: 12px;
+      padding: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mobile-layout #nameSearch {
+      min-width: 120px;
+    }
+
+    .mobile-layout #sortMethod {
+      min-width: 80px;
+    }
   
     .filter-group {
       border: 1px solid #ccc;
@@ -287,32 +343,53 @@
       gap: 6px;
       justify-content: flex-start;
     }
+
+    /* デスクトップ版では通常の配置を維持 */
+    @media (min-width: 541px) {
+      .top-controls-row {
+        display: contents;
+      }
+      
+      .top-controls {
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+      }
+      
+      #filterToggleBtn {
+        order: 1; /* 最後に配置 */
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="container-top">
-      <h2>
-        ホロライブカード一覧
-        <div class="top-nav">
-          <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
-          <button onclick="location.href='deck_builder.html'">🧠 デッキ作成</button>
-          <button onclick="location.href='card_scan_v2.html'">test1</button>
-        </div>
-      </h2>
+      <h2>ホロライブカード一覧</h2>
+      
+      <div class="top-nav">
+        <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
+        <button onclick="location.href='deck_builder.html'">🧠 デッキ作成</button>
+      </div>
 
       <div class="top-controls">
-        <button onclick="setViewMode('table')">🧾 表モード</button>
-        <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
-        <button onclick="toggleDarkMode()">🌗 モード切替</button>
-        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-        <select id="sortMethod" onchange="renderTable()">
-          <option value="release" selected>発売日順</option>
-          <option value="id">カード番号順</option>
-          <option value="name">名前順</option>
-          <option value="rarity">レアリティ順</option>
-        </select>
-        <button onclick="toggleFilters()">🔽 フィルター表示／非表示</button>
+        <!-- その他のコントロール -->
+        <div class="top-controls-row">
+          <button onclick="setViewMode('table')">🧾 表モード</button>
+          <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
+          <button onclick="toggleDarkMode()">🌗 モード切替</button>
+        </div>
+        
+        <div class="top-controls-row">
+          <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
+          <select id="sortMethod" onchange="renderTable()">
+            <option value="release" selected>発売日順</option>
+            <option value="id">カード番号順</option>
+            <option value="name">名前順</option>
+            <option value="rarity">レアリティ順</option>
+          </select>
+          <!-- フィルター表示/非表示を最後に -->
+          <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
+        </div>
       </div>
 
       <div id="filtersWrapper">
@@ -463,8 +540,16 @@
     
       function toggleFilters() {
         const el = document.getElementById("filtersWrapper");
+        const toggleBtn = document.getElementById("filterToggleBtn");
         const isHidden = window.getComputedStyle(el).display === "none";
-        el.style.display = isHidden ? "block" : "none";
+        
+        if (isHidden) {
+          el.style.display = "block";
+          toggleBtn.textContent = "🔼 フィルター非表示";
+        } else {
+          el.style.display = "none";
+          toggleBtn.textContent = "🔽 フィルター表示";
+        }
       }
     
       function toggleDarkMode() {
