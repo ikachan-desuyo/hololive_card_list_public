@@ -865,7 +865,11 @@
         } else if (method === "name") {
           sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
         } else if (method === "rarity") {
-          const rank = { "SR": 3, "R": 2, "N": 1 };
+          const rank = { 
+            "SEC": 14, "OUR": 13, "UR": 12, "SY": 11, "OSR": 10, 
+            "SR": 9, "P": 8, "S": 7, "OC": 6, "RR": 5, 
+            "R": 4, "U": 3, "C": 2, "‐": 1, "-": 1 
+          };
           sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
         }
         return sorted;
