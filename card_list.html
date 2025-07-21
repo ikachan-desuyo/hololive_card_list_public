@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.2 - Improved mobile layout with CSV on top and selective sticky -->
+<!-- Version: 2.3 - Fixed mobile sticky controls and dark mode background -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -102,8 +102,8 @@
     }
 
     .dark .sticky-controls {
-      background: #222;
-      border-color: #444;
+      background: #222 !important;
+      border-color: #444 !important;
     }
   
     h2 {
@@ -361,13 +361,13 @@
     }
 
     .mobile-layout .sticky-controls {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      z-index: 100;
-      border-bottom: 1px solid #ddd;
-      padding: 6px 8px;
-      margin: 0 -8px 10px -8px;
+      position: sticky !important;
+      top: 0 !important;
+      background: #fff !important;
+      z-index: 100 !important;
+      border-bottom: 1px solid #ddd !important;
+      padding: 6px 8px !important;
+      margin: 0 -8px 10px -8px !important;
     }
   
     .mobile-layout #cardPreviewArea div > div div {
@@ -382,8 +382,8 @@
     }
 
     .dark .mobile-layout .sticky-controls {
-      background: #222;
-      border-color: #444;
+      background: #222 !important;
+      border-color: #444 !important;
     }
   
     .dark .mobile-layout #cardPreviewArea div > div div {
@@ -475,6 +475,49 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+
+      /* sticky-controls のモバイル固定を強化 */
+      .sticky-controls {
+        position: sticky !important;
+        top: 0 !important;
+        background: #fff !important;
+        z-index: 100 !important;
+        border-bottom: 1px solid #ddd !important;
+        padding: 8px !important;
+        margin: 0 0 10px 0 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      }
+
+      .dark .sticky-controls {
+        background: #222 !important;
+        border-color: #444 !important;
+        box-shadow: 0 2px 4px rgba(255,255,255,0.1) !important;
+      }
+
+      .sticky-controls .top-controls-row {
+        margin-bottom: 0 !important;
+      }
+
+      .sticky-controls input[type="text"] {
+        font-size: 12px !important;
+        padding: 6px !important;
+        flex: 2 !important;
+        min-width: 100px !important;
+      }
+
+      .sticky-controls select {
+        font-size: 12px !important;
+        padding: 6px !important;
+        flex: 1.5 !important;
+        min-width: 80px !important;
+      }
+
+      .sticky-controls button {
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+        flex: 1 !important;
+        min-width: 70px !important;
+      }
     }
 
     /* CSV機能のモバイル対応 */
@@ -535,20 +578,36 @@
           <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
           <button onclick="toggleDarkMode()">🌗</button>
         </div>
-        
-        <!-- 固定対象：検索・ソート・フィルターのみ -->
-        <div class="top-controls-row sticky-controls">
-          <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-          <select id="sortMethod" onchange="renderTable()">
-            <option value="release" selected>発売日順</option>
-            <option value="id">カード番号順</option>
-            <option value="name">名前順</option>
-            <option value="rarity">レアリティ順</option>
-          </select>
-          <!-- フィルター表示/非表示を最後に -->
-          <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
+      </div>
+
+      <!-- CSV機能パネル（初期非表示） -->
+      <div id="csvPanel" style="display:none;">
+        <h4>📄 CSV機能</h4>
+        <div>
+          <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください"></textarea>
+          <div class="button-group">
+            <button onclick="importCSV()" class="csv-button import-btn">📥 CSVインポート</button>
+            <button onclick="exportCSV()" class="csv-button export-btn">📤 所持CSV取得</button>
+            <button onclick="clearCSVInput()" class="csv-button clear-btn">🗑️ クリア</button>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- 固定対象：検索・ソート・フィルターのみ -->
+    <div class="sticky-controls">
+      <div class="top-controls-row">
+        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
+        <select id="sortMethod" onchange="renderTable()">
+          <option value="release" selected>発売日順</option>
+          <option value="id">カード番号順</option>
+          <option value="name">名前順</option>
+          <option value="rarity">レアリティ順</option>
+        </select>
+        <!-- フィルター表示/非表示を最後に -->
+        <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
+      </div>
+    </div>
 
       <div id="filtersWrapper">
         <fieldset class="filter-group">
@@ -581,20 +640,6 @@
           </select>
         </fieldset>
       </div>
-
-      <!-- CSV機能パネル（初期非表示） -->
-      <div id="csvPanel" style="display:none;">
-        <h4>📄 CSV機能</h4>
-        <div>
-          <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください"></textarea>
-          <div class="button-group">
-            <button onclick="importCSV()" class="csv-button import-btn">📥 CSVインポート</button>
-            <button onclick="exportCSV()" class="csv-button export-btn">📤 所持CSV取得</button>
-            <button onclick="clearCSVInput()" class="csv-button clear-btn">🗑️ クリア</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="sticky-info">
       <div id="countDisplay" style="font-weight:bold;"></div>
