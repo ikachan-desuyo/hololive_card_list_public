@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.7-UPDATE-NOTIFICATION - Restored update notifications -->
+<!-- Version: 2.8-MOBILE-UPDATE-FIX - Fixed mobile update issues -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cache-bust" content="v2.4-force-20250122-1">
-  <meta name="last-modified" content="Wed, 22 Jul 2025 12:00:00 GMT">
+  <meta name="cache-bust" content="v2.8-force-20250122-2">
+  <meta name="last-modified" content="Wed, 22 Jul 2025 13:00:00 GMT">
   <title>カード詳細検索ページ</title>
   <style>
     body {
@@ -401,7 +401,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.7-UPDATE]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.8-MOBILE-FIX]</span>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
       </div>
@@ -878,20 +878,25 @@
       }
     };
 
-    // Service Worker registration with update notification
+    // Service Worker registration with enhanced update notification for mobile
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          // Register service worker normally
-          const registration = await navigator.serviceWorker.register('./sw.js');
-          console.log('SW registered: ', registration);
+          // Force refresh service worker registration for mobile update issues
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'  // Bypass cache for SW updates
+          });
+          console.log('SW registered with cache bypass: ', registration);
+          
+          // Force immediate update check
+          await registration.update();
           
           // Check for waiting service worker (already installed update)
           if (registration.waiting) {
-            console.log('SW update available');
-            if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+            console.log('SW update available - forcing update');
+            if (confirm('🚀 新しいバージョンが利用可能です。モバイル版の問題を修正しました。ページを更新しますか？')) {
               registration.waiting.postMessage({type: 'SKIP_WAITING'});
-              window.location.reload();
+              window.location.reload(true); // Force reload
             }
           }
           
@@ -902,10 +907,10 @@
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New content available - show notification
-                  console.log('New SW installed, showing update notification');
-                  if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                  console.log('New SW installed, showing mobile update notification');
+                  if (confirm('🚀 新しいバージョンが利用可能です。モバイル版の問題を修正しました。ページを更新しますか？')) {
                     newWorker.postMessage({type: 'SKIP_WAITING'});
-                    window.location.reload();
+                    window.location.reload(true); // Force reload
                   }
                 }
               });
@@ -914,8 +919,8 @@
 
           // Listen for controlling service worker changes
           navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('SW controller changed, reloading page');
-            window.location.reload();
+            console.log('SW controller changed, forcing page reload');
+            window.location.reload(true); // Force reload
           });
 
         } catch (error) {

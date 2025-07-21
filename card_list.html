@@ -581,7 +581,9 @@
 <body>
   <div class="container">
     <div class="container-top">
-      <h2>ホロライブカード一覧</h2>
+      <h2>ホロライブカード一覧 
+        <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.4-BG-FIX]</span>
+      </h2>
       
         <div class="top-nav">
           <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
@@ -1007,9 +1009,10 @@
   }
 
   function exportCSV() {
-    const lines = cards.filter(c => c.owned > 0).map(c => `${c.id},${c.owned}`);
+    // 全カードを含む（所持枚数0のカードも含める）
+    const lines = cards.map(c => `${c.id},${c.owned}`);
     navigator.clipboard.writeText(lines.join("\n"))
-      .then(() => alert("所持CSVをコピーしました"))
+      .then(() => alert("全カードの所持CSVをコピーしました（所持枚数0のカードも含む）"))
       .catch(() => alert("コピーに失敗しました"));
   }
 
