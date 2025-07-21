@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.5-STABLE - Fixed infinite reload loop -->
+<!-- Version: 2.6-MOBILE-LAYOUT - Fixed mobile horizontal layout -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -315,35 +315,69 @@
       }
 
       .top-bar .nav-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+      }
+
+      .top-bar .nav-row:nth-child(2) {
+        justify-content: center; /* 検索・ソート行は中央揃え */
       }
 
       .top-bar .nav-row > div {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 5px;
+        gap: 3px;
+      }
+
+      .top-bar .nav-row h2 {
+        font-size: 16px; /* モバイルでタイトルを小さく */
+        text-align: center;
+        flex: 1;
+        margin: 0 5px;
+      }
+
+      .top-bar .nav-row h2 span {
+        font-size: 9px; /* バージョン表示をさらに小さく */
       }
 
       .top-bar button {
-        font-size: 12px;
-        padding: 5px 8px;
+        font-size: 11px;
+        padding: 4px 6px;
         margin-right: 0;
       }
 
       .controls {
-        flex-direction: column;
-        gap: 8px;
-        align-items: stretch;
+        flex-direction: row;
+        gap: 5px;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
       }
 
       .controls input,
       .controls select,
       .controls button {
-        width: 100%;
+        width: auto;
         box-sizing: border-box;
+        flex: none;
+      }
+
+      .controls input[type="text"] {
+        width: 140px; /* 検索ボックスを少し小さく */
+        font-size: 12px;
+      }
+
+      .controls select {
+        max-width: 100px; /* ソート選択を小さく */
+        font-size: 12px;
+      }
+
+      .controls button {
+        padding: 5px 8px;
+        font-size: 11px;
       }
     }
 
@@ -367,7 +401,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.5-STABLE]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;">[v2.6-MOBILE]</span>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
       </div>
@@ -747,7 +781,7 @@
     }
 
     window.onload = async () => {
-      console.log('✅ HOLOCA SKILL PAGE v2.5-STABLE - FIXED RELOAD LOOP ✅');
+      console.log('📱 HOLOCA SKILL PAGE v2.6-MOBILE - FIXED MOBILE LAYOUT 📱');
       console.log('⏰ Loaded at:', new Date().toLocaleString());
       
       if (localStorage.getItem("darkMode") === "true") {

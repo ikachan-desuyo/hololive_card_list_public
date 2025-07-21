@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v2.5-stable'; // 安定版 - 無限リロード修正
+const CACHE_NAME = 'hololive-card-tool-v2.6-mobile-layout'; // モバイルレイアウト修正
 const urlsToCache = [
   './',
   './index.html',
