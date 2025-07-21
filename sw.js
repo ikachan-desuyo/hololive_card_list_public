@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.0-copyright-notice'; // 権利表記追加
+const CACHE_NAME = 'hololive-card-tool-v3.2-manual-update-check'; // 手動更新確認機能追加
 const urlsToCache = [
   './',
   './index.html',
@@ -8,7 +8,6 @@ const urlsToCache = [
   './deck_builder.html',
   './json_file/card_data.json',
   './json_file/release_dates.json',
-  './images/Logo_-_Hololive_Official_Card_Game.png',
   './images/placeholder.png',
   './images/TCG-ColorArtIcon-Blue.png',
   './images/TCG-ColorArtIcon-Colorless.png',

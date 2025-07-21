@@ -242,10 +242,26 @@
         color: #bdc3c7;
       }
 
+      h1 span {
+        color: #95a5a6 !important;
+      }
+
       .footer {
         color: #95a5a6;
         border-top-color: rgba(255, 255, 255, 0.1);
       }
+    }
+
+    /* 更新確認ボタンのスタイル */
+    #updateCheckBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    }
+
+    #updateCheckBtn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
     }
   </style>
 </head>
@@ -260,7 +276,9 @@
       </div>
     </div>
     
-    <h1>ホロライブカードゲーム<br>管理ツール</h1>
+    <h1>ホロライブカードゲーム<br>管理ツール
+      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;">[v3.1-COPYRIGHT-MOBILE]</span>
+    </h1>
     
     <p class="subtitle">
       あなたのホロライブカードコレクションを<br>
@@ -291,6 +309,26 @@
           戦略的なデッキを構築。カードの組み合わせを考えながら最適なデッキを作成できます。
         </div>
       </a>
+    </div>
+
+    <!-- 更新確認ボタン -->
+    <div style="text-align: center; margin: 20px 0;">
+      <button id="updateCheckBtn" onclick="checkForUpdates()" style="
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        transition: all 0.3s ease;
+        margin: 0 10px;
+      ">
+        🔄 更新確認
+      </button>
+      <div id="updateStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
     </div>
 
     <div class="footer">
@@ -364,6 +402,80 @@
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
     window.addEventListener('load', updateOnlineStatus);
+
+    // Manual update check function
+    let serviceWorkerRegistration = null;
+
+    // Store registration for manual update checks
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            serviceWorkerRegistration = registration;
+            console.log('SW registered: ', registration);
+            // ... existing code above
+          });
+      });
+    }
+
+    async function checkForUpdates() {
+      const statusEl = document.getElementById('updateStatus');
+      const btnEl = document.getElementById('updateCheckBtn');
+      
+      if (!navigator.onLine) {
+        statusEl.textContent = '⚠️ オフライン状態では更新確認できません';
+        statusEl.style.color = '#ff9800';
+        return;
+      }
+
+      if (!serviceWorkerRegistration) {
+        statusEl.textContent = '⚠️ Service Worker が利用できません';
+        statusEl.style.color = '#f44336';
+        return;
+      }
+
+      try {
+        btnEl.disabled = true;
+        btnEl.textContent = '🔄 確認中...';
+        statusEl.textContent = '更新を確認しています...';
+        statusEl.style.color = '#2196f3';
+
+        // Force check for updates
+        await serviceWorkerRegistration.update();
+        
+        // Wait a bit for the update check to complete
+        setTimeout(() => {
+          if (serviceWorkerRegistration.waiting) {
+            statusEl.textContent = '✅ 新しいバージョンが見つかりました！';
+            statusEl.style.color = '#4caf50';
+            
+            if (confirm('新しいバージョンが利用可能です。全ページを更新してアプリケーションを再読み込みしますか？')) {
+              // Clear all caches and reload
+              caches.keys().then(cacheNames => {
+                Promise.all(
+                  cacheNames.map(cacheName => caches.delete(cacheName))
+                ).then(() => {
+                  serviceWorkerRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
+                });
+              });
+            }
+          } else {
+            statusEl.textContent = '✅ 最新バージョンです';
+            statusEl.style.color = '#4caf50';
+          }
+          
+          btnEl.disabled = false;
+          btnEl.textContent = '🔄 更新確認';
+        }, 2000);
+
+      } catch (error) {
+        console.error('Update check failed:', error);
+        statusEl.textContent = '❌ 更新確認に失敗しました';
+        statusEl.style.color = '#f44336';
+        btnEl.disabled = false;
+        btnEl.textContent = '🔄 更新確認';
+      }
+    }
   </script>
 </body>
 </html>

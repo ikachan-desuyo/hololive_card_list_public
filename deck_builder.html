@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 2.1 - Updated with navigation and offline support -->
+<!-- Version: 3.1-COPYRIGHT - Added copyright notice and legal disclaimers -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -272,6 +272,10 @@
       background-color: #222;
     }
 
+    body.dark .deck-title span {
+      color: #888 !important;
+    }
+
     .mobile-layout .card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -410,7 +414,9 @@
         <button onclick="location.href='card_list.html'">🃏 カード一覧</button>
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
-      <h2 class="deck-title">デッキ作成</h2>
+      <h2 class="deck-title">デッキ作成
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;">[v3.1-COPYRIGHT]</span>
+      </h2>
       <button onclick="toggleDarkMode()">🌗</button>
     </div>
   
