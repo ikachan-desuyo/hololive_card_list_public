@@ -403,17 +403,24 @@
             const response = await fetch(page.name + '?v=' + Date.now());
             if (response.ok) {
               const content = await response.text();
-              const versionMatch = content.match(/<!-- Version: ([^\\-]+(?:\\-[^\\-]+)*) -/);
+              // シンプルなパターンでバージョンを抽出
+              let versionMatch = content.match(/Version: ([0-9.]+[^\\s]*)/);
+              if (!versionMatch) {
+                versionMatch = content.match(/Version: ([^-\\s]+(?:-[^-\\s]+)*)/);
+              }
+              
               if (versionMatch) {
                 const actualVersion = versionMatch[1];
                 pageVersions[page.name] = actualVersion;
                 if (actualVersion === page.expected) {
-                  versionCheckResults.push(`✅ ${page.name}: v${actualVersion}`);
+                  versionCheckResults.push('✅ ' + page.name + ': v' + actualVersion);
                 } else {
-                  versionCheckResults.push(`⚠️ ${page.name}: v${actualVersion} (期待値: v${page.expected})`);
+                  versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (期待値: v' + page.expected + ')');
                 }
               } else {
-                versionCheckResults.push(`❌ ${page.name}: バージョン情報が見つかりません`);
+                // デバッグ用：最初の200文字を表示
+                const preview = content.substring(0, 200).replace(/\\n/g, ' ');
+                versionCheckResults.push('❌ ' + page.name + ': バージョン情報が見つかりません (先頭: ' + preview + '...)');
               }
             }
           } catch (error) {
