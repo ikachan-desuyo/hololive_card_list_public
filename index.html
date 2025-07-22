@@ -423,10 +423,15 @@
                 versionMatch = content.match(/Version:\s*([^\s]+)/);
               }
               
+              // ページ内表示バージョンもチェック（スマホでのキャッシュ問題対策）
+              let displayVersionMatch = content.match(/\[v([^\]]+)\]/);
+              let displayVersion = displayVersionMatch ? displayVersionMatch[1] : null;
+              
               // デバッグログ
               console.log(`Debug ${page.name}:`, {
                 found: !!versionMatch,
                 version: versionMatch ? versionMatch[1] : 'Not found',
+                displayVersion: displayVersion,
                 expected: page.expected
               });
               
@@ -434,8 +439,12 @@
                 const actualVersion = versionMatch[1];
                 pageVersions[page.name] = actualVersion;
                 
+                // ページ内表示バージョンと期待値もチェック
+                const isDisplayVersionCorrect = !displayVersion || displayVersion === page.expected;
+                
                 // 次に、最新ファイルのバージョンも確認（比較用）
                 let latestVersion = actualVersion;
+                let latestDisplayVersion = displayVersion;
                 try {
                   const latestResponse = await fetch(page.name + '?v=' + Date.now());
                   if (latestResponse.ok) {
@@ -448,13 +457,19 @@
                     if (latestMatch) {
                       latestVersion = latestMatch[1];
                     }
+                    // 最新ファイルの表示バージョンも確認
+                    let latestDisplayMatch = latestContent.match(/\[v([^\]]+)\]/);
+                    latestDisplayVersion = latestDisplayMatch ? latestDisplayMatch[1] : null;
                   }
                 } catch (e) {
                   console.log('Failed to fetch latest version for', page.name);
                 }
                 
-                if (actualVersion === page.expected && actualVersion === latestVersion) {
+                if (actualVersion === page.expected && actualVersion === latestVersion && isDisplayVersionCorrect) {
                   versionCheckResults.push('✅ ' + page.name + ': v' + actualVersion + ' (最新)');
+                } else if (!isDisplayVersionCorrect) {
+                  hasVersionMismatch = true;
+                  versionCheckResults.push('⚠️ ' + page.name + ': 表示バージョン不一致 [v' + displayVersion + '] → [v' + page.expected + '] 更新が必要');
                 } else if (actualVersion === page.expected && actualVersion !== latestVersion) {
                   hasVersionMismatch = true;
                   versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (キャッシュ) → v' + latestVersion + ' (最新) 更新が必要');
