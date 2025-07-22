@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.0.0-CENTRALIZED-VERSION - Modal image enhancement and unified version management -->
+<!-- Version: 4.1.0-CSV-ENHANCEMENT - CSV import/export functionality improvements -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -720,7 +720,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v4.0.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v4.1.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       
@@ -747,9 +747,10 @@
         <h4>📄 CSV機能</h4>
         <div>
           <textarea id="csvInput" rows="3" placeholder="id,枚数 の形式でCSVデータを入力してください"></textarea>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleFileImport(event)">
           <div class="button-group">
-            <button onclick="importCSV()" class="csv-button import-btn">📥 CSVインポート</button>
-            <button onclick="exportCSV()" class="csv-button export-btn">📤 所持CSV取得</button>
+            <button onclick="showImportOptions()" class="csv-button import-btn">📥 CSVインポート</button>
+            <button onclick="showExportOptions()" class="csv-button export-btn">📤 所持CSV取得</button>
             <button onclick="clearCSVInput()" class="csv-button clear-btn">🗑️ クリア</button>
           </div>
         </div>
@@ -1575,25 +1576,111 @@
     renderTable();
   }
 
-  function importCSV() {
-    const input = document.getElementById("csvInput").value.trim().split("\n");
-    input.forEach(line => {
-      const [id, count] = line.split(",");
-      const num = Math.max(0, parseInt(count) || 0);
-      localStorage.setItem("count_" + id, num);
-      const card = cards.find(c => c.id === id);
-      if (card) card.owned = num;
-    });
-    renderTable();
-    alert("CSVを反映しました！");
+  function showImportOptions() {
+    const choice = confirm("CSVインポート方法を選択してください:\n\nOK: ファイルから読み込み\nキャンセル: テキストエリアから読み込み");
+    if (choice) {
+      // ファイル選択を開く
+      document.getElementById("csvFileInput").click();
+    } else {
+      // テキストエリアから読み込み
+      importCSVFromTextarea();
+    }
   }
 
-  function exportCSV() {
+  function showExportOptions() {
+    const choice = confirm("CSV出力方法を選択してください:\n\nOK: ファイルとして保存\nキャンセル: クリップボードにコピー");
+    if (choice) {
+      // ファイルとして保存
+      exportCSVToFile();
+    } else {
+      // クリップボードにコピー
+      exportCSVToClipboard();
+    }
+  }
+
+  function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const csvData = e.target.result;
+      importCSVData(csvData);
+    };
+    reader.readAsText(file);
+  }
+
+  function importCSVFromTextarea() {
+    const csvData = document.getElementById("csvInput").value.trim();
+    if (!csvData) {
+      alert("CSVデータを入力してください");
+      return;
+    }
+    importCSVData(csvData);
+  }
+
+  function importCSVData(csvData) {
+    const lines = csvData.trim().split("\n");
+    let importedCount = 0;
+    
+    lines.forEach(line => {
+      const [id, count] = line.split(",");
+      if (id && count !== undefined) {
+        const num = Math.max(0, parseInt(count) || 0);
+        localStorage.setItem("count_" + id, num);
+        const card = cards.find(c => c.id === id);
+        if (card) {
+          card.owned = num;
+          importedCount++;
+        }
+      }
+    });
+    
+    renderTable();
+    alert(`CSVを反映しました！（${importedCount}件のカードを更新）`);
+  }
+
+  function exportCSVToClipboard() {
     // 全カードを含む（所持枚数0のカードも含める）
     const lines = cards.map(c => `${c.id},${c.owned}`);
     navigator.clipboard.writeText(lines.join("\n"))
-      .then(() => alert("全カードの所持CSVをコピーしました（所持枚数0のカードも含む）"))
+      .then(() => alert("全カードの所持CSVをクリップボードにコピーしました（所持枚数0のカードも含む）"))
       .catch(() => alert("コピーに失敗しました"));
+  }
+
+  function exportCSVToFile() {
+    // 全カードを含む（所持枚数0のカードも含める）
+    const lines = cards.map(c => `${c.id},${c.owned}`);
+    const csvContent = lines.join("\n");
+    
+    // 現在の日付でファイル名を生成
+    const now = new Date();
+    const dateStr = now.getFullYear() + 
+                   String(now.getMonth() + 1).padStart(2, '0') + 
+                   String(now.getDate()).padStart(2, '0');
+    const filename = `hololive_cards_${dateStr}.csv`;
+    
+    // ファイルダウンロード
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert(`CSVファイル "${filename}" として保存しました`);
+  }
+
+  // 後方互換性のため、元の関数も残しておく
+  function importCSV() {
+    importCSVFromTextarea();
+  }
+
+  function exportCSV() {
+    exportCSVToClipboard();
   }
 
   function isMobileScreen() {
@@ -1706,7 +1793,7 @@
       console.warn('Version display error:', error);
       const versionEl = document.getElementById('versionDisplay');
       if (versionEl) {
-        versionEl.textContent = '[v4.0.0-CENTRALIZED]';
+        versionEl.textContent = '[v4.1.0-CENTRALIZED]';
       }
     }
 
@@ -2003,13 +2090,13 @@
         }
         
       } else {
-        statusEl.textContent = '[v4.0.0-SW-UNAVAILABLE]';
+        statusEl.textContent = '[v4.1.0-SW-UNAVAILABLE]';
         statusEl.style.color = '#f44336';
       }
       
     } catch (error) {
       console.error('Update check failed:', error);
-      statusEl.textContent = '[v4.0.0-ERROR: ' + error.message + ']';
+      statusEl.textContent = '[v4.1.0-ERROR: ' + error.message + ']';
       statusEl.style.color = '#f44336';
       setTimeout(() => {
         displayVersionInfo();
@@ -2037,11 +2124,11 @@
           [messageChannel.port2]
         );
       } else {
-        statusEl.textContent = '[v4.0.0-CENTRALIZED]';
+        statusEl.textContent = '[v4.1.0-CENTRALIZED]';
       }
     } catch (error) {
       console.warn('Version display error:', error);
-      statusEl.textContent = '[v4.0.0-CENTRALIZED]';
+      statusEl.textContent = '[v4.1.0-CENTRALIZED]';
     }
   }
 </script>

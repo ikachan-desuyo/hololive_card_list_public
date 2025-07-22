@@ -1,11 +1,11 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.0.0';
-const VERSION_DESCRIPTION = 'ページバージョン統一とキャッシュ強化';
+const APP_VERSION = '4.1.0';
+const VERSION_DESCRIPTION = 'CSV機能の改良 - インポート/エクスポート選択機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '4.0.0',  // バージョン表示統一とUI改善
-  'card_list.html': '4.0.0',  // モーダル画像大型化とスキル画像枠削除 - 画像表示最適化
+  'card_list.html': '4.1.0',  // CSV機能改良 - ファイル保存/読み込み対応
   'holoca_skill_page.html': '4.0.0',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0'  // バージョン表示統一とフィルター機能改善
 };
