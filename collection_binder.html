@@ -971,6 +971,9 @@
       background: #f8f9fa;
       overflow: hidden;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 180px;
     }
 
     .card-item:hover {
@@ -994,16 +997,25 @@
 
     .card-item img {
       width: 100%;
-      height: auto;
+      min-height: 140px;
       aspect-ratio: 63/88;
       object-fit: contain;
       display: block;
       background: #f0f0f0;
+      border-radius: 4px 4px 0 0;
+      flex-shrink: 0;
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.2s ease;
     }
 
     .card-info {
       padding: 8px;
       text-align: center;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .card-info .name {
@@ -1122,36 +1134,57 @@
       }
 
       .card-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 8px;
-        padding: 10px;
-        max-height: 45vh;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        padding: 15px;
+        max-height: 50vh;
+      }
+
+      .card-item {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 140px;
       }
 
       .card-item img {
+        width: 100%;
+        height: auto;
+        min-height: 120px;
         aspect-ratio: 63/88;
         object-fit: contain;
         background: #f0f0f0;
+        border-radius: 4px 4px 0 0;
+        flex-shrink: 0;
+        display: block;
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 0.2s ease;
       }
 
       .card-info {
-        padding: 4px;
+        padding: 6px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
 
       .card-info .name {
-        font-size: 0.7em;
-        line-height: 1.1;
-        max-height: 2.2em;
+        font-size: 0.75em;
+        line-height: 1.2;
+        max-height: 2.4em;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         line-clamp: 2;
         -webkit-box-orient: vertical;
+        margin-bottom: 4px;
       }
 
       .card-info .rarity {
-        font-size: 0.6em;
-        margin-top: 2px;
+        font-size: 0.65em;
+        margin-top: auto;
       }
 
       .modal-footer {
@@ -1392,9 +1425,9 @@
         <button class="modal-close-btn" onclick="closeCardSelector()">×</button>
       </div>
       <div class="modal-search">
-        <input type="text" id="cardSearchInput" placeholder="カード名で検索..." onkeyup="filterCards()">
+        <input type="text" id="cardSearchInput" placeholder="カード名で検索..." oninput="filterCardsInSelector()">
         <div class="search-filters">
-          <select id="rarityFilter" onchange="filterCards()">
+          <select id="rarityFilter" onchange="filterCardsInSelector()">
             <option value="">すべてのレアリティ</option>
             <option value="SEC">SEC</option>
             <option value="OUR">OUR</option>
@@ -1410,7 +1443,7 @@
             <option value="U">U</option>
             <option value="C">C</option>
           </select>
-          <select id="cardTypeFilter" onchange="filterCards()">
+          <select id="cardTypeFilter" onchange="filterCardsInSelector()">
             <option value="">すべてのタイプ</option>
             <option value="ホロメン">ホロメン</option>
             <option value="Buzzホロメン">Buzzホロメン</option>
@@ -1419,7 +1452,7 @@
             <option value="サポート・ツール">ツール</option>
             <option value="LIMITED">LIMITED</option>
           </select>
-          <select id="productFilter" onchange="filterCards()">
+          <select id="modalProductFilter" onchange="filterCardsInSelector()">
             <option value="">すべての商品</option>
           </select>
         </div>
@@ -1551,15 +1584,15 @@
       }
     }
 
-    // 収録商品リストの初期化
+    // 収録商品リストの初期化（所有カードのみ）
     function initializeProductList() {
       const productSelect = document.getElementById('productSelect');
       if (!productSelect || !Array.isArray(cardsData)) return;
       
-      // 収録商品のセットを作成
+      // 所有しているカードの収録商品のセットを作成
       const productSet = new Set();
       cardsData.forEach(card => {
-        if (card.product && card.product.trim()) {
+        if (userCollection[card.id] > 0 && card.product && card.product.trim()) {
           // 複数商品がある場合は分割して追加
           const products = card.product.split(',').map(p => p.trim());
           products.forEach(product => {
@@ -1577,7 +1610,38 @@
         productSelect.appendChild(option);
       });
       
-      console.log('Initialized product list with', productSet.size, 'products');
+      console.log('Initialized product list with', productSet.size, 'products (owned cards only)');
+    }
+
+    // カード選択画面での統合フィルタリング
+    function filterCardsInSelector() {
+      const searchTerm = document.getElementById('cardSearchInput').value.toLowerCase();
+      const rarityFilter = document.getElementById('rarityFilter').value;
+      const cardTypeFilter = document.getElementById('cardTypeFilter').value;
+      const modalProductFilter = document.getElementById('modalProductFilter').value;
+      
+      const cardGrid = document.getElementById('cardGrid');
+      if (!cardGrid) return;
+      
+      // 所有しているカードのみ取得
+      const ownedCards = cardsData.filter(card => userCollection[card.id] > 0);
+      
+      // 全てのフィルタを適用
+      const filteredCards = ownedCards.filter(card => {
+        const matchesProduct = !modalProductFilter || 
+          (card.product && card.product.includes(modalProductFilter));
+        const matchesSearch = card.name.toLowerCase().includes(searchTerm);
+        const matchesRarity = !rarityFilter || card.rarity === rarityFilter;
+        const matchesCardType = !cardTypeFilter || 
+          (card.card_type && card.card_type.includes(cardTypeFilter));
+        
+        return matchesProduct && matchesSearch && matchesRarity && matchesCardType;
+      });
+      
+      // カードグリッドを再描画
+      renderCardGrid(filteredCards);
+      
+      console.log(`Modal filters applied - Product: "${modalProductFilter}", Search: "${searchTerm}", Rarity: "${rarityFilter}", Type: "${cardTypeFilter}" - Showing ${filteredCards.length} cards`);
     }
 
     // ユーザーコレクションの読み込み
@@ -2057,17 +2121,20 @@
       const modal = document.getElementById('cardSelectorModal');
       modal.classList.add('show');
       
-      // カードグリッドを初期化
-      renderCardGrid(availableCards);
-      
-      // 商品フィルターを初期化
+      // 商品フィルターを初期化（自動配置エリア用）
       populateProductFilter(availableCards);
+      
+      // モーダル内商品フィルターを初期化
+      populateModalProductFilter(availableCards);
       
       // 検索フィールドをクリア
       document.getElementById('cardSearchInput').value = '';
       document.getElementById('rarityFilter').value = '';
       document.getElementById('cardTypeFilter').value = '';
-      document.getElementById('productFilter').value = '';
+      document.getElementById('modalProductFilter').value = '';
+      
+      // 初期フィルタを適用（所有カード + 収録商品フィルタ）
+      filterCardsInSelector();
       
       // 現在のスロットにカードがある場合、それを選択状態にする
       const currentPage = binderState.pages[binderState.currentPage];
@@ -2091,14 +2158,20 @@
       renderBinder();
     }
 
-    // 商品フィルターのオプションを生成
+    // 商品フィルターのオプションを生成（自動配置エリア用）
     function populateProductFilter(cards) {
-      const productSelect = document.getElementById('productFilter');
+      const productSelect = document.getElementById('productSelect');
+      if (!productSelect) return;
+      
       const products = new Set();
       
       cards.forEach(card => {
         if (card.product) {
-          products.add(card.product);
+          // 複数商品がある場合は分割して追加
+          const productList = card.product.split(',').map(p => p.trim());
+          productList.forEach(product => {
+            if (product) products.add(product);
+          });
         }
       });
       
@@ -2113,6 +2186,37 @@
         option.value = product;
         option.textContent = product;
         productSelect.appendChild(option);
+      });
+    }
+
+    // モーダル内商品フィルターのオプションを生成
+    function populateModalProductFilter(cards) {
+      const modalProductFilter = document.getElementById('modalProductFilter');
+      if (!modalProductFilter) return;
+      
+      const products = new Set();
+      
+      cards.forEach(card => {
+        if (card.product) {
+          // 複数商品がある場合は分割して追加
+          const productList = card.product.split(',').map(p => p.trim());
+          productList.forEach(product => {
+            if (product) products.add(product);
+          });
+        }
+      });
+      
+      // 既存のオプションをクリア（最初の「すべての商品」は残す）
+      while (modalProductFilter.children.length > 1) {
+        modalProductFilter.removeChild(modalProductFilter.lastChild);
+      }
+      
+      // 商品をソートして追加
+      Array.from(products).sort().forEach(product => {
+        const option = document.createElement('option');
+        option.value = product;
+        option.textContent = product;
+        modalProductFilter.appendChild(option);
       });
     }
 
@@ -2147,7 +2251,8 @@
           <img src="${card.cardImageURL || './images/placeholder.png'}" 
                alt="${card.name}" 
                loading="lazy"
-               onerror="this.onerror=null; this.src='./images/placeholder.png'; console.log('Image failed to load for card:', '${card.id}');"
+               style="display: block;"
+               onerror="this.onerror=null; this.src='./images/placeholder.png'; console.log('Image failed to load for card:', '${card.id}', 'Original URL:', '${card.cardImageURL}');"
                onload="console.log('Image loaded successfully for card:', '${card.id}');">
           <div class="card-info">
             <div class="name">${card.name}</div>
@@ -2161,7 +2266,26 @@
           selectCard(card.id);
         });
         cardGrid.appendChild(cardItem);
+        
+        // 画像の強制表示
+        const img = cardItem.querySelector('img');
+        if (img) {
+          // 次のフレームで画像を強制表示
+          requestAnimationFrame(() => {
+            img.style.display = 'block';
+            img.style.visibility = 'visible';
+            img.style.opacity = '1';
+          });
+        }
       });
+      
+      // 全体の再描画を強制
+      requestAnimationFrame(() => {
+        cardGrid.style.display = 'none';
+        cardGrid.offsetHeight; // リフロー強制
+        cardGrid.style.display = 'grid';
+      });
+      
       console.log('renderCardGrid completed, total cards rendered:', cards.length);
     }
 
@@ -2224,35 +2348,6 @@
           selectedItem.classList.add('selected');
         }
       }
-    }
-
-    // カードを検索・フィルタリング
-    function filterCards() {
-      const searchTerm = document.getElementById('cardSearchInput').value.toLowerCase();
-      const rarityFilter = document.getElementById('rarityFilter').value;
-      const cardTypeFilter = document.getElementById('cardTypeFilter').value;
-      const productFilter = document.getElementById('productFilter').value;
-      
-      console.log('Filtering with:', { searchTerm, rarityFilter, cardTypeFilter, productFilter, availableCardsCount: availableCards.length });
-      
-      const filteredCards = availableCards.filter(card => {
-        const matchesSearch = card.name.toLowerCase().includes(searchTerm);
-        const matchesRarity = !rarityFilter || card.rarity === rarityFilter;
-        
-        // カードタイプのマッチング（部分マッチで対応）
-        const matchesCardType = !cardTypeFilter || 
-          (card.card_type && card.card_type.includes(cardTypeFilter));
-        
-        // 商品フィルター
-        const matchesProduct = !productFilter || 
-          (card.product && card.product.includes(productFilter));
-        
-        return matchesSearch && matchesRarity && matchesCardType && matchesProduct;
-      });
-      
-      console.log('Filtered result count:', filteredCards.length);
-      renderCardGrid(filteredCards);
-      highlightSelectedCard();
     }
 
     // 選択されたカードを配置
@@ -2436,8 +2531,8 @@
       const preserveEmptySlots = document.getElementById('preserveEmptySlots').checked;
       const isAscending = sortOrder === 'asc';
       
-      // 対象カードをフィルタ
-      let filteredCards = [...cardsData];
+      // 対象カードをフィルタ（所有しているカードのみ）
+      let filteredCards = cardsData.filter(card => userCollection[card.id] > 0);
       
       if (productFilter) {
         filteredCards = filteredCards.filter(card => 
@@ -2447,8 +2542,8 @@
       
       if (filteredCards.length === 0) {
         const message = productFilter 
-          ? `収録商品「${productFilter}」のカードがありません`
-          : 'カードがありません';
+          ? `収録商品「${productFilter}」の所有カードがありません`
+          : '所有しているカードがありません';
         alert(message);
         return;
       }

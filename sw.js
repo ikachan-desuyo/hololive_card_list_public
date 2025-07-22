@@ -1,6 +1,6 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.3.8';
-const VERSION_DESCRIPTION = 'モバイル版カード選択画面表示修正';
+const APP_VERSION = '4.4.2';
+const VERSION_DESCRIPTION = 'モーダル内独自収録商品フィルター追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
