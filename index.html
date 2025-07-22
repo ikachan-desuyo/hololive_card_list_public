@@ -416,12 +416,19 @@
             
             if (cachedResponse.ok) {
               const content = await cachedResponse.text();
-              // バージョンを正確に抽出（完全なバージョン文字列を取得）
-              let versionMatch = content.match(/Version: ([^\s-]+(?:-[A-Z0-9-]+)*)/);
+              // デバッグ用：HTMLコメントから直接バージョンを抽出
+              let versionMatch = content.match(/<!--\s*Version:\s*([^\s]+)/);
               if (!versionMatch) {
-                // より広範囲なパターンでもう一度試行
-                versionMatch = content.match(/Version: ([^\s]+)/);
+                // フォールバック：従来の方法
+                versionMatch = content.match(/Version:\s*([^\s]+)/);
               }
+              
+              // デバッグログ
+              console.log(`Debug ${page.name}:`, {
+                found: !!versionMatch,
+                version: versionMatch ? versionMatch[1] : 'Not found',
+                expected: page.expected
+              });
               
               if (versionMatch) {
                 const actualVersion = versionMatch[1];
@@ -433,7 +440,11 @@
                   const latestResponse = await fetch(page.name + '?v=' + Date.now());
                   if (latestResponse.ok) {
                     const latestContent = await latestResponse.text();
-                    const latestMatch = latestContent.match(/Version: ([^\s-]+(?:-[A-Z0-9-]+)*)/);
+                    // 最新ファイルも同じ方法でバージョンを抽出
+                    let latestMatch = latestContent.match(/<!--\s*Version:\s*([^\s]+)/);
+                    if (!latestMatch) {
+                      latestMatch = latestContent.match(/Version:\s*([^\s]+)/);
+                    }
                     if (latestMatch) {
                       latestVersion = latestMatch[1];
                     }
