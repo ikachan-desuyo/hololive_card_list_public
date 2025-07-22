@@ -849,13 +849,34 @@
         });
       }
       
+      // 共通のヘルパー関数：複数商品名から最も早い発売日を取得
+      function getEarliestReleaseDate(productString) {
+        const products = productString.split(',').map(p => p.trim());
+        let earliestDate = "9999-12-31";
+        
+        for (const product of products) {
+          const date = releaseMap[product];
+          if (date && date < earliestDate) {
+            earliestDate = date;
+          }
+        }
+        return earliestDate;
+      }
+
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
         let sorted = [...cards];
         if (method === "release") {
           sorted.sort((a, b) => {
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
+            
+            // デバッグログ：クインテットスペクトラムの場合のみ
+            if (a.product.includes("クインテット") || b.product.includes("クインテット")) {
+              console.log(`Debug sort - Product: "${a.product}" -> Date: "${ra}", Product: "${b.product}" -> Date: "${rb}"`);
+              console.log(`Available dates:`, Object.keys(releaseMap).filter(key => key.includes("クインテット")));
+            }
+            
             if (ra !== rb) return ra.localeCompare(rb);
             if (a.product !== b.product) return a.product.localeCompare(b.product);
             return a.id.localeCompare(b.id);
@@ -864,8 +885,8 @@
           sorted.sort((a, b) => {
             if (a.id !== b.id) return a.id.localeCompare(b.id);
             // 同じIDの場合は発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             return ra.localeCompare(rb);
           });
         } else if (method === "name") {
@@ -873,8 +894,8 @@
             const nameCompare = a.name.localeCompare(b.name, "ja");
             if (nameCompare !== 0) return nameCompare;
             // 同じ名前の場合は発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             return ra.localeCompare(rb);
           });
         } else if (method === "rarity") {
@@ -887,8 +908,8 @@
             const rarityDiff = (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0);
             if (rarityDiff !== 0) return rarityDiff;
             // 同じレアリティ内では発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             if (ra !== rb) return ra.localeCompare(rb);
             if (a.product !== b.product) return a.product.localeCompare(b.product);
             return a.id.localeCompare(b.id);
@@ -1109,6 +1130,10 @@
       }
 
       releaseMap = releaseMapData;
+
+      // デバッグ：releaseMapの内容を確認
+      console.log('Release Map loaded:', Object.keys(releaseMap).length, 'entries');
+      console.log('クインテットスペクトラム date:', releaseMap["ブースターパック「クインテットスペクトラム」"]);
 
       cards = Object.entries(cardRaw).map(([key, card]) => ({
         id: key,
