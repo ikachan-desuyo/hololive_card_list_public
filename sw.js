@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.13-force-cache-clear'; // 強制キャッシュクリア
+const CACHE_NAME = 'hololive-card-tool-v3.14-ultimate-cache-fix'; // 究極のキャッシュ修正版
 const urlsToCache = [
   './',
   './index.html',
@@ -61,20 +61,24 @@ self.addEventListener('message', (event) => {
 
 // Activate event - clean up old caches and claim clients when skip waiting
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating... Clearing all old caches');
+  console.log('Service Worker activating... Clearing ALL caches aggressively');
   event.waitUntil(
     Promise.all([
-      // Delete all old caches aggressively
+      // Delete ALL caches (not just old ones)
       caches.keys().then((cacheNames) => {
-        console.log('Found caches:', cacheNames);
+        console.log('Found ALL caches:', cacheNames);
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME) {
-              console.log('Force deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
+            console.log('Force deleting cache:', cacheName);
+            return caches.delete(cacheName);
           })
         );
+      }).then(() => {
+        // Recreate the current cache
+        return caches.open(CACHE_NAME).then(cache => {
+          console.log('Recreating cache:', CACHE_NAME);
+          return cache.addAll(urlsToCache);
+        });
       }),
       // Immediately claim all clients
       self.clients.claim().then(() => {
@@ -84,7 +88,7 @@ self.addEventListener('activate', (event) => {
           clients.forEach(client => {
             client.postMessage({
               type: 'CACHE_UPDATED',
-              message: 'New version available, please reload'
+              message: 'All caches cleared, please reload'
             });
           });
         });

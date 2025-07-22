@@ -1277,37 +1277,39 @@
 
     // 🔄 Service Worker登録 & アップデート検出
     if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('sw.js');
-            console.log('Service Worker登録成功:', registration);
+        navigator.serviceWorker.register('sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
             
-            // アップデート検出
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // 新しいバージョンが利用可能
-                            if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
-                                // モバイル対応：強制的にキャッシュをクリアして更新
-                                if (/Mobi|Android/i.test(navigator.userAgent)) {
-                                    caches.keys().then(cacheNames => {
-                                        return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-                                    }).then(() => {
-                                        newWorker.postMessage({type: 'SKIP_WAITING'});
-                                        setTimeout(() => window.location.reload(true), 100);
-                                    });
-                                } else {
-                                    window.location.reload();
-                                }
-                            }
-                        }
-                    });
-                }
+            // Listen for messages from Service Worker
+            navigator.serviceWorker.addEventListener('message', event => {
+              if (event.data && event.data.type === 'CACHE_UPDATED') {
+                console.log('Cache updated, forcing reload');
+                window.location.reload(true);
+              }
             });
-        } catch (error) {
-            console.error('Service Worker登録失敗:', error);
-        }
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content available, reload the page immediately
+                  console.log('🚀 強制更新: ソート機能が改善されました');
+                  // Clear all caches first
+                  caches.keys().then(cacheNames => {
+                    return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                  }).then(() => {
+                    // Force reload without user confirmation
+                    window.location.reload(true);
+                  });
+                }
+              });
+            });
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
     }
 
     // 🌐 オンライン/オフライン状態の表示管理

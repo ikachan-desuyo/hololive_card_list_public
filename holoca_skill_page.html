@@ -933,52 +933,40 @@
 
     // Service Worker registration with enhanced update notification for mobile
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        try {
-          // Force refresh service worker registration for mobile update issues
-          const registration = await navigator.serviceWorker.register('./sw.js', {
-            updateViaCache: 'none'  // Bypass cache for SW updates
-          });
-          console.log('SW registered with cache bypass: ', registration);
-          
-          // Force immediate update check
-          await registration.update();
-          
-          // Check for waiting service worker (already installed update)
-          if (registration.waiting) {
-            console.log('SW update available - forcing update');
-            if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
-              registration.waiting.postMessage({type: 'SKIP_WAITING'});
-              window.location.reload(true); // Force reload
-            }
-          }
-          
-          // Listen for new service worker updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+            
+            // Listen for messages from Service Worker
+            navigator.serviceWorker.addEventListener('message', event => {
+              if (event.data && event.data.type === 'CACHE_UPDATED') {
+                console.log('Cache updated, forcing reload');
+                window.location.reload(true);
+              }
+            });
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content available - show notification
-                  console.log('New SW installed, showing mobile update notification');
-                  if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
-                    newWorker.postMessage({type: 'SKIP_WAITING'});
-                    window.location.reload(true); // Force reload
-                  }
+                  // New content available, reload the page immediately
+                  console.log('🚀 強制更新: ソート機能が改善されました');
+                  // Clear all caches first
+                  caches.keys().then(cacheNames => {
+                    return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                  }).then(() => {
+                    // Force reload without user confirmation
+                    window.location.reload(true);
+                  });
                 }
               });
-            }
+            });
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
           });
-
-          // Listen for controlling service worker changes
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('SW controller changed, forcing page reload');
-            window.location.reload(true); // Force reload
-          });
-
-        } catch (error) {
-          console.error('SW registration failed:', error);
-        }
       });
     }
 
