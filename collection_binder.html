@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.3.6-SKILL-MODAL-ENHANCED - Enhanced skill display in view mode with proper icons and z-index fixes -->
+<!-- Version: 4.3.7-MOBILE-MODAL-FIX - Fixed mobile modal layout, added product filter, and official card order sorting -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1289,6 +1289,10 @@
           <div class="option-title">発売日順</div>
           <div class="option-desc">新しいシリーズから古い順</div>
         </div>
+        <div class="arrange-option" onclick="autoArrange('official')">
+          <div class="option-title">公式カード番号順</div>
+          <div class="option-desc">公式レイアウトに準拠した順序で配置</div>
+        </div>
         <div class="arrange-option" onclick="autoArrange('custom')">
           <div class="option-title">五十音順</div>
           <div class="option-desc">カード名の五十音順で配置</div>
@@ -1351,10 +1355,10 @@
           <h3 class="card-detail-title" style="margin: 0;">カード詳細</h3>
           <button onclick="closeImageModal()" class="modal-close-btn" style="background: none; border: none; font-size: 1.5em; cursor: pointer;">✕</button>
         </div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: #000;">
+        <div style="flex: 1; min-height: 45%; display: flex; align-items: center; justify-content: center; background: #000;">
           <img id="modalImageMobile" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
         </div>
-        <div class="card-detail-content mobile" style="max-height: 40%; overflow-y: auto; padding: 15px;">
+        <div class="card-detail-content mobile" style="flex: 1; min-height: 45%; overflow-y: auto; padding: 15px;">
           <div id="cardInfoContentMobile"></div>
         </div>
       </div>
@@ -1399,6 +1403,9 @@
             <option value="サポート・イベント">イベント</option>
             <option value="サポート・ツール">ツール</option>
             <option value="LIMITED">LIMITED</option>
+          </select>
+          <select id="productFilter" onchange="filterCards()">
+            <option value="">すべての商品</option>
           </select>
         </div>
       </div>
@@ -2038,10 +2045,14 @@
       // カードグリッドを初期化
       renderCardGrid(availableCards);
       
+      // 商品フィルターを初期化
+      populateProductFilter(availableCards);
+      
       // 検索フィールドをクリア
       document.getElementById('cardSearchInput').value = '';
       document.getElementById('rarityFilter').value = '';
       document.getElementById('cardTypeFilter').value = '';
+      document.getElementById('productFilter').value = '';
       
       // 現在のスロットにカードがある場合、それを選択状態にする
       const currentPage = binderState.pages[binderState.currentPage];
@@ -2065,11 +2076,41 @@
       renderBinder();
     }
 
+    // 商品フィルターのオプションを生成
+    function populateProductFilter(cards) {
+      const productSelect = document.getElementById('productFilter');
+      const products = new Set();
+      
+      cards.forEach(card => {
+        if (card.product) {
+          products.add(card.product);
+        }
+      });
+      
+      // 既存のオプションをクリア（最初の「すべての商品」は残す）
+      while (productSelect.children.length > 1) {
+        productSelect.removeChild(productSelect.lastChild);
+      }
+      
+      // 商品をソートして追加
+      Array.from(products).sort().forEach(product => {
+        const option = document.createElement('option');
+        option.value = product;
+        option.textContent = product;
+        productSelect.appendChild(option);
+      });
+    }
+
     // カードグリッドをレンダリング
     function renderCardGrid(cards) {
       console.log('renderCardGrid called with', cards.length, 'cards');
       const cardGrid = document.getElementById('cardGrid');
       cardGrid.innerHTML = '';
+
+      if (cards.length === 0) {
+        cardGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">該当するカードがありません</div>';
+        return;
+      }
 
       cards.forEach((card, index) => {
         console.log(`Rendering card ${index}:`, card.id, card.name);
@@ -2173,6 +2214,9 @@
       const searchTerm = document.getElementById('cardSearchInput').value.toLowerCase();
       const rarityFilter = document.getElementById('rarityFilter').value;
       const cardTypeFilter = document.getElementById('cardTypeFilter').value;
+      const productFilter = document.getElementById('productFilter').value;
+      
+      console.log('Filtering with:', { searchTerm, rarityFilter, cardTypeFilter, productFilter, availableCardsCount: availableCards.length });
       
       const filteredCards = availableCards.filter(card => {
         const matchesSearch = card.name.toLowerCase().includes(searchTerm);
@@ -2182,9 +2226,14 @@
         const matchesCardType = !cardTypeFilter || 
           (card.card_type && card.card_type.includes(cardTypeFilter));
         
-        return matchesSearch && matchesRarity && matchesCardType;
+        // 商品フィルター
+        const matchesProduct = !productFilter || 
+          (card.product && card.product.includes(productFilter));
+        
+        return matchesSearch && matchesRarity && matchesCardType && matchesProduct;
       });
       
+      console.log('Filtered result count:', filteredCards.length);
       renderCardGrid(filteredCards);
       highlightSelectedCard();
     }
@@ -2248,6 +2297,114 @@
       selectedCardId = null;
     }
 
+    // 公式カード番号順の比較関数
+    function compareOfficialOrder(a, b) {
+      // カードを3つのグループに分類
+      const getCardGroup = (card) => {
+        const rarity = card.rarity;
+        if (rarity === 'SY') return 3; // SYグループ
+        if (['OUR', 'SEC', 'UR', 'SR', 'S'].includes(rarity)) return 2; // 高レアリティグループ
+        return 1; // 通常グループ
+      };
+      
+      const groupA = getCardGroup(a);
+      const groupB = getCardGroup(b);
+      
+      // グループが異なる場合はグループ順で比較
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+      
+      // SYグループの場合はそのまま配置（カード番号順）
+      if (groupA === 3) {
+        return (a.id || '').localeCompare(b.id || '');
+      }
+      
+      // カードタイプの優先順位を定義
+      const getCardTypePriority = (card) => {
+        const cardType = card.card_type || '';
+        if (cardType.includes('推しホロメン')) return 1;
+        if (cardType.includes('ホロメン') && !(card.bloom === 'spot')) return 2;
+        if (cardType.includes('ホロメン') && card.bloom === 'spot') return 3;
+        if (cardType.includes('アイテム')) return 4;
+        if (cardType.includes('イベント')) return 5;
+        if (cardType.includes('ツール')) return 6;
+        if (cardType.includes('マスコット')) return 7;
+        if (cardType.includes('ファン')) return 8;
+        if (card.cardType === 'エール') return 9;
+        return 10;
+      };
+      
+      const typeA = getCardTypePriority(a);
+      const typeB = getCardTypePriority(b);
+      
+      if (typeA !== typeB) {
+        return typeA - typeB;
+      }
+      
+      // カード番号の接頭文字を取得
+      const getCardPrefix = (cardId) => {
+        if (!cardId) return '';
+        const match = cardId.match(/^([A-Z]+)/);
+        return match ? match[1] : '';
+      };
+      
+      const prefixA = getCardPrefix(a.id);
+      const prefixB = getCardPrefix(b.id);
+      
+      // グループ2（高レアリティ）の場合の特別処理
+      if (groupA === 2) {
+        // カードタイプでソート後、カード番号順
+        const cardNumA = a.id ? a.id.replace(/[A-Z]+/, '').replace(/[A-Z]+$/, '') : '';
+        const cardNumB = b.id ? b.id.replace(/[A-Z]+/, '').replace(/[A-Z]+$/, '') : '';
+        
+        // カード番号（数字部分）が同じ場合はレアリティ順
+        if (cardNumA === cardNumB && cardNumA !== '') {
+          const rarityOrder = { 'SEC': 1, 'OUR': 2, 'UR': 3, 'SR': 4, 'S': 5 };
+          const rarityA = rarityOrder[a.rarity] || 99;
+          const rarityB = rarityOrder[b.rarity] || 99;
+          
+          if (rarityA !== rarityB) {
+            return rarityA - rarityB;
+          }
+        }
+      }
+      
+      // 接頭文字の出現回数を計算（同一タイプ内で）
+      const getCardPrefixCount = (prefix, type) => {
+        return cardsData.filter(card => 
+          getCardTypePriority(card) === type && 
+          getCardPrefix(card.id) === prefix
+        ).length;
+      };
+      
+      const countA = getCardPrefixCount(prefixA, typeA);
+      const countB = getCardPrefixCount(prefixB, typeB);
+      
+      // 通常グループ：多い接頭文字を優先
+      // 高レアリティグループ：カード番号順後、少ない接頭文字を後に
+      if (groupA === 1) {
+        // 多い接頭文字を優先
+        if (countA !== countB) {
+          return countB - countA;
+        }
+      } else if (groupA === 2) {
+        // カード番号順が基本、その後少ない接頭文字を後に
+        const cardIdCompare = (a.id || '').localeCompare(b.id || '');
+        if (cardIdCompare !== 0) {
+          return cardIdCompare;
+        }
+        
+        // 同じカード番号なら少ない接頭文字を後に
+        if (countA !== countB) {
+          return countA - countB;
+        }
+      }
+      
+      // 最終的にカード番号順
+      return (a.id || '').localeCompare(b.id || '');
+    }
+
     // 自動配置
     function autoArrange(mode) {
       if (!Array.isArray(cardsData)) {
@@ -2303,6 +2460,9 @@
               break;
             case 'release':
               diff = new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0);
+              break;
+            case 'official':
+              diff = compareOfficialOrder(a, b);
               break;
             case 'custom':
               diff = a.name.localeCompare(b.name);
@@ -2432,6 +2592,7 @@
       const modeNames = {
         'rarity': 'レアリティ',
         'release': '発売日',
+        'official': '公式カード番号',
         'custom': '五十音'
       };
       
