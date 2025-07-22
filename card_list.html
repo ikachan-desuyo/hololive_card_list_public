@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.6.0-CENTRALIZED-VERSION - Single page version check system -->
+<!-- Version: 3.7.0-CENTRALIZED-VERSION - Enhanced mobile filter display and layout optimizations -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -472,7 +472,7 @@
       }
     }
 
-    /* モバイル版での確実な表示 */
+    /* モバイル版での確実な表示 - 統合版 */
     @media (max-width: 540px) {
       .top-controls-row {
         display: flex !important;
@@ -511,35 +511,115 @@
         box-shadow: 0 2px 4px rgba(255,255,255,0.1) !important;
       }
 
-      /* モバイル環境でのさらなる強化 */
-      .sticky-controls,
-      .sticky-controls * {
+      /* フィルター表示の改善 */
+      .sticky-controls #filtersWrapper {
+        background: transparent !important;
+        margin-top: 8px !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+
+      .dark .sticky-controls #filtersWrapper {
+        background: transparent !important;
+      }
+
+      /* フィルターグループのモバイル最適化 */
+      .sticky-controls .filter-group {
+        background: #f8f9fa !important;
+        margin-bottom: 8px !important;
+        padding: 8px !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+      }
+
+      .dark .sticky-controls .filter-group {
+        background: #333 !important;
+        border-color: #555 !important;
+      }
+
+      .sticky-controls .filter-group legend {
         background: #fff !important;
+        color: #495057 !important;
+        padding: 2px 8px !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
       }
 
-      .dark .sticky-controls,
-      .dark .sticky-controls * {
+      .dark .sticky-controls .filter-group legend {
         background: #222 !important;
-        color: #eee !important;
+        color: #adb5bd !important;
       }
 
-      .dark .sticky-controls input,
-      .dark .sticky-controls select,
-      .dark .sticky-controls button {
+      /* チップグループのモバイル最適化 */
+      .sticky-controls .chip-group {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin-top: 6px !important;
+      }
+
+      .sticky-controls .chip {
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+        border-radius: 12px !important;
+        background: #e9ecef !important;
+        color: #495057 !important;
+        border: 1px solid #ced4da !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+      }
+
+      .sticky-controls .chip.selected {
+        background: #007bff !important;
+        color: #fff !important;
+        border-color: #0056b3 !important;
+      }
+
+      .dark .sticky-controls .chip {
+        background: #495057 !important;
+        color: #adb5bd !important;
+        border-color: #6c757d !important;
+      }
+
+      .dark .sticky-controls .chip.selected {
+        background: #0056b3 !important;
+        color: #fff !important;
+        border-color: #004085 !important;
+      }
+
+      /* セレクトボックスのモバイル最適化 */
+      .sticky-controls select {
+        width: 100% !important;
+        font-size: 12px !important;
+        padding: 6px !important;
+        background: #fff !important;
+        color: #495057 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+        margin-top: 6px !important;
+      }
+
+      .dark .sticky-controls select {
         background: #444 !important;
-        color: #eee !important;
-        border-color: #666 !important;
+        color: #adb5bd !important;
+        border-color: #6c757d !important;
       }
 
-      .sticky-controls .top-controls-row {
-        margin-bottom: 0 !important;
-      }
-
+      /* 入力フィールドの基本設定 */
       .sticky-controls input[type="text"] {
         font-size: 12px !important;
         padding: 6px !important;
         flex: 2 !important;
         min-width: 100px !important;
+        background: #fff !important;
+        color: #495057 !important;
+        border: 1px solid #ced4da !important;
+      }
+
+      .dark .sticky-controls input[type="text"] {
+        background: #444 !important;
+        color: #adb5bd !important;
+        border-color: #6c757d !important;
       }
 
       .sticky-controls select {
@@ -554,6 +634,19 @@
         padding: 6px 8px !important;
         flex: 1 !important;
         min-width: 70px !important;
+        background: #007bff !important;
+        color: #fff !important;
+        border: 1px solid #0056b3 !important;
+        border-radius: 4px !important;
+      }
+
+      .dark .sticky-controls button {
+        background: #0056b3 !important;
+        border-color: #004085 !important;
+      }
+
+      .sticky-controls .top-controls-row {
+        margin-bottom: 0 !important;
       }
     }
 
@@ -599,7 +692,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.4.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.7.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       
@@ -1127,12 +1220,37 @@
 
   function updateMobileLayout() {
     const wasMobile = document.body.classList.contains("mobile-layout");
-    if (isMobileScreen()) {
+    const isMobile = isMobileScreen();
+    
+    if (isMobile) {
       document.body.classList.add("mobile-layout");
-      if (!wasMobile) console.log('Switched to mobile layout');
+      
+      // モバイル版でのフィルター最適化
+      const filtersWrapper = document.getElementById('filtersWrapper');
+      const filterToggleBtn = document.getElementById('filterToggleBtn');
+      
+      if (filtersWrapper && filterToggleBtn) {
+        // モバイルでは初期状態で非表示
+        if (!wasMobile) {
+          filtersWrapper.style.display = 'none';
+          filterToggleBtn.textContent = '🔽 フィルター表示';
+        }
+      }
+      
+      if (!wasMobile) console.log('Switched to mobile layout - filters optimized');
     } else {
       document.body.classList.remove("mobile-layout");
-      if (wasMobile) console.log('Switched to desktop layout');
+      
+      // デスクトップ版では常に表示
+      const filtersWrapper = document.getElementById('filtersWrapper');
+      const filterToggleBtn = document.getElementById('filterToggleBtn');
+      
+      if (filtersWrapper && filterToggleBtn) {
+        filtersWrapper.style.display = 'block';
+        filterToggleBtn.textContent = '🔼 フィルター非表示';
+      }
+      
+      if (wasMobile) console.log('Switched to desktop layout - filters always visible');
     }
   }
 
@@ -1176,7 +1294,7 @@
       console.warn('Version display error:', error);
       const versionEl = document.getElementById('versionDisplay');
       if (versionEl) {
-        versionEl.textContent = '[v3.4.0-CENTRALIZED]';
+        versionEl.textContent = '[v3.7.0-CENTRALIZED]';
       }
     }
 
@@ -1468,12 +1586,12 @@
         }
         
       } else {
-        statusEl.textContent = '[v3.4.0-SW-UNAVAILABLE]';
+        statusEl.textContent = '[v3.7.0-SW-UNAVAILABLE]';
       }
       
     } catch (error) {
       console.error('Update check failed:', error);
-      statusEl.textContent = '[v3.4.0-ERROR: ' + error.message + ']';
+      statusEl.textContent = '[v3.7.0-ERROR: ' + error.message + ']';
       setTimeout(() => {
         displayVersionInfo();
       }, 3000);
@@ -1500,7 +1618,7 @@
           [messageChannel.port2]
         );
       } else {
-        statusEl.textContent = '[v3.4.0-CENTRALIZED]';
+        statusEl.textContent = '[v3.7.0-CENTRALIZED]';
       }
     } catch (error) {
       console.warn('Version display error:', error);
