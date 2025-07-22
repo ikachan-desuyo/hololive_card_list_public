@@ -5,29 +5,27 @@ const VERSION_DESCRIPTION = 'バインダーコレクション管理システム
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
-  'card_list.html': '4.1.1-CSV-ENHANCEMENT-UPDATE',  // CSV機能改良 - 追加修正と改善
+  'card_list.html': '4.1.0-CSV-ENHANCEMENT',  // CSV機能改良 - ファイル保存/読み込み対応
   'collection_binder.html': '4.3.1-DRAG-DROP-COMPLETE',  // ドラッグ&ドロップ機能完全実装
-  'binder_collection.html': '4.1.1-BINDER-COLLECTION-UPDATE',  // 複数バインダー管理システム - UI改善と追加修正
+  'binder_collection.html': '4.1.0-BINDER-COLLECTION',  // 複数バインダー管理システム
   'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🚀 メジャーアップデート v4.3.1',
-  description: 'バインダーコレクション管理システムに完全なドラッグ&ドロップ機能を実装しました',
+  title: '🚀 メジャーアップデート v4.3.0',
+  description: 'バインダーコレクション管理システムに二次ソート、Sレア光エフェクト、空スロット保持機能を追加しました',
   changes: [
-    '🖱️ 完全なドラッグ&ドロップ機能実装（カード移動・入れ替え対応）',
-    '✨ ドラッグ時の視覚エフェクト追加（回転・拡大縮小・光るエフェクト）',
     '🎯 自動配置で二次ソート機能追加（カード番号順・発売日順・名前順・収録商品順）',
     '✨ Sレアリティカードに光エフェクト追加',
-    '📦 空スロット保持機能（持っていないカードは空スロットで配置）',
+    '� 空スロット保持機能（持っていないカードは空スロットで配置）',
     '🎨 ダークモード対応強化',
-    '📚 複数バインダー管理システム（v4.2.0から継続）',
+    '�📚 複数バインダー管理システム（v4.2.0から継続）',
     '🖼️ バインダーごとのカスタム表紙画像設定',
-    '📝 バインダー名前・説明のカスタマイズ',
+    '� バインダー名前・説明のカスタマイズ',
     '📱 モバイル最適化されたバインダー管理UI',
-    '💾 バインダーごとの独立したデータ保存システム'
+    '� バインダーごとの独立したデータ保存システム'
   ]
 };
 
@@ -91,7 +89,6 @@ async function getVersionInfo() {
     appVersion: APP_VERSION,
     pageVersions: PAGE_VERSIONS,
     updateDetails: UPDATE_DETAILS,
-    versionDescription: VERSION_DESCRIPTION,
     cacheName: CACHE_NAME
   };
 }
@@ -182,186 +179,26 @@ async function checkPageVersions() {
   return outdatedPages;
 }
 
-// ✅ バージョン情報をコンソールに表示
-function logVersionInfo() {
-  console.log(`%c🚀 Hololive Card Tool Service Worker v${APP_VERSION}`, 'color: #4CAF50; font-weight: bold; font-size: 16px;');
-  console.log(`%c📝 ${VERSION_DESCRIPTION}`, 'color: #2196F3; font-weight: bold;');
-  console.log('%c📚 ページバージョン情報:', 'color: #FF9800; font-weight: bold;');
-  Object.entries(PAGE_VERSIONS).forEach(([page, version]) => {
-    console.log(`  • ${page}: %c${version}`, 'color: #4CAF50;');
-  });
-  console.log(`%c🗂️ キャッシュ名: ${CACHE_NAME}`, 'color: #9C27B0;');
-}
-
-// Install event
-self.addEventListener('install', function(event) {
-  console.log('%c⚡ Service Worker: Install Event', 'color: #4CAF50; font-weight: bold;');
-  logVersionInfo();
-  
+// Install event - cache resources and immediately take control
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installing... Force update mode');
   // 強制的に即座にスキップ待機
   self.skipWaiting();
   
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('%c📦 Service Worker: Caching files...', 'color: #2196F3;');
+      .then((cache) => {
+        console.log('Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
       })
-      .then(function() {
-        console.log('%c✅ Service Worker: All files cached successfully', 'color: #4CAF50;');
-        return self.skipWaiting();
-      })
-      .catch(function(error) {
-        console.error('❌ Service Worker: Caching failed:', error);
+      .catch((error) => {
+        console.log('Cache failed:', error);
       })
   );
 });
 
-// Activate event
-self.addEventListener('activate', function(event) {
-  console.log('%c🔄 Service Worker: Activate Event', 'color: #FF9800; font-weight: bold;');
-  
-  event.waitUntil(
-    Promise.all([
-      // Delete old caches and create fresh cache
-      caches.keys().then(function(cacheNames) {
-        console.log('Found caches:', cacheNames);
-        return Promise.all(
-          cacheNames.map(function(cacheName) {
-            if (cacheName !== CACHE_NAME) {
-              console.log('%c🗑️ Service Worker: Deleting old cache:', cacheName, 'color: #F44336;');
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      }).then(function() {
-        // Recreate cache with fresh content for HTML files
-        return caches.open(CACHE_NAME).then(cache => {
-          console.log('Updating cache with fresh HTML content:', CACHE_NAME);
-          const cacheBustingUrls = urlsToCache.map(url => {
-            if (url.endsWith('.html') || url === './') {
-              return `${url}?v=${APP_VERSION}&t=${Date.now()}`;
-            }
-            return url;
-          });
-          return cache.addAll(cacheBustingUrls);
-        });
-      }),
-      // Immediately claim all clients
-      self.clients.claim().then(function() {
-        console.log('%c✅ Service Worker: Activated and claimed clients', 'color: #4CAF50;');
-        // Notify all clients about cache update
-        return self.clients.matchAll().then(clients => {
-          clients.forEach(client => {
-            client.postMessage({
-              type: 'CACHE_UPDATED',
-              message: 'Service Worker updated with drag & drop features',
-              version: APP_VERSION,
-              timestamp: Date.now()
-            });
-          });
-        });
-      })
-    ])
-  );
-});
-
-// Fetch event - Network First for HTML, Cache First for other resources
-self.addEventListener('fetch', function(event) {
-  // Skip non-GET requests and external URLs
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  // HTMLファイルに対してはNetwork First戦略を使用
-  const isHTMLFile = event.request.url.endsWith('.html') || 
-                     event.request.url === self.location.origin + '/' ||
-                     event.request.url.endsWith('/');
-
-  if (isHTMLFile) {
-    // ログを減らすために、HTMLファイルのリクエストのみログ出力
-    console.log('%c🌐 Service Worker: Fetching HTML with Network First', event.request.url, 'color: #607D8B;');
-    
-    event.respondWith(
-      // Network First: まずネットワークから取得を試行（キャッシュバスティング付き）
-      fetch(event.request.url + (event.request.url.includes('?') ? '&' : '?') + 't=' + Date.now(), {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      })
-        .then(function(response) {
-          if (response && response.status === 200) {
-            // ネットワークから取得成功時はキャッシュを更新
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(event.request, responseToCache);
-            });
-            console.log('Serving fresh HTML from network:', event.request.url);
-            return response;
-          }
-          throw new Error('Network response not ok');
-        })
-        .catch(function() {
-          // ネットワーク失敗時はキャッシュから提供
-          console.log('Network failed, serving HTML from cache:', event.request.url);
-          return caches.match(event.request);
-        })
-    );
-  } else {
-    // その他のリソースはCache First戦略
-    event.respondWith(
-      caches.match(event.request)
-        .then(function(response) {
-          // キャッシュにあればそれを返す
-          if (response) {
-            return response;
-          }
-          
-          // キャッシュになければネットワークから取得
-          return fetch(event.request).then(function(response) {
-            // 有効なレスポンスかチェック
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // レスポンスをクローンしてキャッシュに保存
-            const responseToCache = response.clone();
-            
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                // カード画像を動的にキャッシュ
-                if (event.request.url.includes('hololive-official-cardgame.com/cardlist/image/') ||
-                    event.request.url.includes('.jpg') ||
-                    event.request.url.includes('.png')) {
-                  cache.put(event.request, responseToCache);
-                }
-              });
-            
-            return response;
-          }).catch(function() {
-            // ネットワーク失敗時、画像の場合はプレースホルダーを提供
-            if (event.request.destination === 'image') {
-              return caches.match('./images/placeholder.png');
-            }
-          });
-        })
-        .catch(function(error) {
-          console.error('❌ Service Worker: Fetch failed:', error);
-          
-          // HTMLページの場合はオフライン用のフォールバック
-          if (event.request.destination === 'document') {
-            return caches.match('./index.html');
-          }
-        })
-    );
-  }
-});
-
-// Message event - 詳細なメッセージハンドリング
-self.addEventListener('message', async function(event) {
+// Listen for messages from client
+self.addEventListener('message', async (event) => {
   const { type, data } = event.data || {};
   
   switch (type) {
@@ -428,11 +265,12 @@ self.addEventListener('message', async function(event) {
             
             if (response.ok) {
               const htmlText = await response.text();
+              // より柔軟なバージョン検出
               const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
               const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
               
               if (versionMatch) {
-                actualVersion = versionMatch[1];
+                actualVersion = versionMatch[1]; // サフィックスを削除しない
               } else if (displayVersionMatch) {
                 actualVersion = displayVersionMatch[1];
               }
@@ -456,7 +294,7 @@ self.addEventListener('message', async function(event) {
         const detailedInfo = {
           hasUpdates: versionCheckResult.length > 0,
           outdatedPages: versionCheckResult,
-          allPages: allPages,
+          allPages: allPages, // 全ページ情報を追加
           currentAppVersion: APP_VERSION,
           pageVersions: PAGE_VERSIONS,
           timestamp: new Date().toISOString()
@@ -585,16 +423,152 @@ self.addEventListener('message', async function(event) {
       break;
       
     default:
-      // 従来のメッセージハンドリング
-      if (event.data && event.data.type === 'GET_VERSION_INFO') {
-        event.ports[0].postMessage(getVersionInfo());
-      }
-      console.log('Message received:', type);
+      console.log('Unknown message type:', type);
+  }
+});
+
+// Activate event - clean up old caches and claim clients when skip waiting
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating... Clearing ALL caches aggressively');
+  event.waitUntil(
+    Promise.all([
+      // Delete ALL caches (not just old ones) - more aggressive clearing
+      caches.keys().then((cacheNames) => {
+        console.log('Found ALL caches:', cacheNames);
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('Force deleting cache:', cacheName);
+            return caches.delete(cacheName).then(success => {
+              console.log(`Cache ${cacheName} deletion result:`, success);
+              return success;
+            });
+          })
+        );
+      }).then((results) => {
+        console.log('All cache deletion results:', results);
+        // Recreate the current cache with fresh content
+        return caches.open(CACHE_NAME).then(cache => {
+          console.log('Recreating cache with fresh content:', CACHE_NAME);
+          // Use cache-busting for critical files
+          const cacheBustingUrls = urlsToCache.map(url => {
+            if (url.endsWith('.html') || url === './') {
+              return `${url}?v=${APP_VERSION}&t=${Date.now()}`;
+            }
+            return url;
+          });
+          return cache.addAll(cacheBustingUrls).then(() => {
+            console.log('Fresh cache created successfully');
+          });
+        });
+      }),
+      // Immediately claim all clients
+      self.clients.claim().then(() => {
+        console.log('Claimed all clients');
+        // Notify all clients to reload with force
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_UPDATED',
+              message: 'All caches cleared forcefully, please perform hard reload',
+              forceReload: true,
+              timestamp: Date.now()
+            });
+          });
+        });
+      })
+    ])
+  );
+});
+
+// Fetch event - serve from cache when offline
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and external URLs
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // HTMLファイルに対してはNetwork First戦略を使用
+  const isHTMLFile = event.request.url.endsWith('.html') || 
+                     event.request.url === self.location.origin + '/' ||
+                     event.request.url.endsWith('/');
+
+  if (isHTMLFile) {
+    event.respondWith(
+      // Network First: まずネットワークから取得を試行（キャッシュバスティング付き）
+      fetch(event.request.url + (event.request.url.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
+        .then((response) => {
+          if (response && response.status === 200) {
+            // ネットワークから取得成功時はキャッシュを更新（古いキャッシュは削除）
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              // 古いバージョンを削除してから新しいものを保存
+              cache.delete(event.request).then(() => {
+                cache.put(event.request, responseToCache);
+              });
+            });
+            console.log('Serving fresh HTML from network with cache-busting:', event.request.url);
+            return response;
+          }
+          throw new Error('Network response not ok');
+        })
+        .catch(() => {
+          // ネットワーク失敗時はキャッシュから提供
+          console.log('Network failed, serving HTML from cache:', event.request.url);
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // その他のリソースはCache First戦略
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Return cached version or fetch from network
+          if (response) {
+            console.log('Serving from cache:', event.request.url);
+            return response;
+          }
+
+          // Fetch from network and cache the response
+          return fetch(event.request).then((response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response for caching
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                // Cache card images dynamically
+                if (event.request.url.includes('hololive-official-cardgame.com/cardlist/image/') ||
+                    event.request.url.includes('.jpg') ||
+                    event.request.url.includes('.png')) {
+                  cache.put(event.request, responseToCache);
+                }
+              });
+
+            return response;
+          }).catch(() => {
+            // If network fails, try to serve a cached placeholder for images
+            if (event.request.destination === 'image') {
+              return caches.match('./images/placeholder.png');
+            }
+          });
+        })
+    );
   }
 });
 
 // Background sync for data updates when connection is restored
-self.addEventListener('sync', function(event) {
+self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
     console.log('Background sync triggered');
     event.waitUntil(updateCache());
@@ -614,15 +588,3 @@ async function updateCache() {
     console.log('Failed to update cache:', error);
   }
 }
-
-// ✅ エラーハンドリング
-self.addEventListener('error', function(event) {
-  console.error('❌ Service Worker Error:', event.error);
-});
-
-self.addEventListener('unhandledrejection', function(event) {
-  console.error('❌ Service Worker Unhandled Rejection:', event.reason);
-});
-
-// ✅ 初期化完了メッセージ
-console.log('%c🎉 Hololive Card Tool Service Worker initialized successfully!', 'color: #4CAF50; font-weight: bold; font-size: 14px;');

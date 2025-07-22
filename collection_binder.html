@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.1.0-COLLECTION-BINDER - Visual collection binder interface -->
+<!-- Version: 4.3.1-DRAG-DROP-COMPLETE - Added complete drag & drop functionality with visual effects and secondary sort features -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -139,43 +139,60 @@
       color: #bdc3c7;
     }
 
-    /* バインダーグリッド - 3x3の9枚配置 */
+    /* バインダーグリッド - 動的レイアウト対応 */
     .binder-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      grid-template-columns: repeat(var(--grid-cols, 3), 1fr);
+      gap: 15px;
       margin: 20px 0;
+      max-width: calc(var(--grid-cols, 3) * 120px + (var(--grid-cols, 3) - 1) * 15px);
+      margin-left: auto;
+      margin-right: auto;
     }
+    
+    /* レイアウト別の最大幅調整 */
+    .binder-grid.layout-2x3 { max-width: 300px; }
+    .binder-grid.layout-3x3 { max-width: 450px; }
+    .binder-grid.layout-4x3 { max-width: 600px; }
+    .binder-grid.layout-3x4 { max-width: 450px; }
 
     /* カードスロット */
     .card-slot {
       aspect-ratio: 63/88;
-      border: 3px dashed rgba(102, 126, 234, 0.3);
-      border-radius: 12px;
+      border: 2px dashed rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
       position: relative;
       transition: all 0.3s ease;
       background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.05));
       cursor: pointer;
       overflow: hidden;
+      max-width: 180px;
     }
 
     .card-slot:hover {
       border-color: rgba(102, 126, 234, 0.8);
-      transform: scale(1.02);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+      transform: scale(1.01);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
     }
 
     .card-slot.occupied {
-      border: 3px solid rgba(40, 167, 69, 0.8);
+      border: 2px solid rgba(40, 167, 69, 0.8);
       background: linear-gradient(145deg, rgba(40, 167, 69, 0.1), rgba(40, 167, 69, 0.05));
     }
 
     .card-slot.reserved {
-      border: 3px solid rgba(255, 193, 7, 0.8);
+      border: 2px solid rgba(255, 193, 7, 0.8);
       background: linear-gradient(145deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
     }
 
     /* カード画像 */
+    .card-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      border-radius: 8px;
+    }
+    
     .card-image {
       width: 100%;
       height: 100%;
@@ -185,7 +202,7 @@
     }
 
     .card-slot:hover .card-image {
-      transform: scale(1.05);
+      transform: scale(1.02);
     }
 
     /* カード情報オーバーレイ */
@@ -206,13 +223,13 @@
     }
 
     .card-name {
-      font-size: 0.8em;
+      font-size: 0.7em;
       font-weight: bold;
       margin-bottom: 2px;
     }
 
     .card-rarity {
-      font-size: 0.7em;
+      font-size: 0.6em;
       opacity: 0.9;
     }
 
@@ -303,93 +320,131 @@
       color: #bdc3c7;
     }
 
-    /* コレクション統計 */
-    .collection-stats {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
+    /* Sレアリティの光エフェクト */
+    .s-rarity-effect {
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-item {
-      background: rgba(255, 255, 255, 0.9);
-      padding: 10px 15px;
-      border-radius: 20px;
-      font-size: 0.9em;
-      font-weight: bold;
-      color: #667eea;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    .s-rarity-effect::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.1) 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 70%,
+        transparent 80%
+      );
+      animation: shine 2s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 1;
     }
 
-    .dark .stat-item {
-      background: rgba(52, 73, 94, 0.9);
-      color: #3498db;
+    .s-rarity-effect::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(
+        circle at center,
+        rgba(255, 215, 0, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes shine {
+      0% {
+        transform: translate(-100%, -100%) rotate(45deg);
+      }
+      50% {
+        transform: translate(0%, 0%) rotate(45deg);
+      }
+      100% {
+        transform: translate(100%, 100%) rotate(45deg);
+      }
+    }
+
+    .s-rarity-effect .card-image {
+      position: relative;
+      z-index: 0;
     }
 
     /* レスポンシブ対応 - スマホファースト */
     @media (max-width: 768px) {
       .header {
-        padding: 8px 15px;
+        padding: 6px 10px;
       }
       
       .header-content {
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
       
       .header h1 {
-        font-size: 1.4em;
+        font-size: 1.2em;
       }
       
       .binder-container {
-        padding: 15px 10px;
+        padding: 10px 8px;
       }
       
       .binder-page {
-        padding: 20px 15px;
-        margin-bottom: 20px;
+        padding: 15px 10px;
+        margin-bottom: 15px;
       }
       
-      /* スマホ用 - 2x2グリッドに変更 */
+      /* スマホ用 - 3x3グリッドのまま、サイズ調整 */
       .binder-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
         margin: 15px 0;
+        max-width: 100%;
       }
       
       /* カードスロットのタッチ操作改善 */
       .card-slot {
-        min-height: 120px;
-        border-width: 2px;
+        min-height: 80px;
+        max-width: none;
+        border-width: 1px;
+        border-radius: 6px;
         touch-action: manipulation;
       }
       
       .empty-slot-content {
-        padding: 8px;
+        padding: 4px;
       }
       
       .slot-number {
-        font-size: 1.5em;
+        font-size: 1.2em;
       }
       
       .slot-action {
-        font-size: 0.8em;
+        font-size: 0.65em;
       }
       
       /* タッチ用ボタンサイズ */
       .compact-controls {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
+        gap: 6px;
       }
       
       .compact-btn {
-        padding: 12px 16px;
-        font-size: 0.9em;
-        min-width: 44px;
-        min-height: 44px;
+        padding: 8px 12px;
+        font-size: 0.8em;
+        min-width: 40px;
+        min-height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -398,34 +453,20 @@
       /* 自動配置パネル */
       .arrange-options {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 8px;
       }
       
       .arrange-option {
-        padding: 16px;
-        font-size: 1em;
-      }
-      
-      /* 統計表示 */
-      .collection-stats {
-        flex-direction: column;
-        gap: 10px;
-        margin: 15px 0;
-      }
-      
-      .stat-item {
-        padding: 12px 20px;
-        font-size: 1em;
-        width: 100%;
-        text-align: center;
-        box-sizing: border-box;
+        padding: 12px;
+        font-size: 0.9em;
       }
       
       /* ページ情報 */
       .page-info {
         flex-direction: column;
-        gap: 5px;
+        gap: 4px;
         text-align: right;
+        font-size: 0.8em;
       }
       
       /* カードオーバーレイ */
@@ -433,38 +474,47 @@
         position: static;
         background: rgba(0,0,0,0.8);
         transform: none;
-        border-radius: 0 0 8px 8px;
-        padding: 6px;
+        border-radius: 0 0 6px 6px;
+        padding: 4px;
       }
       
       .card-name {
-        font-size: 0.7em;
+        font-size: 0.6em;
       }
       
       .card-rarity {
-        font-size: 0.6em;
+        font-size: 0.55em;
       }
     }
 
     /* 極小画面対応 */
     @media (max-width: 480px) {
-      .binder-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-      
-      .card-slot {
-        max-width: 280px;
-        margin: 0 auto;
-      }
-      
       .header h1 {
-        font-size: 1.2em;
+        font-size: 1.1em;
       }
       
       .compact-btn {
-        padding: 10px 14px;
-        font-size: 0.85em;
+        padding: 8px 10px;
+        font-size: 0.75em;
+        min-width: 36px;
+        min-height: 36px;
+      }
+      
+      .binder-grid {
+        gap: 6px;
+      }
+      
+      .card-slot {
+        min-height: 70px;
+        border-radius: 4px;
+      }
+      
+      .slot-number {
+        font-size: 1em;
+      }
+      
+      .slot-action {
+        font-size: 0.6em;
       }
     }
 
@@ -550,11 +600,397 @@
       border-color: #28a745;
       background: rgba(40, 167, 69, 0.2);
       transform: scale(1.05);
+      transition: all 0.2s ease;
+      box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
     }
 
     .card-slot.dragging {
       opacity: 0.5;
       transform: rotate(5deg);
+      transition: all 0.2s ease;
+    }
+    
+    .card-container[draggable="true"] {
+      cursor: grab;
+      transition: all 0.2s ease;
+    }
+    
+    .card-container[draggable="true"]:hover {
+      transform: scale(1.02);
+    }
+    
+    .card-container.dragging {
+      cursor: grabbing;
+      transform: rotate(5deg) scale(0.9);
+      z-index: 1000;
+      transition: all 0.2s ease;
+    }
+
+    /* カード選択モーダル */
+    .card-selector-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2000;
+    }
+
+    .card-selector-modal.show {
+      display: block;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dark .modal-content {
+      background: #34495e;
+      color: #eee;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.3em;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5em;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-search {
+      padding: 15px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      background: #f8f9fa;
+    }
+
+    .dark .modal-search {
+      background: rgba(52, 73, 94, 0.8);
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-search input {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+
+    .dark .modal-search input {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #eee;
+    }
+
+    .search-filters {
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-filters select {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.9em;
+      background: white;
+    }
+
+    .dark .search-filters select {
+      background: #3a3a3a;
+      border-color: #555;
+      color: #eee;
+    }
+    
+    .dark .search-filters select option {
+      background: #3a3a3a;
+      color: #eee;
+    }
+
+    /* 自動配置パネル内のselect要素 */
+    .auto-arrange-panel select {
+      background: white;
+      border: 1px solid #ddd;
+      color: #333;
+    }
+    
+    .dark .auto-arrange-panel select {
+      background: #3a3a3a;
+      border-color: #555;
+      color: #eee;
+    }
+    
+    .dark .auto-arrange-panel select option {
+      background: #3a3a3a;
+      color: #eee;
+    }
+    
+    /* 自動配置パネル内のチェックボックス */
+    .auto-arrange-panel input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    
+    .dark .auto-arrange-panel input[type="checkbox"] {
+      accent-color: #4CAF50;
+    }
+
+    .card-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+      max-height: 50vh;
+    }
+
+    .card-item {
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-item:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-item.selected {
+      border-color: #28a745;
+      background: rgba(40, 167, 69, 0.1);
+    }
+
+    .dark .card-item {
+      background: rgba(52, 73, 94, 0.6);
+    }
+
+    .dark .card-item.selected {
+      background: rgba(40, 167, 69, 0.2);
+    }
+
+    .card-item img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 63/88;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-info {
+      padding: 8px;
+      text-align: center;
+    }
+
+    .card-info .name {
+      font-size: 0.8em;
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dark .card-info .name {
+      color: #eee;
+    }
+
+    .card-info .rarity {
+      font-size: 0.7em;
+      color: #666;
+      padding: 2px 6px;
+      border-radius: 10px;
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .card-info .rarity {
+      color: #bbb;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .rarity-RRR {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a52) !important;
+      color: white !important;
+    }
+
+    .rarity-RR {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d) !important;
+      color: white !important;
+    }
+
+    .rarity-R {
+      background: linear-gradient(45deg, #45b7d1, #3498db) !important;
+      color: white !important;
+    }
+
+    .rarity-C {
+      background: linear-gradient(45deg, #96ceb4, #85c7a8) !important;
+      color: white !important;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      background: #f8f9fa;
+    }
+
+    .dark .modal-footer {
+      background: rgba(52, 73, 94, 0.8);
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        max-height: 95vh;
+      }
+
+      .modal-header {
+        padding: 15px;
+      }
+
+      .modal-header h3 {
+        font-size: 1.1em;
+      }
+
+      .modal-search {
+        padding: 10px 15px;
+      }
+
+      .search-filters {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        padding: 15px;
+        max-height: 45vh;
+      }
+
+      .card-info {
+        padding: 6px;
+      }
+
+      .card-info .name {
+        font-size: 0.75em;
+      }
+
+      .card-info .rarity {
+        font-size: 0.65em;
+      }
+
+      .modal-footer {
+        padding: 12px 15px;
+        flex-direction: column;
+      }
+
+      .btn {
+        padding: 12px;
+        font-size: 1em;
+      }
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    }
+
+    .temporary-message {
+      animation: fadeInOut 2s ease-in-out;
     }
   </style>
 </head>
@@ -566,6 +1002,7 @@
         <button class="compact-btn" onclick="toggleTheme()" title="ダークモード切替">🌙</button>
         <button class="compact-btn" onclick="showAutoArrangePanel()" title="自動配置">📋</button>
         <button class="compact-btn" onclick="toggleManualMode()" title="手動配置" id="manualModeBtn">✋</button>
+        <button class="compact-btn" onclick="addTestCards()" title="テストカード追加">🎴</button>
         <button class="compact-btn" onclick="saveBinderLayout()" title="レイアウト保存">💾</button>
         <button class="compact-btn" onclick="goHome()" title="ホームに戻る">🏠</button>
       </div>
@@ -576,18 +1013,54 @@
     <!-- 自動配置パネル -->
     <div class="auto-arrange-panel" id="autoArrangePanel" style="display: none;">
       <div class="auto-arrange-title">📋 自動配置オプション</div>
+      
+      <!-- 配置設定 -->
+      <div style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <span>順序:</span>
+            <select id="sortOrderSelect" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+              <option value="desc">降順 (高→低)</option>
+              <option value="asc">昇順 (低→高)</option>
+            </select>
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <span>二次ソート:</span>
+            <select id="secondarySortSelect" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd; min-width: 120px;">
+              <option value="">なし</option>
+              <option value="cardId">カード番号順</option>
+              <option value="release">発売日順</option>
+              <option value="name">名前順</option>
+              <option value="product">収録商品順</option>
+            </select>
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <span>収録商品:</span>
+            <select id="productSelect" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd; min-width: 120px;">
+              <option value="">すべての商品</option>
+            </select>
+          </label>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <input type="checkbox" id="preserveEmptySlots" style="margin: 0;">
+            <span>空スロット保持 (持っていないカードは空に)</span>
+          </label>
+        </div>
+      </div>
+      
       <div class="arrange-options">
         <div class="arrange-option" onclick="autoArrange('rarity')">
           <div class="option-title">レアリティ順</div>
-          <div class="option-desc">RRR → RR → R → C の順で配置</div>
+          <div class="option-desc">SEC → OUR → UR → SR の順で配置</div>
         </div>
         <div class="arrange-option" onclick="autoArrange('series')">
           <div class="option-title">シリーズ順</div>
           <div class="option-desc">同じシリーズでグループ化</div>
         </div>
-        <div class="arrange-option" onclick="autoArrange('color')">
-          <div class="option-title">カラー順</div>
-          <div class="option-desc">色ごとにまとめて配置</div>
+        <div class="arrange-option" onclick="autoArrange('product')">
+          <div class="option-title">収録商品順</div>
+          <div class="option-desc">選択した商品のカードを配置</div>
         </div>
         <div class="arrange-option" onclick="autoArrange('collection')">
           <div class="option-title">コレクション率順</div>
@@ -604,22 +1077,32 @@
       </div>
     </div>
 
-    <!-- コレクション統計 -->
-    <div class="collection-stats">
-      <div class="stat-item" id="totalOwnedStat">所持: 0枚</div>
-      <div class="stat-item" id="collectionRateStat">所持率: 0%</div>
-      <div class="stat-item" id="currentPageStat">ページ: 1</div>
-      <div class="stat-item" id="filledSlotsStat">配置済み: 0/9</div>
-    </div>
-
     <!-- バインダーページコンテナ -->
     <div id="binderPages"></div>
 
     <!-- ページナビゲーション -->
-    <div class="collection-stats">
-      <button class="compact-btn" onclick="previousPage()" id="prevPageBtn">◀ 前のページ</button>
-      <button class="compact-btn" onclick="nextPage()" id="nextPageBtn">次のページ ▶</button>
-      <button class="compact-btn" onclick="addNewPage()">➕ ページ追加</button>
+    <div style="text-align: center; margin: 20px 0;">
+      <!-- 基本ナビゲーション -->
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+        <button class="compact-btn" onclick="goToFirstPage()" id="firstPageBtn" title="最初のページ">⏮️ 最初</button>
+        <button class="compact-btn" onclick="previousPage()" id="prevPageBtn" title="前のページ">◀ 前</button>
+        
+        <!-- ページ番号入力 -->
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <input type="number" id="pageNumberInput" min="1" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" placeholder="1">
+          <button class="compact-btn" onclick="goToPage()" title="指定ページに移動">移動</button>
+        </div>
+        
+        <button class="compact-btn" onclick="nextPage()" id="nextPageBtn" title="次のページ">次 ▶</button>
+        <button class="compact-btn" onclick="goToLastPage()" id="lastPageBtn" title="最後のページ">最後 ⏭️</button>
+      </div>
+      
+      <!-- バインダー管理ボタン -->
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+        <button class="compact-btn" onclick="addNewPage()" title="新しいページを追加">➕ ページ追加</button>
+        <button class="compact-btn" onclick="toggleViewMode()" id="viewModeBtn" title="閲覧/編集モード切替">👁️ 閲覧モード</button>
+        <button class="compact-btn" onclick="clearAllCards()" id="clearBtn" title="全カードを削除" style="background: #f44336; color: white;">🗑️ 初期化</button>
+      </div>
     </div>
   </div>
 
@@ -628,6 +1111,55 @@
 
   <!-- スワイプインジケーター -->
   <div class="swipe-indicator" id="swipeIndicator"></div>
+
+  <!-- カード選択モーダル -->
+  <div class="card-selector-modal" id="cardSelectorModal">
+    <div class="modal-backdrop" onclick="closeCardSelector()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>カードを選択</h3>
+        <button class="modal-close-btn" onclick="closeCardSelector()">×</button>
+      </div>
+      <div class="modal-search">
+        <input type="text" id="cardSearchInput" placeholder="カード名で検索..." onkeyup="filterCards()">
+        <div class="search-filters">
+          <select id="rarityFilter" onchange="filterCards()">
+            <option value="">すべてのレアリティ</option>
+            <option value="SEC">SEC</option>
+            <option value="OUR">OUR</option>
+            <option value="UR">UR</option>
+            <option value="SY">SY</option>
+            <option value="OSR">OSR</option>
+            <option value="SR">SR</option>
+            <option value="P">P</option>
+            <option value="S">S</option>
+            <option value="OC">OC</option>
+            <option value="RR">RR</option>
+            <option value="R">R</option>
+            <option value="U">U</option>
+            <option value="C">C</option>
+          </select>
+          <select id="cardTypeFilter" onchange="filterCards()">
+            <option value="">すべてのタイプ</option>
+            <option value="ホロメン">ホロメン</option>
+            <option value="Buzzホロメン">Buzzホロメン</option>
+            <option value="サポート・アイテム">アイテム</option>
+            <option value="サポート・イベント">イベント</option>
+            <option value="サポート・ツール">ツール</option>
+            <option value="LIMITED">LIMITED</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-grid" id="cardGrid">
+        <!-- カードがここに動的に表示されます -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCardSelector()">キャンセル</button>
+        <button class="btn btn-primary" onclick="removeCardFromSlot()">カードを削除</button>
+        <button class="btn btn-primary" onclick="placeSelectedCard()">カードを配置</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // バインダーの状態管理
@@ -639,12 +1171,18 @@
       totalCards: 0,
       ownedCards: 0,
       manualMode: false,
-      autoArrangeVisible: false
+      autoArrangeVisible: false,
+      viewMode: false // false: 編集モード, true: 閲覧モード
     };
 
     let cardsData = [];
     let userCollection = {};
     let binderCollection = { binders: [] };
+    
+    // カード選択関連の変数
+    let currentSlotIndex = null;
+    let selectedCardId = null;
+    let availableCards = [];
     
     // モバイル用の変数
     let touchStartX = 0;
@@ -653,60 +1191,257 @@
     let mobileMenuVisible = false;
 
     // 初期化
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+      console.log('DOMContentLoaded fired');
+      
       // URLパラメータからバインダーIDを取得
       const urlParams = new URLSearchParams(window.location.search);
       binderState.binderId = urlParams.get('binderId');
       
+      console.log('Binder ID from URL:', binderState.binderId);
+      
       if (!binderState.binderId) {
-        alert('バインダーが指定されていません');
+        console.log('No binder ID specified, checking for existing binders...');
+        
+        // 既存のバインダーをチェック
+        const saved = localStorage.getItem('binderCollection');
+        if (saved) {
+          const collection = JSON.parse(saved);
+          if (collection.binders && collection.binders.length > 0) {
+            // 最初のバインダーにリダイレクト
+            const firstBinder = collection.binders[0];
+            console.log('Redirecting to first binder:', firstBinder.id);
+            window.location.href = `collection_binder.html?binderId=${firstBinder.id}`;
+            return;
+          }
+        }
+        
+        // バインダーが存在しない場合、バインダーコレクションページにリダイレクト
+        console.log('No binders found, redirecting to binder collection');
+        alert('バインダーがありません。新しいバインダーを作成してください。');
         window.location.href = 'binder_collection.html';
         return;
       }
 
-      loadCardData();
-      loadUserCollection();
+      // 非同期でカードデータを読み込み、完了を待つ
+      await loadCardData();
+      loadUserCollection(); // カードデータ読み込み後にユーザーコレクションを読み込み
       loadBinderCollection();
       initializeBinder();
       updateStats();
       initializeMobileFeatures();
+      
+      console.log('Initialization complete');
+      
+      // デバッグ用: 強制的にクリックテスト
+      setTimeout(() => {
+        const slots = document.querySelectorAll('.card-slot');
+        console.log('Found slots:', slots.length);
+        slots.forEach((slot, index) => {
+          console.log(`Slot ${index}:`, slot);
+        });
+      }, 1000);
     });
 
     // カードデータの読み込み
     async function loadCardData() {
       try {
+        console.log('Loading card data...');
         const response = await fetch('./json_file/card_data.json');
-        cardsData = await response.json();
+        const rawCardData = await response.json();
+        console.log('Raw card data loaded:', Object.keys(rawCardData).length, 'entries');
+        console.log('First 3 raw entries:', Object.keys(rawCardData).slice(0, 3));
+        
+        // オブジェクトから配列に変換
+        cardsData = Object.entries(rawCardData).map(([key, card]) => ({
+          ...card,
+          id: key,  // keyをidとして設定（card_list.htmlと同じ方式）
+          cardImageURL: card.image_url  // 互換性のため
+        }));
+        
+        console.log('Card data converted to array:', cardsData.length, 'cards');
+        console.log('First 3 converted cards:', cardsData.slice(0, 3).map(c => ({id: c.id, name: c.name})));
+        
         binderState.totalCards = cardsData.length;
+        
+        // cardsDataが配列であることを確認
+        if (!Array.isArray(cardsData)) {
+          console.error('Card data is not an array:', cardsData);
+          cardsData = [];
+        }
+        
+        // 収録商品リストを初期化
+        initializeProductList();
       } catch (error) {
         console.error('Failed to load card data:', error);
+        cardsData = []; // エラー時は空配列に設定
       }
+    }
+
+    // 収録商品リストの初期化
+    function initializeProductList() {
+      const productSelect = document.getElementById('productSelect');
+      if (!productSelect || !Array.isArray(cardsData)) return;
+      
+      // 収録商品のセットを作成
+      const productSet = new Set();
+      cardsData.forEach(card => {
+        if (card.product && card.product.trim()) {
+          // 複数商品がある場合は分割して追加
+          const products = card.product.split(',').map(p => p.trim());
+          products.forEach(product => {
+            if (product) productSet.add(product);
+          });
+        }
+      });
+      
+      // プルダウンにオプションを追加
+      productSelect.innerHTML = '<option value="">すべての商品</option>';
+      [...productSet].sort().forEach(product => {
+        const option = document.createElement('option');
+        option.value = product;
+        option.textContent = product;
+        productSelect.appendChild(option);
+      });
+      
+      console.log('Initialized product list with', productSet.size, 'products');
     }
 
     // ユーザーコレクションの読み込み
     function loadUserCollection() {
-      const saved = localStorage.getItem('userCollection');
-      userCollection = saved ? JSON.parse(saved) : {};
+      console.log('Loading user collection from card_list.html format...');
+      
+      // card_list.html形式のデータを読み込み（"count_" + cardId の形式）
+      userCollection = {};
+      let ownedCount = 0;
+      let totalStorageItems = 0;
+      let validCounts = 0;
+      
+      // すべてのlocalStorageキーをチェック
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('count_')) {
+          totalStorageItems++;
+          const value = localStorage.getItem(key);
+          console.log(`Found localStorage item: ${key} = ${value}`);
+        }
+      }
+      
+      console.log(`Total localStorage items with 'count_' prefix: ${totalStorageItems}`);
+      
+      if (Array.isArray(cardsData)) {
+        console.log('Processing', cardsData.length, 'cards...');
+        console.log('First 3 cards from cardsData:', cardsData.slice(0, 3).map(c => ({id: c.id, name: c.name})));
+        
+        cardsData.forEach((card, index) => {
+          const savedCount = localStorage.getItem("count_" + card.id);
+          const count = savedCount ? parseInt(savedCount, 10) : 0;
+          userCollection[card.id] = count;
+          
+          if (count > 0) {
+            ownedCount++;
+            validCounts++;
+            if (validCounts <= 5) {  // 最初の5枚のみログ出力
+              console.log(`Card ${card.id} (${card.name}): count = ${count}`);
+            }
+          }
+          
+          // 最初の10枚の詳細ログ
+          if (index < 10) {
+            console.log(`Debug card ${index}: id=${card.id}, name=${card.name}, savedCount=${savedCount}, count=${count}`);
+          }
+        });
+      } else {
+        console.error('cardsData is not an array:', cardsData);
+      }
+      
+      console.log('Loaded userCollection from card_list format:', Object.keys(userCollection).length, 'cards');
+      console.log('Total owned card types:', ownedCount);
+      console.log('Valid counts found:', validCounts);
       
       // 所持カード数を計算
-      binderState.ownedCards = Object.values(userCollection).reduce((count, quantity) => {
-        return count + (quantity > 0 ? 1 : 0);
-      }, 0);
+      binderState.ownedCards = ownedCount;
+      
+      console.log('Final owned cards count:', binderState.ownedCards);
+    }
+    
+    // テスト用ユーザーコレクションの作成
+    function createTestUserCollection() {
+      console.log('Creating test user collection in card_list.html format...');
+      
+      // 最初の10枚のカードを所持していることにする
+      const testCards = cardsData.slice(0, Math.min(10, cardsData.length));
+      let addedCount = 0;
+      
+      testCards.forEach(card => {
+        // card_list.html形式で保存
+        localStorage.setItem("count_" + card.id, "1");
+        userCollection[card.id] = 1;
+        addedCount++;
+      });
+      
+      // 所持カード数を再計算
+      binderState.ownedCards = addedCount;
+      
+      console.log('Test user collection created in card_list format');
+      console.log('Added cards count:', addedCount);
+      
+      // ユーザーに通知
+      if (isMobile) {
+        showMobileAlert(`テスト用に${addedCount}枚のカードを追加しました\n（ホロライブカード一覧ページでも確認できます）`, '✅');
+      } else {
+        alert(`テスト用に${addedCount}枚のカードを追加しました\n（ホロライブカード一覧ページでも確認できます）`);
+      }
     }
 
     // バインダーコレクションの読み込み
     function loadBinderCollection() {
+      console.log('Loading binder collection for ID:', binderState.binderId);
+      
       const saved = localStorage.getItem('binderCollection');
+      console.log('Saved binder collection:', saved);
+      
       if (saved) {
         binderCollection = JSON.parse(saved);
       }
       
+      console.log('Parsed binder collection:', binderCollection);
+      
       // 指定されたバインダーを取得
       binderState.binderData = binderCollection.binders.find(b => b.id == binderState.binderId);
+      console.log('Found binder data:', binderState.binderData);
+      
       if (!binderState.binderData) {
-        alert('指定されたバインダーが見つかりません');
-        window.location.href = 'binder_collection.html';
-        return;
+        console.log('Binder not found, creating test binder');
+        // テスト用バインダーを作成
+        const testBinder = {
+          id: binderState.binderId,
+          name: `テストバインダー ${binderState.binderId}`,
+          description: 'テスト用バインダー',
+          layout: {
+            type: '3x3',
+            rows: 3,
+            cols: 3,
+            slotsPerPage: 9
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          pageCount: 1,
+          cardCount: 0,
+          pages: [{
+            id: Date.now(),
+            name: 'ページ 1',
+            slots: Array(9).fill(null)
+          }]
+        };
+        
+        if (!binderCollection.binders) {
+          binderCollection.binders = [];
+        }
+        binderCollection.binders.push(testBinder);
+        localStorage.setItem('binderCollection', JSON.stringify(binderCollection));
+        binderState.binderData = testBinder;
+        console.log('Created test binder:', testBinder);
       }
       
       // バインダーのページデータを復元
@@ -716,6 +1451,19 @@
         binderState.pages = [createEmptyPage()];
         binderState.binderData.pages = binderState.pages;
       }
+      
+      // 古いバインダーに対してレイアウト情報を追加（互換性）
+      if (!binderState.binderData.layout) {
+        binderState.binderData.layout = {
+          type: '3x3',
+          rows: 3,
+          cols: 3,
+          slotsPerPage: 9
+        };
+        console.log('Added default layout to existing binder');
+      }
+      
+      console.log('Final binder state pages:', binderState.pages);
       
       // ヘッダータイトルを更新
       updateBinderTitle();
@@ -737,15 +1485,20 @@
 
     // 空のページを作成
     function createEmptyPage() {
+      const slotsPerPage = binderState.binderData?.layout?.slotsPerPage || 9;
       return {
         id: Date.now(),
         name: `ページ ${binderState.pages.length + 1}`,
-        slots: Array(9).fill(null) // 3x3の9スロット
+        slots: Array(slotsPerPage).fill(null)
       };
     }
 
     // バインダーのレンダリング
     function renderBinder() {
+      console.log('renderBinder called');
+      console.log('binderState:', binderState);
+      console.log('currentPage:', binderState.currentPage);
+      
       const container = document.getElementById('binderPages');
       container.innerHTML = '';
 
@@ -754,10 +1507,16 @@
       }
 
       const currentPageData = binderState.pages[binderState.currentPage];
+      console.log('currentPageData:', currentPageData);
+      
       if (!currentPageData) {
         binderState.currentPage = 0;
         return renderBinder();
       }
+
+      // レイアウト情報を取得
+      const layout = binderState.binderData?.layout || { type: '3x3', cols: 3, slotsPerPage: 9 };
+      const slotsPerPage = currentPageData.slots.length;
 
       // ページの作成
       const pageDiv = document.createElement('div');
@@ -767,15 +1526,22 @@
           <div class="page-title">${currentPageData.name}</div>
           <div class="page-info">
             <span>ページ ${binderState.currentPage + 1} / ${binderState.pages.length}</span>
-            <span>配置済み: ${currentPageData.slots.filter(slot => slot !== null).length}/9</span>
+            <span>配置済み: ${currentPageData.slots.filter(slot => slot !== null).length}/${slotsPerPage}</span>
+            <span>レイアウト: ${layout.type}</span>
           </div>
         </div>
-        <div class="binder-grid" id="currentPageGrid"></div>
+        <div class="binder-grid layout-${layout.type}" id="currentPageGrid" style="--grid-cols: ${layout.cols}"></div>
       `;
 
       container.appendChild(pageDiv);
       renderPageSlots(currentPageData.slots);
       updateStats();
+      
+      // ページ番号入力フィールドを更新
+      updatePageNumberInput();
+      
+      // 閲覧モードでのUI制御
+      updateViewModeUI();
     }
 
     // ページスロットのレンダリング
@@ -790,17 +1556,44 @@
         
         if (slotData) {
           // カードが配置されている場合
+          console.log('Rendering card in slot', index, 'cardId:', slotData.cardId);
           slot.classList.add('occupied');
           const card = cardsData.find(c => c.id === slotData.cardId);
+          console.log('Found card:', card);
+          
           if (card) {
+            const imageUrl = card.cardImageURL || card.image_url || './images/placeholder.png';
+            console.log('Card image URL:', imageUrl);
+            
+            // Sレアリティの光エフェクトを適用
+            const isShinyRarity = card.rarity === 'S';
+            const effectClass = isShinyRarity ? ' s-rarity-effect' : '';
+            
             slot.innerHTML = `
-              <img src="${card.cardImageURL || './images/placeholder.png'}" 
-                   alt="${card.name}" 
-                   class="card-image"
-                   onerror="this.src='./images/placeholder.png'">
-              <div class="card-overlay">
-                <div class="card-name">${card.name}</div>
-                <div class="card-rarity">${card.rarity || 'Unknown'}</div>
+              <div class="card-container${effectClass}" draggable="true" data-card-id="${card.id}" data-slot-index="${index}">
+                <img src="${imageUrl}" 
+                     alt="${card.name}" 
+                     class="card-image"
+                     onerror="this.src='./images/placeholder.png'">
+                <div class="card-overlay">
+                  <div class="card-name">${card.name}</div>
+                  <div class="card-rarity">${card.rarity || 'Unknown'}</div>
+                </div>
+              </div>
+            `;
+            
+            // ドラッグイベントリスナーを追加
+            const cardContainer = slot.querySelector('.card-container');
+            if (cardContainer && !binderState.viewMode) {
+              cardContainer.addEventListener('dragstart', (e) => handleDragStart(e, index));
+              cardContainer.addEventListener('dragend', handleDragEnd);
+            }
+          } else {
+            console.warn('Card not found for id:', slotData.cardId);
+            slot.innerHTML = `
+              <div class="empty-slot-content">
+                <div class="slot-number">${index + 1}</div>
+                <div class="slot-action">カードが見つかりません</div>
               </div>
             `;
           }
@@ -814,10 +1607,20 @@
           `;
         }
 
-        // イベントリスナーの追加
-        slot.addEventListener('click', () => openCardSelector(index));
-        slot.addEventListener('dragover', handleDragOver);
-        slot.addEventListener('drop', (e) => handleDrop(e, index));
+        // イベントリスナーの追加（編集モードのみ）
+        console.log('Adding click listener to slot', index);
+        if (!binderState.viewMode) {
+          slot.addEventListener('click', () => {
+            console.log('Slot clicked:', index);
+            openCardSelector(index);
+          });
+          slot.addEventListener('dragover', handleDragOver);
+          slot.addEventListener('dragleave', handleDragLeave);
+          slot.addEventListener('drop', (e) => handleDrop(e, index));
+        } else {
+          // 閲覧モードでは視覚的にクリックできないことを示す
+          slot.style.cursor = 'default';
+        }
         
         grid.appendChild(slot);
       });
@@ -825,7 +1628,12 @@
 
     // カード選択モーダルを開く
     function openCardSelector(slotIndex) {
+      console.log('openCardSelector called with slotIndex:', slotIndex);
+      console.log('manualMode status:', binderState.manualMode);
+      console.log('cardsData status:', cardsData, 'is array:', Array.isArray(cardsData));
+      
       if (!binderState.manualMode) {
+        console.log('Manual mode is OFF, showing alert');
         if (isMobile) {
           showMobileAlert('手動配置モードを有効にしてください', '⚠️');
         } else {
@@ -834,82 +1642,378 @@
         return;
       }
 
-      // 所持カードのみを表示するモーダルを作成
-      const ownedCards = cardsData.filter(card => userCollection[card.id] > 0);
-      
-      if (ownedCards.length === 0) {
+      // cardsDataが配列であることを確認
+      if (!Array.isArray(cardsData)) {
+        console.error('cardsData is not an array:', cardsData);
         if (isMobile) {
-          showMobileAlert('配置可能なカードがありません', '📋');
+          showMobileAlert('カードデータの読み込み中です。しばらくお待ちください。', '⏳');
         } else {
-          alert('配置可能なカードがありません');
+          alert('カードデータの読み込み中です。しばらくお待ちください。');
         }
         return;
       }
 
-      if (isMobile) {
-        // モバイル用のカード選択UI
-        showMobileCardSelector(slotIndex, ownedCards);
-      } else {
-        // デスクトップ用の簡易選択
-        const cardNames = ownedCards.map(card => `${card.name} (${card.rarity})`);
-        const selectedIndex = prompt(`配置するカードを選択してください:\n${cardNames.map((name, i) => `${i}: ${name}`).join('\n')}\n\n番号を入力:`);
+      currentSlotIndex = slotIndex;
+      selectedCardId = null;
+      
+      // 所持カードのみを表示
+      availableCards = cardsData.filter(card => userCollection[card.id] > 0);
+      console.log('Filtering cards:');
+      console.log('Total cards:', cardsData.length);
+      console.log('UserCollection sample:', Object.entries(userCollection).slice(0, 5));
+      console.log('Cards with count > 0:', Object.entries(userCollection).filter(([id, count]) => count > 0));
+      console.log('Available cards:', availableCards.length);
+      
+      if (availableCards.length === 0) {
+        console.log('No available cards found. Debugging...');
+        // デバッグ用：最初の5枚のカードの所持状況をチェック
+        const debugCards = cardsData.slice(0, 5);
+        debugCards.forEach(card => {
+          const count = userCollection[card.id];
+          console.log(`Card ${card.id} (${card.name}): stored count = ${count}, localStorage = ${localStorage.getItem("count_" + card.id)}`);
+        });
         
-        if (selectedIndex !== null && selectedIndex !== '') {
-          const index = parseInt(selectedIndex);
-          if (index >= 0 && index < ownedCards.length) {
-            placeCardInSlot(slotIndex, ownedCards[index].id);
-          }
+        if (isMobile) {
+          showMobileAlert('配置可能なカードがありません\nホロライブカード一覧ページで所持枚数を1以上に設定してください', '📋');
+        } else {
+          alert('配置可能なカードがありません\nホロライブカード一覧ページで所持枚数を1以上に設定してください');
         }
+        return;
+      }
+
+      // モーダルを表示
+      const modal = document.getElementById('cardSelectorModal');
+      modal.classList.add('show');
+      
+      // カードグリッドを初期化
+      renderCardGrid(availableCards);
+      
+      // 検索フィールドをクリア
+      document.getElementById('cardSearchInput').value = '';
+      document.getElementById('rarityFilter').value = '';
+      document.getElementById('cardTypeFilter').value = '';
+      
+      // 現在のスロットにカードがある場合、それを選択状態にする
+      const currentPage = binderState.pages[binderState.currentPage];
+      if (currentPage.slots[slotIndex]) {
+        selectedCardId = currentPage.slots[slotIndex].cardId;
+        highlightSelectedCard();
       }
     }
 
     // スロットにカードを配置
     function placeCardInSlot(slotIndex, cardId) {
+      console.log('placeCardInSlot called:', slotIndex, cardId);
       const currentPage = binderState.pages[binderState.currentPage];
+      console.log('Current page before:', currentPage);
+      
       currentPage.slots[slotIndex] = { cardId, placedAt: Date.now() };
+      console.log('Current page after:', currentPage);
+      console.log('Slot data:', currentPage.slots[slotIndex]);
       
       saveBinder();
       renderBinder();
     }
 
+    // カードグリッドをレンダリング
+    function renderCardGrid(cards) {
+      console.log('renderCardGrid called with', cards.length, 'cards');
+      const cardGrid = document.getElementById('cardGrid');
+      cardGrid.innerHTML = '';
+
+      cards.forEach((card, index) => {
+        console.log(`Rendering card ${index}:`, card.id, card.name);
+        const cardItem = document.createElement('div');
+        
+        // Sレアリティの光エフェクトを適用
+        const isShinyRarity = card.rarity === 'S';
+        cardItem.className = isShinyRarity ? 'card-item s-rarity-effect' : 'card-item';
+        cardItem.setAttribute('data-card-id', card.id);
+        
+        cardItem.innerHTML = `
+          <img src="${card.cardImageURL || './images/placeholder.png'}" 
+               alt="${card.name}" 
+               onerror="this.src='./images/placeholder.png'">
+          <div class="card-info">
+            <div class="name">${card.name}</div>
+            <div class="rarity rarity-${card.rarity || 'C'}">${card.rarity || 'C'}</div>
+          </div>
+        `;
+        
+        console.log(`Adding click listener for card:`, card.id);
+        cardItem.addEventListener('click', () => {
+          console.log('Card clicked at:', new Date().toISOString(), 'cardId:', card.id);
+          selectCard(card.id);
+        });
+        cardGrid.appendChild(cardItem);
+      });
+      console.log('renderCardGrid completed, total cards rendered:', cards.length);
+    }
+
+    // 一時的なメッセージを表示
+    function showTemporaryMessage(message, type = 'info') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `temporary-message ${type}`;
+      messageDiv.textContent = message;
+      messageDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: fadeInOut 2s ease-in-out;
+      `;
+      
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.parentNode.removeChild(messageDiv);
+        }
+      }, 2000);
+    }
+
+    // カードを選択
+    function selectCard(cardId) {
+      console.log('selectCard called with cardId:', cardId);
+      
+      // 既に同じカードが選択されている場合は何もしない
+      if (selectedCardId === cardId) {
+        console.log('Same card already selected, ignoring');
+        return;
+      }
+      
+      selectedCardId = cardId;
+      console.log('selectedCardId set to:', selectedCardId);
+      highlightSelectedCard();
+    }
+
+    // 選択されたカードをハイライト
+    function highlightSelectedCard() {
+      // すべてのカードから選択状態を削除
+      document.querySelectorAll('.card-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // 選択されたカードをハイライト
+      if (selectedCardId) {
+        const selectedItem = document.querySelector(`[data-card-id="${selectedCardId}"]`);
+        if (selectedItem) {
+          selectedItem.classList.add('selected');
+        }
+      }
+    }
+
+    // カードを検索・フィルタリング
+    function filterCards() {
+      const searchTerm = document.getElementById('cardSearchInput').value.toLowerCase();
+      const rarityFilter = document.getElementById('rarityFilter').value;
+      const cardTypeFilter = document.getElementById('cardTypeFilter').value;
+      
+      const filteredCards = availableCards.filter(card => {
+        const matchesSearch = card.name.toLowerCase().includes(searchTerm);
+        const matchesRarity = !rarityFilter || card.rarity === rarityFilter;
+        
+        // カードタイプのマッチング（部分マッチで対応）
+        const matchesCardType = !cardTypeFilter || 
+          (card.card_type && card.card_type.includes(cardTypeFilter));
+        
+        return matchesSearch && matchesRarity && matchesCardType;
+      });
+      
+      renderCardGrid(filteredCards);
+      highlightSelectedCard();
+    }
+
+    // 選択されたカードを配置
+    function placeSelectedCard() {
+      console.log('placeSelectedCard called at:', new Date().toISOString(), {
+        selectedCardId,
+        currentSlotIndex,
+        typeOfSelectedCardId: typeof selectedCardId,
+        typeOfCurrentSlotIndex: typeof currentSlotIndex,
+        hasValidData: selectedCardId && currentSlotIndex !== null
+      });
+      
+      if (selectedCardId && currentSlotIndex !== null) {
+        console.log('Placing card:', selectedCardId, 'in slot:', currentSlotIndex);
+        
+        // カード名を取得して表示
+        const card = cardsData.find(c => c.id === selectedCardId);
+        const cardName = card ? card.name : selectedCardId;
+        
+        placeCardInSlot(currentSlotIndex, selectedCardId);
+        
+        // 配置完了メッセージを表示
+        if (isMobile) {
+          showMobileAlert(`「${cardName}」を配置しました！`, '✅');
+        } else {
+          showTemporaryMessage(`「${cardName}」を配置しました！`, 'success');
+        }
+        
+        closeCardSelector();
+      } else {
+        console.warn('Invalid data for placing card:', { selectedCardId, currentSlotIndex });
+        
+        if (!selectedCardId) {
+          if (isMobile) {
+            showMobileAlert('カードを選択してください', '⚠️');
+          } else {
+            alert('カードを選択してください');
+          }
+        }
+      }
+    }
+
+    // カードをスロットから削除
+    function removeCardFromSlot() {
+      if (currentSlotIndex !== null) {
+        const currentPage = binderState.pages[binderState.currentPage];
+        currentPage.slots[currentSlotIndex] = null;
+        saveBinder();
+        renderBinder();
+        closeCardSelector();
+      }
+    }
+
+    // カード選択モーダルを閉じる
+    function closeCardSelector() {
+      const modal = document.getElementById('cardSelectorModal');
+      modal.classList.remove('show');
+      currentSlotIndex = null;
+      selectedCardId = null;
+    }
+
     // 自動配置
     function autoArrange(mode) {
-      const ownedCards = cardsData.filter(card => userCollection[card.id] > 0);
+      if (!Array.isArray(cardsData)) {
+        alert('カードデータの読み込み中です。しばらくお待ちください。');
+        return;
+      }
       
-      if (ownedCards.length === 0) {
-        alert('配置可能なカードがありません');
+      // 順序設定を取得
+      const sortOrder = document.getElementById('sortOrderSelect').value;
+      const secondarySort = document.getElementById('secondarySortSelect').value;
+      const productFilter = document.getElementById('productSelect').value;
+      const preserveEmptySlots = document.getElementById('preserveEmptySlots').checked;
+      const isAscending = sortOrder === 'asc';
+      
+      // 対象カードをフィルタ
+      let filteredCards = [...cardsData];
+      
+      if (productFilter) {
+        filteredCards = filteredCards.filter(card => 
+          card.product && card.product.includes(productFilter)
+        );
+      }
+      
+      if (filteredCards.length === 0) {
+        const message = productFilter 
+          ? `収録商品「${productFilter}」のカードがありません`
+          : 'カードがありません';
+        alert(message);
         return;
       }
 
-      // ソート方法を選択
-      let sortedCards = [...ownedCards];
-      switch(mode) {
-        case 'rarity':
-          sortedCards.sort((a, b) => {
-            const rarityOrder = { 'RRR': 0, 'RR': 1, 'R': 2, 'C': 3 };
-            return (rarityOrder[a.rarity] || 4) - (rarityOrder[b.rarity] || 4);
-          });
-          break;
-        case 'series':
-          sortedCards.sort((a, b) => (a.expansion || '').localeCompare(b.expansion || ''));
-          break;
-        case 'color':
-          sortedCards.sort((a, b) => (a.cardColor || '').localeCompare(b.cardColor || ''));
-          break;
-        case 'collection':
-          sortedCards.sort((a, b) => (userCollection[b.id] || 0) - (userCollection[a.id] || 0));
-          break;
-        case 'release':
-          sortedCards.sort((a, b) => new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0));
-          break;
-        case 'custom':
-          // お気に入り機能があれば使用（今回は名前順でフォールバック）
-          sortedCards.sort((a, b) => a.name.localeCompare(b.name));
-          break;
+      // ソート方法を選択（二次ソート対応）
+      let sortedCards = [...filteredCards];
+      
+      // 二次ソート関数を定義
+      const applySortingLogic = (cards, primaryMode, secondaryMode, ascending) => {
+        return cards.sort((a, b) => {
+          // プライマリソート
+          let diff = 0;
+          switch(primaryMode) {
+            case 'rarity':
+              const rarityRank = { 
+                "SEC": 14, "OUR": 13, "UR": 12, "SY": 11, "OSR": 10, 
+                "SR": 9, "P": 8, "S": 7, "OC": 6, "RR": 5, 
+                "R": 4, "U": 3, "C": 2, "‐": 1, "-": 1 
+              };
+              diff = (rarityRank[b.rarity] || 0) - (rarityRank[a.rarity] || 0);
+              break;
+            case 'series':
+              diff = (a.expansion || '').localeCompare(b.expansion || '');
+              break;
+            case 'product':
+              diff = (a.product || '').localeCompare(b.product || '');
+              break;
+            case 'collection':
+              diff = (userCollection[b.id] || 0) - (userCollection[a.id] || 0);
+              break;
+            case 'release':
+              diff = new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0);
+              break;
+            case 'custom':
+              diff = a.name.localeCompare(b.name);
+              break;
+          }
+          
+          // 同じ値の場合は二次ソートを適用
+          if (diff === 0 && secondaryMode) {
+            switch(secondaryMode) {
+              case 'cardId':
+                diff = (a.id || '').localeCompare(b.id || '');
+                break;
+              case 'release':
+                diff = new Date(a.releaseDate || 0) - new Date(b.releaseDate || 0);
+                break;
+              case 'name':
+                diff = a.name.localeCompare(b.name);
+                break;
+              case 'product':
+                diff = (a.product || '').localeCompare(b.product || '');
+                break;
+            }
+          }
+          
+          return ascending ? diff : -diff;
+        });
+      };
+      
+      sortedCards = applySortingLogic(sortedCards, mode, secondarySort, isAscending);
+
+      // 空スロット保持モードの場合
+      if (preserveEmptySlots) {
+        // 持っているカードのみに絞り込み
+        const ownedCards = sortedCards.filter(card => userCollection[card.id] > 0);
+        
+        // 元のソート順を保持したまま、持っていないカードの位置に null を挿入
+        const finalCards = [];
+        for (const card of sortedCards) {
+          if (userCollection[card.id] > 0) {
+            finalCards.push(card);
+          } else {
+            finalCards.push(null); // 空スロット
+          }
+        }
+        sortedCards = finalCards;
+      } else {
+        // 通常モード：持っているカードのみ
+        sortedCards = sortedCards.filter(card => userCollection[card.id] > 0);
       }
 
+      if (sortedCards.filter(card => card !== null).length === 0) {
+        const message = productFilter 
+          ? `収録商品「${productFilter}」の配置可能なカードがありません`
+          : '配置可能なカードがありません';
+        alert(message);
+        return;
+      }
+
+      // レイアウト情報を取得
+      const layout = binderState.binderData?.layout || { slotsPerPage: 9 };
+      const slotsPerPage = layout.slotsPerPage;
+
       // 必要なページ数を計算
-      const requiredPages = Math.ceil(sortedCards.length / 9);
+      const requiredPages = Math.ceil(sortedCards.length / slotsPerPage);
       
       // ページを追加/調整
       while (binderState.pages.length < requiredPages) {
@@ -920,14 +2024,19 @@
       let cardIndex = 0;
       for (let pageIndex = 0; pageIndex < requiredPages && cardIndex < sortedCards.length; pageIndex++) {
         const page = binderState.pages[pageIndex];
-        page.slots = Array(9).fill(null);
+        page.slots = Array(slotsPerPage).fill(null);
         
-        for (let slotIndex = 0; slotIndex < 9 && cardIndex < sortedCards.length; slotIndex++) {
-          page.slots[slotIndex] = {
-            cardId: sortedCards[cardIndex].id,
-            placedAt: Date.now(),
-            autoArranged: true
-          };
+        for (let slotIndex = 0; slotIndex < slotsPerPage && cardIndex < sortedCards.length; slotIndex++) {
+          const card = sortedCards[cardIndex];
+          if (card) {
+            page.slots[slotIndex] = {
+              cardId: card.id,
+              placedAt: Date.now(),
+              autoArranged: true
+            };
+          } else {
+            page.slots[slotIndex] = null; // 空スロット保持
+          }
           cardIndex++;
         }
       }
@@ -937,23 +2046,53 @@
       renderBinder();
       hideAutoArrangePanel();
       
-      alert(`${mode}順で${sortedCards.length}枚のカードを配置しました！`);
+      const modeNames = {
+        'rarity': 'レアリティ',
+        'series': 'シリーズ',
+        'product': '収録商品',
+        'collection': '所持枚数',
+        'release': '発売日',
+        'custom': 'カスタム'
+      };
+      
+      const secondaryNames = {
+        'cardId': 'カード番号',
+        'release': '発売日',
+        'name': '名前',
+        'product': '収録商品'
+      };
+      
+      const layoutName = layout.type || '3x3';
+      const placedCards = sortedCards.filter(card => card !== null).length;
+      const emptySlots = preserveEmptySlots ? sortedCards.filter(card => card === null).length : 0;
+      const orderText = isAscending ? '昇順' : '降順';
+      const productText = productFilter ? ` (${productFilter})` : '';
+      const secondaryText = secondarySort ? ` → ${secondaryNames[secondarySort]}順` : '';
+      const emptyText = emptySlots > 0 ? ` (空スロット${emptySlots}個保持)` : '';
+      
+      let message = `${modeNames[mode] || mode}順${orderText}${secondaryText}で${placedCards}枚のカードを配置しました！${productText}${emptyText}\nレイアウト: ${layoutName} (${slotsPerPage}枚/ページ)`;
+      
+      if (isMobile) {
+        showMobileAlert(message, '✅');
+      } else {
+        alert(message);
+      }
     }
 
     // 統計の更新
     function updateStats() {
-      document.getElementById('totalOwnedStat').textContent = `所持: ${binderState.ownedCards}枚`;
-      
-      const collectionRate = binderState.totalCards > 0 ? 
-        Math.round((binderState.ownedCards / binderState.totalCards) * 100) : 0;
-      document.getElementById('collectionRateStat').textContent = `所持率: ${collectionRate}%`;
-      
-      document.getElementById('currentPageStat').textContent = 
-        `ページ: ${binderState.currentPage + 1}/${binderState.pages.length}`;
-      
+      // 統計表示は削除されたため、ページ情報のみ更新
       const currentPage = binderState.pages[binderState.currentPage];
       const filledSlots = currentPage ? currentPage.slots.filter(slot => slot !== null).length : 0;
-      document.getElementById('filledSlotsStat').textContent = `配置済み: ${filledSlots}/9`;
+      
+      // ページ情報をページヘッダーに反映
+      const pageInfo = document.querySelector('.page-info');
+      if (pageInfo) {
+        pageInfo.innerHTML = `
+          <span>ページ ${binderState.currentPage + 1} / ${binderState.pages.length}</span>
+          <span>配置済み: ${filledSlots}/9</span>
+        `;
+      }
     }
 
     // ユーティリティ関数
@@ -974,7 +2113,9 @@
     }
 
     function toggleManualMode() {
+      console.log('toggleManualMode called, current state:', binderState.manualMode);
       binderState.manualMode = !binderState.manualMode;
+      console.log('toggleManualMode new state:', binderState.manualMode);
       const btn = document.getElementById('manualModeBtn');
       if (binderState.manualMode) {
         btn.classList.add('active');
@@ -987,10 +2128,30 @@
       }
     }
 
+    function addTestCards() {
+      if (!Array.isArray(cardsData) || cardsData.length === 0) {
+        alert('カードデータが読み込まれていません');
+        return;
+      }
+      
+      const currentOwnedCount = binderState.ownedCards;
+      createTestUserCollection();
+      
+      // ユーザーコレクションを再読み込み
+      loadUserCollection();
+      
+      if (binderState.ownedCards > currentOwnedCount) {
+        alert(`${binderState.ownedCards - currentOwnedCount}枚のテストカードを追加しました！\nホロライブカード一覧ページでも確認できます。`);
+      } else {
+        alert('テストカードは既に追加済みです。');
+      }
+    }
+
     function previousPage() {
       if (binderState.currentPage > 0) {
         binderState.currentPage--;
         renderBinder();
+        updatePageNumberInput();
       }
     }
 
@@ -998,6 +2159,7 @@
       if (binderState.currentPage < binderState.pages.length - 1) {
         binderState.currentPage++;
         renderBinder();
+        updatePageNumberInput();
       }
     }
 
@@ -1006,9 +2168,13 @@
       binderState.currentPage = binderState.pages.length - 1;
       saveBinder();
       renderBinder();
+      updatePageNumberInput();
     }
 
     function saveBinder() {
+      console.log('saveBinder called');
+      console.log('binderState.binderData:', binderState.binderData);
+      
       if (binderState.binderData) {
         // バインダーデータを更新
         binderState.binderData.pages = binderState.pages;
@@ -1018,8 +2184,14 @@
         }, 0);
         binderState.binderData.updatedAt = new Date().toISOString();
         
+        console.log('Updated binder data:', binderState.binderData);
+        console.log('Card count:', binderState.binderData.cardCount);
+        
         // バインダーコレクション全体を保存
         localStorage.setItem('binderCollection', JSON.stringify(binderCollection));
+        console.log('Saved to localStorage');
+      } else {
+        console.warn('No binderData to save');
       }
     }
 
@@ -1034,15 +2206,107 @@
     }
 
     // ドラッグ&ドロップの処理
+    let draggedCardData = null;
+    let draggedFromSlot = null;
+
+    function handleDragStart(e, slotIndex) {
+      console.log('Drag started from slot:', slotIndex);
+      const currentPage = binderState.pages[binderState.currentPage];
+      const slotData = currentPage.slots[slotIndex];
+      
+      if (slotData) {
+        draggedCardData = {
+          cardId: slotData.cardId,
+          fromSlot: slotIndex,
+          fromPage: binderState.currentPage
+        };
+        draggedFromSlot = slotIndex;
+        
+        // ドラッグ効果を設定
+        e.currentTarget.classList.add('dragging');
+        e.currentTarget.style.opacity = '0.5';
+        
+        // データ転送を設定
+        e.dataTransfer.setData('text/plain', JSON.stringify(draggedCardData));
+        e.dataTransfer.effectAllowed = 'move';
+        
+        console.log('Dragging card:', draggedCardData);
+      }
+    }
+
+    function handleDragEnd(e) {
+      console.log('Drag ended');
+      e.currentTarget.classList.remove('dragging');
+      e.currentTarget.style.opacity = '1';
+      
+      // ドラッグオーバー効果をすべてのスロットから削除
+      document.querySelectorAll('.card-slot.drag-over').forEach(slot => {
+        slot.classList.remove('drag-over');
+      });
+      
+      draggedCardData = null;
+      draggedFromSlot = null;
+    }
+
     function handleDragOver(e) {
       e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
+      e.dataTransfer.dropEffect = 'move';
+      
+      // ドラッグ元と同じスロットでない場合のみハイライト
+      const slotIndex = parseInt(e.currentTarget.dataset.slotIndex);
+      if (draggedFromSlot !== slotIndex) {
+        e.currentTarget.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
     }
 
     function handleDrop(e, slotIndex) {
       e.preventDefault();
       e.currentTarget.classList.remove('drag-over');
-      // ドラッグ&ドロップの実装は今後の拡張で対応
+      
+      console.log('Drop at slot:', slotIndex);
+      
+      if (!draggedCardData) {
+        console.log('No dragged card data');
+        return;
+      }
+      
+      // 同じスロットへのドロップは無視
+      if (draggedCardData.fromSlot === slotIndex && draggedCardData.fromPage === binderState.currentPage) {
+        console.log('Dropped on same slot, ignoring');
+        return;
+      }
+      
+      const currentPage = binderState.pages[binderState.currentPage];
+      const targetSlot = currentPage.slots[slotIndex];
+      const sourceSlot = currentPage.slots[draggedCardData.fromSlot];
+      
+      // カードの移動処理
+      if (targetSlot) {
+        // ターゲットスロットにカードがある場合は入れ替え
+        console.log('Swapping cards between slots', draggedCardData.fromSlot, 'and', slotIndex);
+        currentPage.slots[draggedCardData.fromSlot] = targetSlot;
+        currentPage.slots[slotIndex] = sourceSlot;
+      } else {
+        // ターゲットスロットが空の場合は移動
+        console.log('Moving card from slot', draggedCardData.fromSlot, 'to slot', slotIndex);
+        currentPage.slots[slotIndex] = sourceSlot;
+        currentPage.slots[draggedCardData.fromSlot] = null;
+      }
+      
+      // バインダーを保存して再描画
+      saveBinder();
+      renderBinder();
+      
+      // 成功メッセージ
+      if (isMobile) {
+        showMobileAlert('カードを移動しました！', '✅');
+      } else {
+        console.log('Card moved successfully');
+      }
     }
 
     // ダークモードの復元
@@ -1187,12 +2451,6 @@
       document.body.appendChild(modal);
     }
 
-    // カード選択（モバイル用）
-    function selectCard(slotIndex, cardId) {
-      placeCardInSlot(slotIndex, cardId);
-      showMobileAlert('カードを配置しました！', '✅');
-    }
-
     // モバイル用メニュー切り替え
     function toggleMobileMenu() {
       mobileMenuVisible = !mobileMenuVisible;
@@ -1208,6 +2466,159 @@
         hideAutoArrangePanel();
       }
     }
+
+    // モーダル関連のイベントリスナー
+    document.addEventListener('DOMContentLoaded', function() {
+      // モーダル外をクリックした時の処理
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-backdrop')) {
+          closeCardSelector();
+        }
+      });
+
+      // ESCキーでモーダルを閉じる
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeCardSelector();
+        }
+      });
+
+      // カード選択時のダブルクリック処理
+      document.addEventListener('dblclick', function(e) {
+        if (e.target.closest('.card-item')) {
+          placeSelectedCard();
+        }
+      });
+    });
+    // 閲覧モードのUI更新
+    function updateViewModeUI() {
+      // 編集関連ボタンの表示/非表示制御
+      const editElements = [
+        document.getElementById('manualModeBtn'),
+        document.querySelector('[onclick="showAutoArrangePanel()"]'),
+        document.querySelector('[onclick="addTestCards()"]'),
+        document.querySelector('[onclick="saveBinderLayout()"]'),
+        document.getElementById('clearBtn'),
+        document.querySelector('[onclick="addNewPage()"]')
+      ];
+      
+      editElements.forEach(element => {
+        if (element) {
+          element.style.display = binderState.viewMode ? 'none' : 'inline-block';
+        }
+      });
+      
+      // 自動配置パネルを閉じる
+      if (binderState.viewMode && binderState.autoArrangeVisible) {
+        hideAutoArrangePanel();
+      }
+      
+      // カード選択モーダルを閉じる
+      if (binderState.viewMode) {
+        closeCardSelector();
+      }
+    }
+
+    // ページナビゲーション拡張機能
+    function goToFirstPage() {
+      if (binderState.pages.length > 0) {
+        binderState.currentPage = 0;
+        renderBinder();
+        updatePageNumberInput();
+      }
+    }
+
+    function goToLastPage() {
+      if (binderState.pages.length > 0) {
+        binderState.currentPage = binderState.pages.length - 1;
+        renderBinder();
+        updatePageNumberInput();
+      }
+    }
+
+    function goToPage() {
+      const input = document.getElementById('pageNumberInput');
+      const pageNumber = parseInt(input.value);
+      
+      if (isNaN(pageNumber) || pageNumber < 1 || pageNumber > binderState.pages.length) {
+        if (isMobile) {
+          showMobileAlert(`1から${binderState.pages.length}の間のページ番号を入力してください`, '⚠️');
+        } else {
+          alert(`1から${binderState.pages.length}の間のページ番号を入力してください`);
+        }
+        return;
+      }
+      
+      binderState.currentPage = pageNumber - 1;
+      renderBinder();
+      updatePageNumberInput();
+    }
+
+    function updatePageNumberInput() {
+      const input = document.getElementById('pageNumberInput');
+      if (input) {
+        input.value = binderState.currentPage + 1;
+        input.max = binderState.pages.length;
+      }
+    }
+
+    // 閲覧/編集モード切替
+    function toggleViewMode() {
+      binderState.viewMode = !binderState.viewMode;
+      const btn = document.getElementById('viewModeBtn');
+      
+      if (binderState.viewMode) {
+        btn.textContent = '✏️ 編集モード';
+        btn.title = '編集モードに切替';
+        if (isMobile) {
+          showMobileAlert('閲覧モードに切り替えました', 'ℹ️');
+        }
+      } else {
+        btn.textContent = '👁️ 閲覧モード';
+        btn.title = '閲覧モードに切替';
+        if (isMobile) {
+          showMobileAlert('編集モードに切り替えました', 'ℹ️');
+        }
+      }
+      
+      renderBinder();
+    }
+
+    // 全カード初期化
+    function clearAllCards() {
+      const totalCards = binderState.pages.reduce((count, page) => {
+        return count + page.slots.filter(slot => slot !== null).length;
+      }, 0);
+      
+      if (totalCards === 0) {
+        if (isMobile) {
+          showMobileAlert('配置されているカードがありません', 'ℹ️');
+        } else {
+          alert('配置されているカードがありません');
+        }
+        return;
+      }
+      
+      const confirmMessage = `${totalCards}枚の配置されたカードをすべて削除します。\nこの操作は取り消せません。\n\n実行しますか？`;
+      
+      if (confirm(confirmMessage)) {
+        // 全ページのスロットを初期化
+        binderState.pages.forEach(page => {
+          const slotsPerPage = page.slots.length;
+          page.slots = Array(slotsPerPage).fill(null);
+        });
+        
+        saveBinder();
+        renderBinder();
+        
+        if (isMobile) {
+          showMobileAlert(`${totalCards}枚のカードを削除しました`, '✅');
+        } else {
+          alert(`${totalCards}枚のカードを削除しました`);
+        }
+      }
+    }
+
   </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.1.0-BINDER-COLLECTION - Multiple binder management interface -->
+<!-- Version: 4.1.1-BINDER-COLLECTION-UPDATE - Multiple binder management interface with UI improvements and additional fixes -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -582,6 +582,96 @@
     .dark .modal-btn.secondary:hover {
       background: rgba(52, 73, 94, 1);
     }
+    /* レイアウト選択 */
+    .layout-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .layout-option {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      text-align: center;
+      background: #fff;
+      transition: all 0.3s ease;
+    }
+    
+    .layout-option:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .layout-option.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    
+    .dark .layout-option {
+      background: #3a3a3a;
+      border-color: #555;
+    }
+    
+    .dark .layout-option.selected {
+      background: #2a3a4a;
+      border-color: #3498db;
+    }
+    
+    .layout-grid {
+      display: grid;
+      gap: 3px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    .dark .layout-grid {
+      background: #2a2a2a;
+    }
+    
+    .layout-3x3 { grid-template-columns: repeat(3, 1fr); }
+    .layout-4x3 { grid-template-columns: repeat(4, 1fr); }
+    .layout-3x4 { grid-template-columns: repeat(3, 1fr); }
+    .layout-2x3 { grid-template-columns: repeat(2, 1fr); }
+    
+    .layout-slot {
+      aspect-ratio: 2.5/3.5;
+      background: #e9ecef;
+      border-radius: 2px;
+      border: 1px solid #ddd;
+    }
+    
+    .dark .layout-slot {
+      background: #444;
+      border-color: #666;
+    }
+    
+    .layout-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+    }
+    
+    .dark .layout-label {
+      color: #ccc;
+    }
+    
+    @media (max-width: 768px) {
+      .layout-options {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      
+      .layout-option {
+        padding: 10px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -619,6 +709,49 @@
         <div class="form-group">
           <label class="form-label" for="binderDescription">説明（任意）</label>
           <textarea id="binderDescription" class="form-input form-textarea" placeholder="このバインダーについての説明を入力してください"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">ページレイアウト</label>
+          <div class="layout-options">
+            <div class="layout-option" data-layout="3x3" onclick="selectLayout('3x3')">
+              <div class="layout-grid layout-3x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">3×3 (9枚)</div>
+            </div>
+            
+            <div class="layout-option" data-layout="4x3" onclick="selectLayout('4x3')">
+              <div class="layout-grid layout-4x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">4×3 (12枚)</div>
+            </div>
+            
+            <div class="layout-option" data-layout="3x4" onclick="selectLayout('3x4')">
+              <div class="layout-grid layout-3x4">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">3×4 (12枚)</div>
+            </div>
+            
+            <div class="layout-option" data-layout="2x3" onclick="selectLayout('2x3')">
+              <div class="layout-grid layout-2x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">2×3 (6枚)</div>
+            </div>
+          </div>
+          <input type="hidden" id="selectedLayout" value="3x3">
         </div>
         
         <div class="form-group">
@@ -733,10 +866,27 @@
       return card;
     }
 
+    // レイアウトを選択
+    function selectLayout(layout) {
+      // 全ての選択を解除
+      document.querySelectorAll('.layout-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      // 選択されたレイアウトをハイライト
+      document.querySelector(`[data-layout="${layout}"]`).classList.add('selected');
+      
+      // 隠しフィールドに値を設定
+      document.getElementById('selectedLayout').value = layout;
+    }
+
     // バインダー作成モーダルを開く
     function openCreateBinderModal() {
       document.getElementById('createBinderModal').classList.add('show');
       document.getElementById('binderName').focus();
+      
+      // デフォルトで3x3を選択
+      selectLayout('3x3');
     }
 
     // バインダー作成モーダルを閉じる
@@ -744,6 +894,11 @@
       document.getElementById('createBinderModal').classList.remove('show');
       document.getElementById('createBinderForm').reset();
       resetCoverPreview();
+      
+      // レイアウト選択もリセット
+      document.querySelectorAll('.layout-option').forEach(option => {
+        option.classList.remove('selected');
+      });
     }
 
     // 表紙画像のアップロード処理
@@ -777,6 +932,7 @@
       
       const name = document.getElementById('binderName').value.trim();
       const description = document.getElementById('binderDescription').value.trim();
+      const selectedLayout = document.getElementById('selectedLayout').value;
       const coverImageInput = document.getElementById('coverImageInput');
       
       if (!name) {
@@ -784,11 +940,27 @@
         return;
       }
 
+      // レイアウトに基づいてスロット数を決定
+      const layoutConfig = {
+        '3x3': { slots: 9, rows: 3, cols: 3 },
+        '4x3': { slots: 12, rows: 3, cols: 4 },
+        '3x4': { slots: 12, rows: 4, cols: 3 },
+        '2x3': { slots: 6, rows: 3, cols: 2 }
+      };
+      
+      const config = layoutConfig[selectedLayout] || layoutConfig['3x3'];
+
       const newBinder = {
         id: binderCollection.nextId++,
         name: name,
         description: description,
         coverImage: null,
+        layout: {
+          type: selectedLayout,
+          rows: config.rows,
+          cols: config.cols,
+          slotsPerPage: config.slots
+        },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         pageCount: 1,
@@ -796,7 +968,7 @@
         pages: [{
           id: Date.now(),
           name: 'ページ 1',
-          slots: Array(9).fill(null)
+          slots: Array(config.slots).fill(null)
         }]
       };
 
