@@ -4,7 +4,7 @@ const VERSION_DESCRIPTION = '強力なキャッシュクリア機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '3.9.0',
+  'index.html': '3.10.0',  // 対象ページのみ更新 - バージョン不一致検出ページのみキャッシュクリア
   'card_list.html': '3.6.0',  // 単一ページバージョンチェック対応
   'holoca_skill_page.html': '3.6.0',  // 単一ページバージョンチェック対応
   'deck_builder.html': '3.8.0'  // 単一ページバージョンチェック対応

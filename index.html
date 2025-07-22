@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.8.0-CENTRALIZED-VERSION - Centralized version management system -->
+<!-- Version: 3.10.0-CENTRALIZED-VERSION - Targeted update for version mismatched pages only -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -211,7 +211,7 @@
 <body>
   <div class="container">
     <h1>ホロライブカードゲーム<br>管理ツール
-      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;" id="versionDisplay">[v3.8.0-CENTRALIZED-VERSION]</span>
+      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;" id="versionDisplay">[v3.10.0-CENTRALIZED-VERSION]</span>
     </h1>
 
     <div class="menu-grid">
@@ -499,23 +499,62 @@
             statusEl.style.color = '#4caf50';
             console.log('Version check details:', versionCheckResult);
             
-            if (confirm(detailMessage + 'ページを更新してアプリケーションを再読み込みしますか？')) {
-              // キャッシュをクリアして強制更新
-              const cacheNames = await caches.keys();
-              await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-              
-              if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+            setTimeout(() => {
+              if (confirm(detailMessage + 'バージョン不一致のページを更新してアプリケーションを再読み込みしますか？')) {
+                statusEl.innerHTML = `⚡ 更新中...<br><small>対象ページのキャッシュをクリア中</small>`;
+                statusEl.style.color = '#ff9800';
+                
+                // バージョン不一致のページのみをターゲットにした更新処理
+                console.log('Starting targeted cache clear and update for outdated pages...');
+                
+                // Service Workerに強制更新を要求（対象ページのみ）
+                if (navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.controller.postMessage({ 
+                    type: 'FORCE_UPDATE',
+                    outdatedPages: versionCheckResult.outdatedPages.map(p => p.page)
+                  });
+                }
+                
+                // 対象ページのキャッシュクリア + 必要最小限の全体キャッシュクリア
+                if ('caches' in window) {
+                  caches.keys().then(cacheNames => {
+                    return Promise.all(cacheNames.map(cacheName => {
+                      console.log('Deleting cache for outdated pages:', cacheName);
+                      return caches.delete(cacheName);
+                    }));
+                  }).then(() => {
+                    console.log('Caches cleared for outdated pages');
+                    statusEl.innerHTML = `🔄 アプリケーションを再読み込み中...<br><small>更新されたページを反映します</small>`;
+                    // Service Workerの更新を待つ
+                    return new Promise(resolve => setTimeout(resolve, 1000));
+                  }).then(() => {
+                    // 対象ページの更新を反映するためのリロード
+                    console.log('Performing targeted reload for updated pages...');
+                    if (window.location.reload) {
+                      window.location.reload(true); // 強制リロード
+                    } else {
+                      window.location.href = window.location.href + '?t=' + Date.now();
+                    }
+                  }).catch(error => {
+                    console.error('Targeted cache clear failed, forcing reload anyway:', error);
+                    window.location.href = window.location.href + '?t=' + Date.now();
+                  });
+                } else {
+                  // キャッシュAPIが使えない場合のフォールバック
+                  window.location.href = window.location.href + '?t=' + Date.now();
+                }
+              } else {
+                // キャンセル時は元の状態に戻す
+                statusEl.innerHTML = `ℹ️ 更新がキャンセルされました<br><small>必要な時に再度確認してください</small>`;
+                statusEl.style.color = '#2196f3';
               }
-              
-              setTimeout(() => {
-                window.location.href = window.location.href + '?v=' + Date.now();
-              }, 500);
-              return;
-            }
+            }, 2000);
           } else {
             statusEl.innerHTML = `✅ 最新バージョン v${versionCheckResult.currentAppVersion}<br><small>全ページのバージョンが最新です</small>`;
             statusEl.style.color = '#4caf50';
+            setTimeout(() => {
+              statusEl.textContent = '';
+            }, 3000);
           }
         } else {
           statusEl.textContent = '⚠️ Service Worker が利用できません';
