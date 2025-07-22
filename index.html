@@ -257,7 +257,7 @@
       ">
         🔄 更新確認
       </button>
-      <div id="updateStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+      <div id="updateStatus" style="margin-top: 10px; font-size: 12px; color: #666; line-height: 1.3; max-width: 400px; white-space: pre-line;"></div>
     </div>
 
     <div class="footer">
@@ -386,8 +386,40 @@
       try {
         btnEl.disabled = true;
         btnEl.textContent = '🔄 確認中...';
-        statusEl.textContent = 'モバイル向け更新確認中...';
+        statusEl.textContent = 'Service Worker と各ページのバージョンを確認中...';
         statusEl.style.color = '#2196f3';
+
+        // 各ページのバージョンを確認
+        const pageVersions = {};
+        const pages = [
+          { name: 'card_list.html', expected: '3.1-RELEASE-DATE-SORTING' },
+          { name: 'holoca_skill_page.html', expected: '3.1-RELEASE-DATE-SORTING' },
+          { name: 'deck_builder.html', expected: '3.2-RELEASE-DATE-SORTING' }
+        ];
+
+        let versionCheckResults = [];
+        for (const page of pages) {
+          try {
+            const response = await fetch(page.name + '?v=' + Date.now());
+            if (response.ok) {
+              const content = await response.text();
+              const versionMatch = content.match(/<!-- Version: ([^\\-]+(?:\\-[^\\-]+)*) -/);
+              if (versionMatch) {
+                const actualVersion = versionMatch[1];
+                pageVersions[page.name] = actualVersion;
+                if (actualVersion === page.expected) {
+                  versionCheckResults.push(`✅ ${page.name}: v${actualVersion}`);
+                } else {
+                  versionCheckResults.push(`⚠️ ${page.name}: v${actualVersion} (期待値: v${page.expected})`);
+                }
+              } else {
+                versionCheckResults.push(`❌ ${page.name}: バージョン情報が見つかりません`);
+              }
+            }
+          } catch (error) {
+            versionCheckResults.push(`❌ ${page.name}: 確認エラー`);
+          }
+        }
 
         // モバイル向け：全キャッシュをクリアして強制更新
         if (/Mobi|Android/i.test(navigator.userAgent)) {
@@ -402,7 +434,7 @@
         // Wait a bit for the update check to complete
         setTimeout(() => {
           if (serviceWorkerRegistration.waiting) {
-            statusEl.textContent = '✅ 新しいバージョンが見つかりました！';
+            statusEl.innerHTML = '✅ 新しいバージョンが見つかりました！<br><small>' + versionCheckResults.join('<br>') + '</small>';
             statusEl.style.color = '#4caf50';
             
             if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。全ページを更新してアプリケーションを再読み込みしますか？')) {
@@ -420,7 +452,7 @@
               });
             }
           } else {
-            statusEl.textContent = '✅ 最新バージョンです';
+            statusEl.innerHTML = '✅ 最新バージョンです<br><small>' + versionCheckResults.join('<br>') + '</small>';
             statusEl.style.color = '#4caf50';
           }
           
