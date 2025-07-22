@@ -1,13 +1,13 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '3.17.0';
-const VERSION_DESCRIPTION = 'バージョンチェック機能修正';
+const APP_VERSION = '3.18.0';
+const VERSION_DESCRIPTION = 'ネットワーク優先バージョンチェック修正';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '3.8.0',
-  'card_list.html': '3.4.0', 
-  'holoca_skill_page.html': '3.4.0',
-  'deck_builder.html': '3.6.0'
+  'index.html': '3.9.0',
+  'card_list.html': '3.5.0', 
+  'holoca_skill_page.html': '3.5.0',
+  'deck_builder.html': '3.7.0'  // テスト用に高く設定
 };
 
 // ✅ 更新内容の詳細情報
@@ -88,29 +88,49 @@ async function getVersionInfo() {
 async function checkPageVersions() {
   const outdatedPages = [];
   
-  for (const [page, currentVersion] of Object.entries(PAGE_VERSIONS)) {
+  for (const [page, expectedVersion] of Object.entries(PAGE_VERSIONS)) {
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const cachedResponse = await cache.match(`./${page}`);
-      
-      if (!cachedResponse) {
-        outdatedPages.push({page, reason: 'not_cached', currentVersion});
+      // ネットワークから最新のページを取得して比較
+      const response = await fetch(`./${page}`, { cache: 'no-cache' });
+      if (!response.ok) {
+        outdatedPages.push({page, reason: 'fetch_failed', expectedVersion});
         continue;
       }
       
-      // HTMLファイルの内容からバージョンを抽出
-      const htmlText = await cachedResponse.text();
+      const htmlText = await response.text();
       const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
-      const cachedVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+      const actualVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
       
-      console.log(`Page ${page}: current=${currentVersion}, cached=${cachedVersion}`);
+      console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}`);
       
-      if (compareVersions(currentVersion, cachedVersion)) {
-        outdatedPages.push({page, reason: 'version_mismatch', currentVersion, cachedVersion});
+      // キャッシュされたバージョンもチェック
+      const cache = await caches.open(CACHE_NAME);
+      const cachedResponse = await cache.match(`./${page}`);
+      let cachedVersion = null;
+      
+      if (cachedResponse) {
+        const cachedText = await cachedResponse.text();
+        const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+        cachedVersion = cachedVersionMatch ? cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+      }
+      
+      console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
+      
+      // 実際のバージョンと期待するバージョンが異なる場合、または
+      // キャッシュされたバージョンが古い場合に更新が必要
+      if (compareVersions(expectedVersion, actualVersion) || 
+          compareVersions(actualVersion, cachedVersion)) {
+        outdatedPages.push({
+          page, 
+          reason: 'version_mismatch', 
+          expectedVersion, 
+          actualVersion, 
+          cachedVersion
+        });
       }
     } catch (error) {
       console.error(`Error checking version for ${page}:`, error);
-      outdatedPages.push({page, reason: 'error', currentVersion});
+      outdatedPages.push({page, reason: 'error', expectedVersion});
     }
   }
   
@@ -225,44 +245,74 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          console.log('Serving from cache:', event.request.url);
-          return response;
-        }
+  // HTMLファイルに対してはNetwork First戦略を使用
+  const isHTMLFile = event.request.url.endsWith('.html') || 
+                     event.request.url === self.location.origin + '/' ||
+                     event.request.url.endsWith('/');
 
-        // Fetch from network and cache the response
-        return fetch(event.request).then((response) => {
-          // Check if we received a valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+  if (isHTMLFile) {
+    event.respondWith(
+      // Network First: まずネットワークから取得を試行
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            // ネットワークから取得成功時はキャッシュを更新
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+            console.log('Serving fresh HTML from network:', event.request.url);
+            return response;
+          }
+          throw new Error('Network response not ok');
+        })
+        .catch(() => {
+          // ネットワーク失敗時はキャッシュから提供
+          console.log('Network failed, serving HTML from cache:', event.request.url);
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // その他のリソースはCache First戦略
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Return cached version or fetch from network
+          if (response) {
+            console.log('Serving from cache:', event.request.url);
             return response;
           }
 
-          // Clone the response for caching
-          const responseToCache = response.clone();
+          // Fetch from network and cache the response
+          return fetch(event.request).then((response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
 
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              // Cache card images dynamically
-              if (event.request.url.includes('hololive-official-cardgame.com/cardlist/image/') ||
-                  event.request.url.includes('.jpg') ||
-                  event.request.url.includes('.png')) {
-                cache.put(event.request, responseToCache);
-              }
-            });
+            // Clone the response for caching
+            const responseToCache = response.clone();
 
-          return response;
-        }).catch(() => {
-          // If network fails, try to serve a cached placeholder for images
-          if (event.request.destination === 'image') {
-            return caches.match('./images/placeholder.png');
-          }
-        });
-      })
-  );
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                // Cache card images dynamically
+                if (event.request.url.includes('hololive-official-cardgame.com/cardlist/image/') ||
+                    event.request.url.includes('.jpg') ||
+                    event.request.url.includes('.png')) {
+                  cache.put(event.request, responseToCache);
+                }
+              });
+
+            return response;
+          }).catch(() => {
+            // If network fails, try to serve a cached placeholder for images
+            if (event.request.destination === 'image') {
+              return caches.match('./images/placeholder.png');
+            }
+          });
+        })
+    );
+  }
 });
 
 // Background sync for data updates when connection is restored

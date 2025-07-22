@@ -600,6 +600,7 @@
     <div class="container-top">
       <h2>ホロライブカード一覧 
         <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.4.0-loading...]</span>
+        <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       
         <div class="top-nav">
@@ -1344,6 +1345,87 @@
   // Update status on page load and network changes
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
+
+  // ✅ 更新確認機能
+  async function checkForUpdates() {
+    const statusEl = document.getElementById('versionDisplay');
+    if (!statusEl) return;
+    
+    try {
+      statusEl.textContent = 'バージョン情報を確認中...';
+      
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        // ✅ Service Worker からバージョンチェック
+        const messageChannel = new MessageChannel();
+        
+        // まず古いページをチェック
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'OUTDATED_PAGES_RESPONSE') {
+            if (event.data.data && event.data.data.length > 0) {
+              statusEl.innerHTML = '🚀 新しいバージョンが利用可能です！';
+              
+              setTimeout(() => {
+                if (confirm('🚀 新しいバージョンが利用可能です。ページを更新してアプリケーションを再読み込みしますか？')) {
+                  navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+                  setTimeout(() => {
+                    location.reload(true);
+                  }, 500);
+                } else {
+                  // バージョン情報を再表示
+                  displayVersionInfo();
+                }
+              }, 2000);
+            } else {
+              statusEl.textContent = '✅ 全ページ更新済み';
+              setTimeout(() => {
+                displayVersionInfo();
+              }, 2000);
+            }
+          }
+        };
+        
+        navigator.serviceWorker.controller.postMessage(
+          { type: 'CHECK_OUTDATED_PAGES' },
+          [messageChannel.port2]
+        );
+        
+      } else {
+        statusEl.textContent = '[v3.4.0-SW-UNAVAILABLE]';
+      }
+      
+    } catch (error) {
+      console.error('Update check failed:', error);
+      statusEl.textContent = '[v3.4.0-ERROR]';
+    }
+  }
+
+  // ✅ バージョン情報を表示する関数
+  async function displayVersionInfo() {
+    const statusEl = document.getElementById('versionDisplay');
+    if (!statusEl) return;
+    
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'VERSION_INFO_RESPONSE') {
+            if (event.data.data && event.data.data.pageVersions) {
+              statusEl.textContent = `[v${event.data.data.pageVersions['card_list.html']}-CENTRALIZED]`;
+            }
+          }
+        };
+        navigator.serviceWorker.controller.postMessage(
+          { type: 'GET_VERSION_INFO' },
+          [messageChannel.port2]
+        );
+      } else {
+        statusEl.textContent = '[v3.4.0-CENTRALIZED]';
+      }
+    } catch (error) {
+      console.warn('Version display error:', error);
+      statusEl.textContent = '[v3.4.0-CENTRALIZED]';
+    }
+  }
 </script>
 
 <div style="margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.05); border-top: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 0.85em; color: #666;">

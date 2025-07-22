@@ -415,7 +415,8 @@
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
       <h2 class="deck-title">デッキ作成
-        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;">[v3.4-SORT-PRIORITY-SIMPLIFIED]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v3.6.0-loading...]</span>
+        <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       <button onclick="toggleDarkMode()">🌗</button>
     </div>
@@ -1343,6 +1344,137 @@
   <p>このツールの使用により生じた損害について、作成者は一切の責任を負いません。</p>
   <p style="margin-top: 10px;">© 2025 Hololive Card Game Management Tool (非公式)</p>
 </div>
+
+<script>
+// ✅ Service Worker との通信機能
+async function sendMessageToSW(type, data) {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+    throw new Error('Service Worker not available');
+  }
+  
+  return new Promise((resolve) => {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (event) => {
+      resolve(event.data);
+    };
+    navigator.serviceWorker.controller.postMessage({ type, data }, [messageChannel.port2]);
+  });
+}
+
+// ✅ バージョン情報を取得
+async function getVersionInfo() {
+  return await sendMessageToSW('GET_VERSION_INFO');
+}
+
+// ✅ 更新メッセージを取得
+async function getUpdateMessage() {
+  return await sendMessageToSW('GET_UPDATE_MESSAGE');
+}
+
+// ✅ 古いページをチェック
+async function checkOutdatedPages() {
+  return await sendMessageToSW('CHECK_OUTDATED_PAGES');
+}
+
+// ✅ 更新確認機能
+async function checkForUpdates() {
+  const statusEl = document.getElementById('versionDisplay');
+  if (!statusEl) return;
+  
+  try {
+    statusEl.textContent = 'バージョン情報を確認中...';
+    
+    // ✅ 新しいバージョン管理システムを使用
+    const outdatedPages = await checkOutdatedPages();
+    
+    if (outdatedPages.data && outdatedPages.data.length > 0) {
+      try {
+        // 統一されたバージョン管理システムからメッセージを取得
+        const updateMessage = await getUpdateMessage();
+        
+        if (updateMessage && updateMessage.data) {
+          statusEl.innerHTML = `🚀 新しいバージョンが利用可能です！<br><small>${updateMessage.data.details.description}</small>`;
+          
+          setTimeout(() => {
+            if (confirm(updateMessage.data.message)) {
+              // Service Workerに更新を通知してページを更新
+              if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                  type: 'SKIP_WAITING'
+                });
+              }
+              setTimeout(() => {
+                location.reload(true);
+              }, 500);
+            } else {
+              // バージョン情報を表示
+              displayVersionInfo();
+            }
+          }, 2000);
+        }
+      } catch (versionError) {
+        console.error('Version system error:', versionError);
+        console.warn('Version system fallback:', versionError);
+        if (confirm('🚀 新しいバージョンが利用可能です。ページを更新してアプリケーションを再読み込みしますか？')) {
+          location.reload(true);
+        }
+      }
+    } else {
+      statusEl.textContent = '✅ 全ページ更新済み';
+      setTimeout(() => {
+        displayVersionInfo();
+      }, 2000);
+    }
+    
+    // バージョン情報の表示
+    try {
+      const versionInfo = await getVersionInfo();
+      if (versionInfo && versionInfo.data) {
+        statusEl.textContent = `[v${versionInfo.data.pageVersions['deck_builder.html']}-CENTRALIZED]`;
+      }
+    } catch (error) {
+      console.warn('Version display error:', error);
+    }
+    
+  } catch (error) {
+    console.error('Update check failed:', error);
+    statusEl.textContent = '[v3.6.0-ERROR]';
+  }
+}
+
+// ✅ バージョン情報を表示する関数
+async function displayVersionInfo() {
+  const statusEl = document.getElementById('versionDisplay');
+  if (!statusEl) return;
+  
+  try {
+    const versionInfo = await getVersionInfo();
+    if (versionInfo && versionInfo.data) {
+      statusEl.textContent = `[v${versionInfo.data.pageVersions['deck_builder.html']}-CENTRALIZED]`;
+    }
+  } catch (error) {
+    console.warn('Version display error:', error);
+    statusEl.textContent = '[v3.6.0-CENTRALIZED]';
+  }
+}
+
+// ✅ ページ読み込み時にバージョン情報を取得
+document.addEventListener('DOMContentLoaded', function() {
+  // Service Worker からバージョン情報を取得して表示
+  setTimeout(() => {
+    displayVersionInfo();
+  }, 1000);
+});
+
+// ✅ Service Worker登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(function(registration) {
+    console.log('Service Worker registered successfully:', registration.scope);
+  }).catch(function(error) {
+    console.log('Service Worker registration failed:', error);
+  });
+}
+</script>
 
 </body>
 </html>
