@@ -416,8 +416,8 @@
             
             if (cachedResponse.ok) {
               const content = await cachedResponse.text();
-              // バージョンを正確に抽出（- や英数字を含む完全なバージョン文字列）
-              let versionMatch = content.match(/Version: ([^-\s]+(?:-[A-Z-]+)*)/);
+              // バージョンを正確に抽出（完全なバージョン文字列を取得）
+              let versionMatch = content.match(/Version: ([^\s-]+(?:-[A-Z0-9-]+)*)/);
               if (!versionMatch) {
                 // より広範囲なパターンでもう一度試行
                 versionMatch = content.match(/Version: ([^\s]+)/);
@@ -433,7 +433,7 @@
                   const latestResponse = await fetch(page.name + '?v=' + Date.now());
                   if (latestResponse.ok) {
                     const latestContent = await latestResponse.text();
-                    const latestMatch = latestContent.match(/Version: ([^-\s]+(?:-[A-Z-]+)*)/);
+                    const latestMatch = latestContent.match(/Version: ([^\s-]+(?:-[A-Z0-9-]+)*)/);
                     if (latestMatch) {
                       latestVersion = latestMatch[1];
                     }
