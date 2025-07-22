@@ -129,10 +129,8 @@ async function checkPageVersions() {
       } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
         mismatchReason = 'actual_vs_cached_mismatch';
         needsUpdate = true;
-      } else if (!cachedVersion) {
-        mismatchReason = 'no_cached_version';
-        needsUpdate = true;
       }
+      // キャッシュにバージョン情報がない場合は更新しない
       
       if (needsUpdate) {
         outdatedPages.push({
@@ -308,10 +306,8 @@ self.addEventListener('message', async (event) => {
           } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
             mismatchReason = 'actual_vs_cached_mismatch';
             needsUpdate = true;
-          } else if (!cachedVersion) {
-            mismatchReason = 'no_cached_version';
-            needsUpdate = true;
           }
+          // キャッシュにバージョン情報がない場合は更新しない
           
           if (needsUpdate) {
             pageInfo = {
