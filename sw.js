@@ -1,12 +1,12 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.3.7';
-const VERSION_DESCRIPTION = 'モバイルモーダル修正・商品フィルター・公式カード番号順追加';
+const APP_VERSION = '4.3.8';
+const VERSION_DESCRIPTION = 'モバイル版カード選択画面表示修正';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
   'card_list.html': '4.1.1-CSV-ENHANCEMENT-UPDATE',  // CSV機能改良 - 追加修正と改善
-  'collection_binder.html': '4.3.7-MOBILE-MODAL-FIX',  // モバイルモーダル修正・商品フィルター・公式カード番号順追加
+  'collection_binder.html': '4.3.8-MOBILE-CARD-DISPLAY-FIX',  // モバイル版カード選択画面表示修正
   'binder_collection.html': '4.1.3-MOBILE-IMPROVEMENTS',  // 複数バインダー管理システム - UI改善と追加修正
   'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
@@ -14,22 +14,22 @@ const PAGE_VERSIONS = {
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🚀 メジャーアップデート v4.3.7',
-  description: 'モバイル版改善と新機能追加を行いました',
+  title: '🚀 バグ修正アップデート v4.3.8',
+  description: 'モバイル版カード選択画面の表示問題を修正しました',
   changes: [
+    '🔧 モバイル版カード画像表示の修正（object-fit: contain）',
+    '📱 モバイル版カードグリッドレイアウト改善',
+    '🖼️ カード画像の背景色追加で視認性向上',
+    '⚡ 画像読み込みエラーハンドリング強化',
+    '📝 カード名表示の改善（2行表示対応）',
     '📱 モバイル版カード詳細モーダルのレイアウト改善',
-    '�️ カード選択画面に収録商品フィルター追加',
+    '🏷️ カード選択画面に収録商品フィルター追加',
     '🔧 モバイル版フィルター表示問題修正',
     '📋 公式カード番号順自動配置オプション追加',
-    '�🎯 カード詳細モーダルにスキル情報表示機能追加',
+    '🎯 カード詳細モーダルにスキル情報表示機能追加',
     '🔀 デスクトップ版クロスページドラッグ&ドロップ機能追加',
     '🖼️ スキル情報表示でアイコン画像とスタイル改善',
-    '📱 モバイル版UI大幅改善（タイトル横ボタン配置・歯車位置調整）',
-    '🔍 閲覧モードでカード画像タップ拡大表示機能追加',
-    '🎯 自動配置でエールカード最後尾配置対応',
-    '✨ R以上のレアリティカードに光エフェクト追加',
-    '📦 カード選択時の収録商品フィルター追加',
-    '📐 モバイル版4×3レイアウト正常表示対応'
+    '📱 モバイル版UI大幅改善（タイトル横ボタン配置・歯車位置調整）'
   ]
 };
 
