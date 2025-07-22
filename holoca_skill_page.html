@@ -401,7 +401,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
                 <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.8.0-loading...]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v4.0.0-loading...]</span>
           <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
@@ -1173,13 +1173,13 @@ async function checkForUpdates() {
       }
       
     } else {
-      statusEl.textContent = '[v3.8.0-SW-UNAVAILABLE]';
+      statusEl.textContent = '[v4.0.0-SW-UNAVAILABLE]';
       statusEl.style.color = '#f44336';
     }
     
   } catch (error) {
     console.error('Update check failed:', error);
-    statusEl.textContent = '[v3.8.0-ERROR: ' + error.message + ']';
+    statusEl.textContent = '[v4.0.0-ERROR: ' + error.message + ']';
     statusEl.style.color = '#f44336';
     setTimeout(() => {
       displayVersionInfo();
@@ -1199,7 +1199,7 @@ async function displayVersionInfo() {
     }
   } catch (error) {
     console.warn('Version display error:', error);
-    statusEl.textContent = '[v3.8.0-CENTRALIZED]';
+    statusEl.textContent = '[v4.0.0-CENTRALIZED]';
   }
 }
 

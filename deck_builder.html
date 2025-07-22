@@ -415,7 +415,7 @@
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
       <h2 class="deck-title">デッキ作成
-        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v3.10.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v4.0.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       <button onclick="toggleDarkMode()">🌗</button>
@@ -1525,13 +1525,13 @@ async function checkForUpdates() {
       }
       
     } else {
-      statusEl.textContent = '[v3.10.0-SW-UNAVAILABLE]';
+      statusEl.textContent = '[v4.0.0-SW-UNAVAILABLE]';
       statusEl.style.color = '#f44336';
     }
     
   } catch (error) {
     console.error('Update check failed:', error);
-    statusEl.textContent = '[v3.10.0-ERROR: ' + error.message + ']';
+    statusEl.textContent = '[v4.0.0-ERROR: ' + error.message + ']';
     statusEl.style.color = '#f44336';
     setTimeout(() => {
       displayVersionInfo();
@@ -1551,7 +1551,7 @@ async function displayVersionInfo() {
     }
   } catch (error) {
     console.warn('Version display error:', error);
-    statusEl.textContent = '[v3.10.0-CENTRALIZED]';
+    statusEl.textContent = '[v4.0.0-CENTRALIZED]';
   }
 }
 

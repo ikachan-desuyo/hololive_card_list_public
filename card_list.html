@@ -720,7 +720,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.9.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v4.0.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       
@@ -1706,7 +1706,7 @@
       console.warn('Version display error:', error);
       const versionEl = document.getElementById('versionDisplay');
       if (versionEl) {
-        versionEl.textContent = '[v3.9.0-CENTRALIZED]';
+        versionEl.textContent = '[v4.0.0-CENTRALIZED]';
       }
     }
 
@@ -2003,13 +2003,13 @@
         }
         
       } else {
-        statusEl.textContent = '[v3.9.0-SW-UNAVAILABLE]';
+        statusEl.textContent = '[v4.0.0-SW-UNAVAILABLE]';
         statusEl.style.color = '#f44336';
       }
       
     } catch (error) {
       console.error('Update check failed:', error);
-      statusEl.textContent = '[v3.9.0-ERROR: ' + error.message + ']';
+      statusEl.textContent = '[v4.0.0-ERROR: ' + error.message + ']';
       statusEl.style.color = '#f44336';
       setTimeout(() => {
         displayVersionInfo();
@@ -2037,11 +2037,11 @@
           [messageChannel.port2]
         );
       } else {
-        statusEl.textContent = '[v3.9.0-CENTRALIZED]';
+        statusEl.textContent = '[v4.0.0-CENTRALIZED]';
       }
     } catch (error) {
       console.warn('Version display error:', error);
-      statusEl.textContent = '[v3.9.0-CENTRALIZED]';
+      statusEl.textContent = '[v4.0.0-CENTRALIZED]';
     }
   }
 </script>

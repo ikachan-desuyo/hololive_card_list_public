@@ -1,24 +1,25 @@
 // Service Worker for offline caching with centralized version management
 const APP_VERSION = '4.0.0';
-const VERSION_DESCRIPTION = '強力なキャッシュクリア機能追加';
+const VERSION_DESCRIPTION = 'ページバージョン統一とキャッシュ強化';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '3.11.0',  // バージョン表示統一とUI改善
-  'card_list.html': '3.9.0',  // モーダル画像大型化とスキル画像枠削除 - 画像表示最適化
-  'holoca_skill_page.html': '3.8.0',  // バージョン表示統一とUI改善
-  'deck_builder.html': '3.10.0'  // バージョン表示統一とフィルター機能改善
+  'index.html': '4.0.0',  // バージョン表示統一とUI改善
+  'card_list.html': '4.0.0',  // モーダル画像大型化とスキル画像枠削除 - 画像表示最適化
+  'holoca_skill_page.html': '4.0.0',  // バージョン表示統一とUI改善
+  'deck_builder.html': '4.0.0'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🚀 新しいバージョンが利用可能です',
-  description: '強力なキャッシュクリア機能を追加し、更新の確実性を向上させました',
+  title: '🚀 メジャーアップデート v4.0.0',
+  description: '全ページのバージョンを統一し、より確実なキャッシュ管理システムを導入しました',
   changes: [
-    '🔥 FORCE_UPDATE メッセージタイプを追加',
-    '💪 より強力なキャッシュクリア処理を実装',
-    '⚡ キャッシュバスティング機能を強化',
-    '🔄 確実なページ更新システムを導入'
+    '🎯 全ページバージョンを v4.0.0 に統一',
+    '� 強化されたキャッシュクリア機能',
+    '💪 より確実な更新検出システム',
+    '⚡ 改善されたUI表示とユーザビリティ',
+    '🔄 統一されたバージョン管理システム'
   ]
 };
 
