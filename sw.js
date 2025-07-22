@@ -4,10 +4,11 @@ const VERSION_DESCRIPTION = 'CSV機能の改良 - インポート/エクスポ�
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '4.0.0',  // バージョン表示統一とUI改善
-  'card_list.html': '4.1.0',  // CSV機能改良 - ファイル保存/読み込み対応
-  'holoca_skill_page.html': '4.0.0',  // バージョン表示統一とUI改善
-  'deck_builder.html': '4.0.0'  // バージョン表示統一とフィルター機能改善
+  'index.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
+  'card_list.html': '4.1.0-CSV-ENHANCEMENT',  // CSV機能改良 - ファイル保存/読み込み対応
+  'collection_binder.html': '4.1.0-COLLECTION-BINDER',  // 新機能 - 視覚的コレクションバインダー
+  'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
+  'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
@@ -28,6 +29,7 @@ const urlsToCache = [
   './',
   './index.html',
   './card_list.html',
+  './collection_binder.html',
   './holoca_skill_page.html',
   './deck_builder.html',
   './json_file/card_data.json',
@@ -105,7 +107,7 @@ async function checkPageVersions() {
       
       let actualVersion = null;
       if (versionMatch) {
-        actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+        actualVersion = versionMatch[1]; // サフィックスを削除しない
       } else if (displayVersionMatch) {
         actualVersion = displayVersionMatch[1];
       }
@@ -123,7 +125,7 @@ async function checkPageVersions() {
         const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
         
         if (cachedVersionMatch) {
-          cachedVersion = cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+          cachedVersion = cachedVersionMatch[1]; // サフィックスを削除しない
         } else if (cachedDisplayVersionMatch) {
           cachedVersion = cachedDisplayVersionMatch[1];
         }
@@ -262,7 +264,7 @@ self.addEventListener('message', async (event) => {
               const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
               
               if (versionMatch) {
-                actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+                actualVersion = versionMatch[1]; // サフィックスを削除しない
               } else if (displayVersionMatch) {
                 actualVersion = displayVersionMatch[1];
               }
@@ -335,7 +337,7 @@ self.addEventListener('message', async (event) => {
           
           let actualVersion = null;
           if (versionMatch) {
-            actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+            actualVersion = versionMatch[1]; // サフィックスを削除しない
           } else if (displayVersionMatch) {
             actualVersion = displayVersionMatch[1];
           }
@@ -351,7 +353,7 @@ self.addEventListener('message', async (event) => {
             const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
             
             if (cachedVersionMatch) {
-              cachedVersion = cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+              cachedVersion = cachedVersionMatch[1]; // サフィックスを削除しない
             } else if (cachedDisplayVersionMatch) {
               cachedVersion = cachedDisplayVersionMatch[1];
             }
