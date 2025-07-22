@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!-- Version: 4.1.0-BINDER-COLLECTION - Multiple binder management interface -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ホロライブカード バインダーコレクション</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
+    }
+
+    .dark { 
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      color: #eee; 
+    }
+
+    /* ヘッダー */
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .dark .header {
+      background: rgba(44, 62, 80, 0.95);
+      border-bottom-color: rgba(52, 152, 219, 0.3);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header h1 {
+      margin: 0;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 25px;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .control-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .control-btn.success {
+      background: linear-gradient(45deg, #28a745, #20c997);
+    }
+
+    /* メインコンテナ */
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    /* バインダーグリッド */
+    .binder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    /* バインダーカード */
+    .binder-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .dark .binder-card {
+      background: rgba(52, 73, 94, 0.95);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .binder-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    }
+
+    /* バインダー表紙 */
+    .binder-cover {
+      height: 200px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .binder-cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .binder-card:hover .binder-cover-image {
+      transform: scale(1.05);
+    }
+
+    .binder-cover-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 3em;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .binder-cover-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .binder-card:hover .binder-cover-overlay {
+      opacity: 1;
+    }
+
+    /* バインダー情報 */
+    .binder-info {
+      padding: 20px;
+    }
+
+    .binder-name {
+      font-size: 1.3em;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #667eea;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dark .binder-name {
+      color: #3498db;
+    }
+
+    .binder-description {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 15px;
+      height: 3em;
+      overflow: hidden;
+      line-height: 1.5;
+    }
+
+    .dark .binder-description {
+      color: #bdc3c7;
+    }
+
+    .binder-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .dark .stat-badge {
+      background: rgba(52, 152, 219, 0.2);
+      color: #3498db;
+      border-color: rgba(52, 152, 219, 0.3);
+    }
+
+    .binder-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .binder-card:hover .binder-actions {
+      opacity: 1;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .action-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: scale(1.1);
+    }
+
+    /* 新規バインダー作成カード */
+    .new-binder-card {
+      border: 3px dashed rgba(102, 126, 234, 0.5);
+      background: rgba(255, 255, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      transition: all 0.3s ease;
+    }
+
+    .dark .new-binder-card {
+      background: rgba(52, 73, 94, 0.5);
+      border-color: rgba(52, 152, 219, 0.5);
+    }
+
+    .new-binder-card:hover {
+      border-color: rgba(102, 126, 234, 0.8);
+      background: rgba(102, 126, 234, 0.1);
+      transform: translateY(-4px);
+    }
+
+    .new-binder-content {
+      text-align: center;
+      color: #667eea;
+    }
+
+    .dark .new-binder-content {
+      color: #3498db;
+    }
+
+    .new-binder-icon {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    .new-binder-text {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      .header {
+        padding: 10px 15px;
+      }
+      
+      .header h1 {
+        font-size: 1.5em;
+      }
+      
+      .header-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .control-btn {
+        padding: 10px 14px;
+        font-size: 0.85em;
+        min-width: 44px;
+        min-height: 44px;
+      }
+      
+      .main-container {
+        padding: 20px 15px;
+      }
+      
+      .binder-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+      
+      .binder-cover {
+        height: 160px;
+      }
+      
+      .binder-info {
+        padding: 15px;
+      }
+      
+      .binder-name {
+        font-size: 1.1em;
+      }
+      
+      .new-binder-card {
+        min-height: 240px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .binder-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header-controls {
+        width: 100%;
+        justify-content: center;
+        margin-top: 10px;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+
+    /* アニメーション */
+    @keyframes binderAppear {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .binder-card.new {
+      animation: binderAppear 0.5s ease-out;
+    }
+
+    /* モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .dark .modal-content {
+      background: #34495e;
+      color: #eee;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+      padding-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .dark .modal-title {
+      color: #3498db;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #999;
+      transition: color 0.3s ease;
+    }
+
+    .modal-close:hover {
+      color: #667eea;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .dark .form-label {
+      color: #eee;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-radius: 10px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .dark .form-input {
+      background: rgba(52, 73, 94, 0.8);
+      color: #eee;
+      border-color: rgba(52, 152, 219, 0.3);
+    }
+
+    .dark .form-input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .cover-upload-area {
+      border: 2px dashed rgba(102, 126, 234, 0.3);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .cover-upload-area:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .cover-preview {
+      max-width: 100%;
+      max-height: 120px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .upload-text {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .dark .upload-text {
+      color: #3498db;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+    }
+
+    .modal-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .modal-btn.primary {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .modal-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .modal-btn.secondary {
+      background: #f8f9fa;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .modal-btn.secondary:hover {
+      background: #e9ecef;
+    }
+
+    .dark .modal-btn.secondary {
+      background: rgba(52, 73, 94, 0.8);
+      color: #eee;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .dark .modal-btn.secondary:hover {
+      background: rgba(52, 73, 94, 1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <h1>📚 バインダーコレクション</h1>
+      <div class="header-controls">
+        <button class="control-btn" onclick="toggleTheme()">🌙 ダークモード</button>
+        <button class="control-btn success" onclick="openCreateBinderModal()">➕ 新規バインダー</button>
+        <button class="control-btn" onclick="goHome()">🏠 ホーム</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="binder-grid" id="binderGrid">
+      <!-- バインダーカードがここに動的に追加されます -->
+    </div>
+  </div>
+
+  <!-- バインダー作成モーダル -->
+  <div class="modal" id="createBinderModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">新しいバインダーを作成</div>
+        <button class="modal-close" onclick="closeCreateBinderModal()">×</button>
+      </div>
+      
+      <form id="createBinderForm">
+        <div class="form-group">
+          <label class="form-label" for="binderName">バインダー名</label>
+          <input type="text" id="binderName" class="form-input" placeholder="例: ホロライブ1期生コレクション" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="binderDescription">説明（任意）</label>
+          <textarea id="binderDescription" class="form-input form-textarea" placeholder="このバインダーについての説明を入力してください"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">表紙画像（任意）</label>
+          <div class="cover-upload-area" onclick="document.getElementById('coverImageInput').click()">
+            <div id="coverPreview" style="display: none;">
+              <img id="coverPreviewImage" class="cover-preview" alt="表紙プレビュー">
+            </div>
+            <div id="coverUploadText" class="upload-text">
+              🖼️ クリックして画像を選択<br>
+              <small>推奨サイズ: 280x200px</small>
+            </div>
+            <input type="file" id="coverImageInput" accept="image/*" style="display: none;" onchange="handleCoverImageUpload(event)">
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="modal-btn secondary" onclick="closeCreateBinderModal()">キャンセル</button>
+          <button type="submit" class="modal-btn primary">バインダーを作成</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // バインダーコレクションの状態管理
+    let binderCollection = {
+      binders: [],
+      nextId: 1
+    };
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', function() {
+      loadBinderCollection();
+      renderBinders();
+      
+      // ダークモードの復元
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+      }
+    });
+
+    // バインダーコレクションの読み込み
+    function loadBinderCollection() {
+      const saved = localStorage.getItem('binderCollection');
+      if (saved) {
+        binderCollection = JSON.parse(saved);
+      }
+    }
+
+    // バインダーコレクションの保存
+    function saveBinderCollection() {
+      localStorage.setItem('binderCollection', JSON.stringify(binderCollection));
+    }
+
+    // バインダー一覧のレンダリング
+    function renderBinders() {
+      const grid = document.getElementById('binderGrid');
+      grid.innerHTML = '';
+
+      // 新規作成カード
+      const newBinderCard = document.createElement('div');
+      newBinderCard.className = 'binder-card new-binder-card';
+      newBinderCard.onclick = openCreateBinderModal;
+      newBinderCard.innerHTML = `
+        <div class="new-binder-content">
+          <div class="new-binder-icon">➕</div>
+          <div class="new-binder-text">新しいバインダーを作成</div>
+        </div>
+      `;
+      grid.appendChild(newBinderCard);
+
+      // 既存のバインダーカード
+      binderCollection.binders.forEach((binder, index) => {
+        const binderCard = createBinderCard(binder, index);
+        grid.appendChild(binderCard);
+      });
+    }
+
+    // バインダーカードの作成
+    function createBinderCard(binder, index) {
+      const card = document.createElement('div');
+      card.className = 'binder-card';
+      card.onclick = () => openBinder(binder.id);
+
+      const coverContent = binder.coverImage ? 
+        `<img src="${binder.coverImage}" alt="${binder.name}" class="binder-cover-image">` :
+        `<div class="binder-cover-placeholder">📚</div>`;
+
+      card.innerHTML = `
+        <div class="binder-cover">
+          ${coverContent}
+          <div class="binder-cover-overlay">
+            バインダーを開く
+          </div>
+          <div class="binder-actions">
+            <button class="action-btn" onclick="event.stopPropagation(); editBinder(${index})" title="編集">✏️</button>
+            <button class="action-btn" onclick="event.stopPropagation(); deleteBinder(${index})" title="削除">🗑️</button>
+          </div>
+        </div>
+        <div class="binder-info">
+          <div class="binder-name">${binder.name}</div>
+          <div class="binder-description">${binder.description || 'バインダーの説明がありません'}</div>
+          <div class="binder-stats">
+            <span class="stat-badge">ページ: ${binder.pageCount || 0}</span>
+            <span class="stat-badge">カード: ${binder.cardCount || 0}枚</span>
+            <span class="stat-badge">作成: ${formatDate(binder.createdAt)}</span>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // バインダー作成モーダルを開く
+    function openCreateBinderModal() {
+      document.getElementById('createBinderModal').classList.add('show');
+      document.getElementById('binderName').focus();
+    }
+
+    // バインダー作成モーダルを閉じる
+    function closeCreateBinderModal() {
+      document.getElementById('createBinderModal').classList.remove('show');
+      document.getElementById('createBinderForm').reset();
+      resetCoverPreview();
+    }
+
+    // 表紙画像のアップロード処理
+    function handleCoverImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const previewImage = document.getElementById('coverPreviewImage');
+          const preview = document.getElementById('coverPreview');
+          const uploadText = document.getElementById('coverUploadText');
+          
+          previewImage.src = e.target.result;
+          preview.style.display = 'block';
+          uploadText.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 表紙プレビューのリセット
+    function resetCoverPreview() {
+      document.getElementById('coverPreview').style.display = 'none';
+      document.getElementById('coverUploadText').style.display = 'block';
+      document.getElementById('coverImageInput').value = '';
+    }
+
+    // バインダー作成フォームの送信
+    document.getElementById('createBinderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('binderName').value.trim();
+      const description = document.getElementById('binderDescription').value.trim();
+      const coverImageInput = document.getElementById('coverImageInput');
+      
+      if (!name) {
+        alert('バインダー名を入力してください');
+        return;
+      }
+
+      const newBinder = {
+        id: binderCollection.nextId++,
+        name: name,
+        description: description,
+        coverImage: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        pageCount: 1,
+        cardCount: 0,
+        pages: [{
+          id: Date.now(),
+          name: 'ページ 1',
+          slots: Array(9).fill(null)
+        }]
+      };
+
+      // 表紙画像の処理
+      if (coverImageInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          newBinder.coverImage = e.target.result;
+          finalizeBinderCreation(newBinder);
+        };
+        reader.readAsDataURL(coverImageInput.files[0]);
+      } else {
+        finalizeBinderCreation(newBinder);
+      }
+    });
+
+    // バインダー作成の完了
+    function finalizeBinderCreation(binder) {
+      binderCollection.binders.push(binder);
+      saveBinderCollection();
+      closeCreateBinderModal();
+      renderBinders();
+      
+      // 作成完了アニメーション
+      setTimeout(() => {
+        const newCard = document.querySelector('.binder-card:last-child');
+        if (newCard && !newCard.classList.contains('new-binder-card')) {
+          newCard.classList.add('new');
+        }
+      }, 100);
+      
+      alert(`バインダー「${binder.name}」を作成しました！`);
+    }
+
+    // バインダーを開く
+    function openBinder(binderId) {
+      // バインダーIDをURLパラメータとして渡して、collection_binder.htmlを開く
+      const url = `collection_binder.html?binderId=${binderId}`;
+      window.location.href = url;
+    }
+
+    // バインダーの編集
+    function editBinder(index) {
+      const binder = binderCollection.binders[index];
+      
+      // 編集モーダルを開く（今回は簡易的にpromptを使用）
+      const newName = prompt('バインダー名を編集:', binder.name);
+      if (newName && newName.trim()) {
+        binder.name = newName.trim();
+        binder.updatedAt = new Date().toISOString();
+        saveBinderCollection();
+        renderBinders();
+      }
+    }
+
+    // バインダーの削除
+    function deleteBinder(index) {
+      const binder = binderCollection.binders[index];
+      
+      if (confirm(`バインダー「${binder.name}」を削除しますか？\nこの操作は取り消せません。`)) {
+        binderCollection.binders.splice(index, 1);
+        saveBinderCollection();
+        renderBinders();
+        alert('バインダーを削除しました');
+      }
+    }
+
+    // ユーティリティ関数
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+    }
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    // モーダルの外側クリックで閉じる
+    document.getElementById('createBinderModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCreateBinderModal();
+      }
+    });
+
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeCreateBinderModal();
+      }
+    });
+  </script>
+</body>
+</html>

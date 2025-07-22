@@ -1,26 +1,27 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.1.0';
-const VERSION_DESCRIPTION = 'CSV機能の改良 - インポート/エクスポート選択機能追加';
+const APP_VERSION = '4.2.0';
+const VERSION_DESCRIPTION = 'バインダーコレクション管理システム - 複数バインダー作成・管理機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
+  'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
   'card_list.html': '4.1.0-CSV-ENHANCEMENT',  // CSV機能改良 - ファイル保存/読み込み対応
-  'collection_binder.html': '4.1.0-COLLECTION-BINDER',  // 新機能 - 視覚的コレクションバインダー
+  'collection_binder.html': '4.1.0-COLLECTION-BINDER',  // 視覚的コレクションバインダー
+  'binder_collection.html': '4.1.0-BINDER-COLLECTION',  // 複数バインダー管理システム
   'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🚀 メジャーアップデート v4.0.0',
-  description: '全ページのバージョンを統一し、より確実なキャッシュ管理システムを導入しました',
+  title: '🚀 メジャーアップデート v4.2.0',
+  description: 'バインダーコレクション管理システムを追加し、複数のバインダーを効率的に管理できるようになりました',
   changes: [
-    '🎯 全ページバージョンを v4.0.0 に統一',
-    '� 強化されたキャッシュクリア機能',
-    '💪 より確実な更新検出システム',
-    '⚡ 改善されたUI表示とユーザビリティ',
-    '🔄 統一されたバージョン管理システム'
+    '📚 複数バインダー管理システム追加',
+    '🖼️ バインダーごとのカスタム表紙画像設定',
+    '� バインダー名前・説明のカスタマイズ',
+    '📱 モバイル最適化されたバインダー管理UI',
+    '� バインダーごとの独立したデータ保存システム'
   ]
 };
 
@@ -30,6 +31,7 @@ const urlsToCache = [
   './index.html',
   './card_list.html',
   './collection_binder.html',
+  './binder_collection.html',
   './holoca_skill_page.html',
   './deck_builder.html',
   './json_file/card_data.json',
