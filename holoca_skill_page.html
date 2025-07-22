@@ -920,7 +920,7 @@
           // Check for waiting service worker (already installed update)
           if (registration.waiting) {
             console.log('SW update available - forcing update');
-            if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
+            if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
               registration.waiting.postMessage({type: 'SKIP_WAITING'});
               window.location.reload(true); // Force reload
             }
@@ -934,7 +934,7 @@
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New content available - show notification
                   console.log('New SW installed, showing mobile update notification');
-                  if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
+                  if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
                     newWorker.postMessage({type: 'SKIP_WAITING'});
                     window.location.reload(true); // Force reload
                   }

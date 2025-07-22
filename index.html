@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.4-MOBILE-UPDATE-FIX - Enhanced mobile browser update mechanism -->
+<!-- Version: 3.5-VERSION-MISMATCH-FIX - Auto-fix version mismatches and errors -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -211,7 +211,7 @@
 <body>
   <div class="container">
     <h1>ホロライブカードゲーム<br>管理ツール
-      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;">[v3.4-MOBILE-UPDATE-FIX]</span>
+      <span style="font-size: 0.4em; color: #999; display: block; margin-top: 5px; font-weight: normal;">[v3.5-VERSION-MISMATCH-FIX]</span>
     </h1>
 
     <div class="menu-grid">
@@ -290,7 +290,7 @@
             // Check for waiting service worker
             if (registration.waiting) {
               console.log('SW update available');
-              if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
+              if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
                 registration.waiting.postMessage({type: 'SKIP_WAITING'});
               }
             }
@@ -301,7 +301,7 @@
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
+                    if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
                       newWorker.postMessage({type: 'SKIP_WAITING'});
                     }
                   }
@@ -392,7 +392,7 @@
         // 各ページのバージョンを確認
         const pageVersions = {};
         const pages = [
-          { name: 'index.html', expected: '3.4-MOBILE-UPDATE-FIX' },
+          { name: 'index.html', expected: '3.5-VERSION-MISMATCH-FIX' },
           { name: 'card_list.html', expected: '3.1-RELEASE-DATE-SORTING' },
           { name: 'holoca_skill_page.html', expected: '3.1-RELEASE-DATE-SORTING' },
           { name: 'deck_builder.html', expected: '3.2-RELEASE-DATE-SORTING' }
@@ -482,7 +482,7 @@
             statusEl.innerHTML = '✅ 新しいバージョンが見つかりました！<br><small>' + versionCheckResults.join('<br>') + '</small>';
             statusEl.style.color = '#4caf50';
             
-            if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。全ページを更新してアプリケーションを再読み込みしますか？')) {
+            if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。全ページを更新してアプリケーションを再読み込みしますか？')) {
               // Clear all caches and reload
               caches.keys().then(cacheNames => {
                 Promise.all(
