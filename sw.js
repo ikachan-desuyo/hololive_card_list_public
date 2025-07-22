@@ -1,20 +1,21 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '3.16.0';
-const VERSION_DESCRIPTION = 'エールフィルター機能修正';
+const APP_VERSION = '3.17.0';
+const VERSION_DESCRIPTION = 'バージョンチェック機能修正';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '3.7.0',
-  'card_list.html': '3.3.0', 
-  'holoca_skill_page.html': '3.3.0',
-  'deck_builder.html': '3.5.0'
+  'index.html': '3.8.0',
+  'card_list.html': '3.4.0', 
+  'holoca_skill_page.html': '3.4.0',
+  'deck_builder.html': '3.6.0'
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
   title: '🚀 新しいバージョンが利用可能です',
-  description: 'デッキ作成ページのエールフィルター機能が修正されました',
+  description: 'バージョンチェック機能とエールフィルターが修正されました',
   changes: [
+    '✅ バージョンチェック機能の精度向上',
     '✅ エールカードのフィルタリング精度向上',
     '✅ 複合カードタイプの正確な判定',
     '✅ モバイル版でのフィルター動作改善'
@@ -97,8 +98,13 @@ async function checkPageVersions() {
         continue;
       }
       
-      // レスポンスヘッダーからバージョンを取得（将来的な拡張用）
-      const cachedVersion = cachedResponse.headers.get('X-App-Version');
+      // HTMLファイルの内容からバージョンを抽出
+      const htmlText = await cachedResponse.text();
+      const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+      const cachedVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+      
+      console.log(`Page ${page}: current=${currentVersion}, cached=${cachedVersion}`);
+      
       if (compareVersions(currentVersion, cachedVersion)) {
         outdatedPages.push({page, reason: 'version_mismatch', currentVersion, cachedVersion});
       }
@@ -150,7 +156,9 @@ self.addEventListener('message', async (event) => {
       
     case 'CHECK_OUTDATED_PAGES':
       // 古いページをチェック
+      console.log('Checking outdated pages...');
       const outdatedPages = await checkPageVersions();
+      console.log('Outdated pages result:', outdatedPages);
       event.ports[0]?.postMessage({
         type: 'OUTDATED_PAGES_RESPONSE',
         data: outdatedPages
