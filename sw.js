@@ -99,8 +99,16 @@ async function checkPageVersions() {
       }
       
       const htmlText = await response.text();
-      const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
-      const actualVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+      // より柔軟なバージョン検出：ヘッダーコメントと表示バージョンの両方をチェック
+      const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
+      const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
+      
+      let actualVersion = null;
+      if (versionMatch) {
+        actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+      } else if (displayVersionMatch) {
+        actualVersion = displayVersionMatch[1];
+      }
       
       console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}`);
       
@@ -111,8 +119,14 @@ async function checkPageVersions() {
       
       if (cachedResponse) {
         const cachedText = await cachedResponse.text();
-        const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
-        cachedVersion = cachedVersionMatch ? cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+        const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
+        const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
+        
+        if (cachedVersionMatch) {
+          cachedVersion = cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+        } else if (cachedDisplayVersionMatch) {
+          cachedVersion = cachedDisplayVersionMatch[1];
+        }
       }
       
       console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
@@ -243,9 +257,14 @@ self.addEventListener('message', async (event) => {
             
             if (response.ok) {
               const htmlText = await response.text();
-              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+              // より柔軟なバージョン検出
+              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
+              const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
+              
               if (versionMatch) {
                 actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+              } else if (displayVersionMatch) {
+                actualVersion = displayVersionMatch[1];
               }
             }
             
@@ -310,8 +329,16 @@ self.addEventListener('message', async (event) => {
           };
         } else {
           const htmlText = await response.text();
-          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
-          const actualVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+          // より柔軟なバージョン検出
+          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
+          const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
+          
+          let actualVersion = null;
+          if (versionMatch) {
+            actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+          } else if (displayVersionMatch) {
+            actualVersion = displayVersionMatch[1];
+          }
           
           // キャッシュされたバージョンもチェック
           const cache = await caches.open(CACHE_NAME);
@@ -320,8 +347,14 @@ self.addEventListener('message', async (event) => {
           
           if (cachedResponse) {
             const cachedText = await cachedResponse.text();
-            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
-            cachedVersion = cachedVersionMatch ? cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
+            const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
+            
+            if (cachedVersionMatch) {
+              cachedVersion = cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+            } else if (cachedDisplayVersionMatch) {
+              cachedVersion = cachedDisplayVersionMatch[1];
+            }
           }
           
           console.log(`Single page ${targetPage}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
