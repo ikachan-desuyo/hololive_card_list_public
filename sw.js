@@ -1,35 +1,38 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.3.1';
-const VERSION_DESCRIPTION = 'バインダーコレクション管理システム - ドラッグ&ドロップ機能完全実装';
+const APP_VERSION = '4.3.6';
+const VERSION_DESCRIPTION = 'スキル情報モーダル表示とクロスページドラッグ機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
   'card_list.html': '4.1.1-CSV-ENHANCEMENT-UPDATE',  // CSV機能改良 - 追加修正と改善
-  'collection_binder.html': '4.3.1-DRAG-DROP-COMPLETE',  // ドラッグ&ドロップ機能完全実装
-  'binder_collection.html': '4.1.1-BINDER-COLLECTION-UPDATE',  // 複数バインダー管理システム - UI改善と追加修正
+  'collection_binder.html': '4.3.6-SKILL-MODAL-ENHANCED',  // スキル情報モーダル表示とクロスページドラッグ機能追加
+  'binder_collection.html': '4.1.3-MOBILE-IMPROVEMENTS',  // 複数バインダー管理システム - UI改善と追加修正
   'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🚀 メジャーアップデート v4.3.1',
-  description: 'バインダーコレクション管理システムに完全なドラッグ&ドロップ機能を実装しました',
+  title: '🚀 メジャーアップデート v4.3.6',
+  description: 'スキル情報モーダル表示とクロスページドラッグ機能を追加しました',
   changes: [
-    '🖱️ 完全なドラッグ&ドロップ機能実装（カード移動・入れ替え対応）',
-    '✨ ドラッグ時の視覚エフェクト追加（回転・拡大縮小・光るエフェクト）',
-    '🎯 自動配置で二次ソート機能追加（カード番号順・発売日順・名前順・収録商品順）',
-    '✨ Sレアリティカードに光エフェクト追加',
-    '📦 空スロット保持機能（持っていないカードは空スロットで配置）',
+    '🎯 カード詳細モーダルにスキル情報表示機能追加',
+    '🔀 デスクトップ版クロスページドラッグ&ドロップ機能追加',
+    '🖼️ スキル情報表示でアイコン画像とスタイル改善',
+    '📱 モバイル版UI大幅改善（タイトル横ボタン配置・歯車位置調整）',
+    '🔍 閲覧モードでカード画像タップ拡大表示機能追加',
+    '🎯 自動配置でエールカード最後尾配置対応',
+    '✨ R以上のレアリティカードに光エフェクト追加',
+    '📦 カード選択時の収録商品フィルター追加',
+    '📐 モバイル版4×3レイアウト正常表示対応',
+    '⚙️ 自動配置オプションのデフォルト昇順変更',
+    '🛠️ ドラッグ&ドロップ機能（v4.3.1から継続）',
     '🎨 ダークモード対応強化',
-    '📚 複数バインダー管理システム（v4.2.0から継続）',
-    '🖼️ バインダーごとのカスタム表紙画像設定',
-    '📝 バインダー名前・説明のカスタマイズ',
-    '📱 モバイル最適化されたバインダー管理UI',
-    '💾 バインダーごとの独立したデータ保存システム'
+    '📚 複数バインダー管理システム'
   ]
 };
+
 
 const CACHE_NAME = `hololive-card-tool-v${APP_VERSION}-${VERSION_DESCRIPTION.replace(/\s+/g, '-')}`;
 const urlsToCache = [
