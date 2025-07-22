@@ -255,11 +255,19 @@
     }
   
     img {
-      width: 60px;
-      border-radius: 4px;
+      width: 100px;
+      height: auto;
+      border-radius: 6px;
       cursor: zoom-in;
       background-color: #fff;
       border: 1px solid #ddd;
+    }
+
+    .skill-icon {
+      border: none !important;
+      background: transparent !important;
+      cursor: default !important;
+      border-radius: 0 !important;
     }
 
     img:focus {
@@ -712,7 +720,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.7.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.9.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       
@@ -843,38 +851,38 @@
       position:fixed;
       top:0; left:0;
       width:100vw; height:100vh;
-      background:rgba(0,0,0,0.85);
+      background:rgba(0,0,0,1);
       z-index:1000;
       cursor:zoom-out;
       overflow-y:auto;">
       
       <!-- デスクトップ用レイアウト -->
-      <div class="modal-desktop" style="display:flex; height:100vh; align-items:center; justify-content:center;">
-        <div style="display:flex; max-width:95vw; max-height:90vh; background:rgba(40,40,40,0.95); border-radius:10px; overflow:hidden;">
-          <!-- 画像エリア -->
-          <div style="flex:1; display:flex; align-items:center; justify-content:center; min-width:60%; background:#000;">
-            <img id="modalImage" src="" alt="カード画像拡大表示" style="max-width:100%; max-height:100%; object-fit:contain;" onclick="event.stopPropagation();">
+      <div class="modal-desktop" style="display:flex; height:100vh; align-items:center; justify-content:center; padding:5px;">
+        <div style="display:flex; width:98vw; height:96vh; background:rgba(40,40,40,0.98); border-radius:8px; overflow:hidden;">
+          <!-- 画像エリア（さらに大きく） -->
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; min-width:75%; background:black;">
+            <img id="modalImage" src="" alt="カード画像拡大表示" style="width:100%; height:100%; object-fit:contain; min-height:90vh; background:black;" onclick="event.stopPropagation();">
           </div>
           <!-- 情報エリア -->
-          <div id="cardInfoPanel" style="width:320px; padding:20px; color:white; overflow-y:auto; background:rgba(0,0,0,0.8);" onclick="event.stopPropagation();">
+          <div id="cardInfoPanel" style="width:320px; padding:15px; color:white; overflow-y:auto; background:rgba(0,0,0,0.9); max-height:96vh;" onclick="event.stopPropagation();">
             <div id="cardInfoContent"></div>
           </div>
         </div>
       </div>
 
       <!-- モバイル用レイアウト -->
-      <div class="modal-mobile" style="display:none; flex-direction:column; height:100vh;">
-        <!-- 画像エリア（上部） -->
-        <div style="flex:1; display:flex; align-items:center; justify-content:center; background:#000; min-height:60%;">
-          <img id="modalImageMobile" src="" alt="カード画像拡大表示" style="max-width:100%; max-height:100%; object-fit:contain;" onclick="event.stopPropagation();">
+      <div class="modal-mobile" style="display:none; flex-direction:column; height:100vh; padding:5px;">
+        <!-- 画像エリア（上部・さらに大きく） -->
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; background:black; min-height:75%; border-radius:8px 8px 0 0;">
+          <img id="modalImageMobile" src="" alt="カード画像拡大表示" style="width:100%; height:100%; object-fit:contain; min-height:70vh; background:black;" onclick="event.stopPropagation();">
         </div>
         <!-- 情報エリア（下部） -->
-        <div id="cardInfoPanelMobile" style="background:rgba(0,0,0,0.9); color:white; padding:15px; max-height:40%; overflow-y:auto;" onclick="event.stopPropagation();">
+        <div id="cardInfoPanelMobile" style="background:rgba(0,0,0,0.95); color:white; padding:12px; max-height:25%; overflow-y:auto; border-top:1px solid #666; border-radius:0 0 8px 8px;" onclick="event.stopPropagation();">
           <div id="cardInfoContentMobile"></div>
         </div>
       </div>
 
-      <div style="position:absolute; top:10px; right:20px; color:white; font-size:18px; cursor:pointer; z-index:1001;" onclick="hideImageModal()" aria-label="閉じる">✕</div>
+      <div style="position:absolute; top:10px; right:20px; color:white; font-size:20px; cursor:pointer; z-index:1001; background:rgba(0,0,0,0.7); border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center;" onclick="hideImageModal()" aria-label="閉じる">✕</div>
     </div>
     <script>
       let cards = [];
@@ -887,6 +895,73 @@
         owned: "所持あり",
         unowned: "所持なし"
       };
+
+      // スキル表示用のアイコンマップ
+      const iconImageMap = {
+        red: "images/TCG-ColorArtIcon-Red.png",
+        blue: "images/TCG-ColorArtIcon-Blue.png",
+        yellow: "images/TCG-ColorArtIcon-Yellow.png",
+        green: "images/TCG-ColorArtIcon-Green.png",
+        purple: "images/TCG-ColorArtIcon-Purple.png",
+        white: "images/TCG-ColorArtIcon-White.png",
+        any: "images/TCG-ColorArtIcon-Colorless.png"
+      };
+
+      const tokkouImageMap = {
+        '赤+50': "images/tokkou_50_red.png",
+        '青+50': "images/tokkou_50_blue.png",
+        '黄+50': "images/tokkou_50_yellow.png",
+        '緑+50': "images/tokkou_50_green.png",
+        '紫+50': "images/tokkou_50_purple.png",
+        '白+50': "images/tokkou_50_white.png"
+      };
+
+      // スキル情報をレンダリングする関数
+      function renderSkills(skills) {
+        if (!skills || skills.length === 0) return "スキルなし";
+        
+        return skills.map(skill => {
+          // メインアイコン
+          const iconHTML = (skill.icons?.main ?? [])
+            .map(icon => {
+              const src = iconImageMap[icon.toLowerCase()];
+              return src
+                ? `<img src="${src}" alt="${icon}" class="skill-icon" style="height:16px; max-width:20px; object-fit:contain; background:transparent; vertical-align:middle;" />`
+                : icon;
+            })
+            .join(" ");
+
+          // 特攻アイコン（any は除外）
+          const tokkouHTML = (skill.icons?.tokkou ?? [])
+            .filter(t => tokkouImageMap[t.toLowerCase()])
+            .map(tokkou => {
+              const src = tokkouImageMap[tokkou.toLowerCase()];
+              return `<img src="${src}" alt="特攻:${tokkou}" class="skill-icon" style="height:40px; max-width:44px; object-fit:contain; background:transparent; vertical-align:middle;" />`;
+            })
+            .join(" ");
+
+          const iconsBlock = (iconHTML || tokkouHTML)
+            ? `<br><div style="margin:5px 0;">${iconHTML}${tokkouHTML ? " ｜ " + tokkouHTML : ""}</div>`
+            : "";
+
+          // 表示タイプ別に処理
+          if (skill.text) {
+            return `<div style="margin-bottom:12px;"><strong>【${skill.type}】</strong>${iconsBlock}<br><span style="font-size:13px;">${skill.text}</span></div>`;
+          } else if (skill.type === "キーワード") {
+            const subtype = skill.subtype ? `<strong>【${skill.subtype}】</strong>` : "";
+            const name = skill.name ?? "";
+            const desc = skill.description ?? "";
+            return `<div style="margin-bottom:12px;">${subtype}${iconsBlock}<br><strong style="font-size:14px;">${name}</strong><br><span style="font-size:13px;">${desc}</span></div>`;
+          } else {
+            const typePart = `<strong>【${skill.type}】</strong>`;
+            const namePart = skill.name ? `[${skill.name}]` : "";
+            const dmg = skill.dmg ? `（${skill.dmg}）` : "";
+            const subtype = skill.subtype ? `<br><em>${skill.subtype}</em>` : "";
+            const desc = skill.description ?? "";
+            return `<div style="margin-bottom:12px;">${typePart}<strong>${namePart}${dmg}</strong>${subtype}${iconsBlock}<br><span style="font-size:13px;">${desc}</span></div>`;
+          }
+        }).join("");
+      }
     
       function populateChipGroup(id, items, withAllButton = false, selectAllByDefault = true) {
         const container = document.getElementById(id);
@@ -1130,35 +1205,55 @@
           const productText = cardData.product.includes(",") ? 
             cardData.product.replace(/,\s*/g, " / ") : cardData.product;
           
+          // スキル情報を取得
+          const skillsHtml = cardData.skills && cardData.skills.length > 0 ? 
+            renderSkills(cardData.skills) : "<div style='font-size:13px; color:#aaa;'>スキルなし</div>";
+          
           infoContent.innerHTML = `
-            <h3 style="margin-top:0; color:#4db6e6;">${cardData.name}</h3>
-            <div style="margin-bottom:15px;">
-              <div style="margin:8px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
-              <div style="margin:8px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.card_type}</div>
-              <div style="margin:8px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
-              <div style="margin:8px 0;"><strong>🎨 色:</strong> ${cardData.color}</div>
-              <div style="margin:8px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
-              ${cardData.hp ? `<div style="margin:8px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
-              <div style="margin:8px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
-              <div style="margin:8px 0;"><strong>🃏 所持枚数:</strong> ${cardData.owned || 0}枚</div>
+            <h3 style="margin-top:0; color:#4db6e6; font-size:18px;">${cardData.name}</h3>
+            
+            <div style="margin-bottom:18px; font-size:14px;">
+              <div style="margin:6px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
+              <div style="margin:6px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.card_type}</div>
+              <div style="margin:6px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
+              <div style="margin:6px 0;"><strong>🎨 色:</strong> ${cardData.color}</div>
+              <div style="margin:6px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
+              ${cardData.hp ? `<div style="margin:6px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
+              <div style="margin:6px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
+              <div style="margin:6px 0;"><strong>🃏 所持枚数:</strong> ${cardData.owned || 0}枚</div>
             </div>
+            
             ${cardData.tags && cardData.tags.length > 0 ? 
               `<div style="margin:15px 0;">
-                <strong>🏷️ タグ:</strong><br>
-                <div style="margin-top:5px;">
+                <strong style="font-size:15px;">🏷️ タグ:</strong><br>
+                <div style="margin-top:8px;">
                   ${cardData.tags.map(tag => 
-                    `<span style="background:#007acc; color:white; padding:2px 8px; border-radius:12px; margin:2px 4px 2px 0; display:inline-block; font-size:12px;">${tag}</span>`
+                    `<span style="background:#007acc; color:white; padding:3px 8px; border-radius:12px; margin:3px 4px 3px 0; display:inline-block; font-size:12px;">${tag}</span>`
                   ).join('')}
                 </div>
               </div>` : ''
             }
-            <div style="margin:15px 0;">
+            
+            <div style="margin:15px 0; border-top:1px solid #555; padding-top:15px;">
+              <strong style="font-size:15px; color:#4db6e6;">⚡ スキル:</strong><br>
+              <div style="margin-top:10px;">
+                ${skillsHtml}
+              </div>
+            </div>
+            
+            <div style="margin:20px 0; text-align:center;">
               <a href="https://hololive-official-cardgame.com/cardlist/?id=${cardData.id}" target="_blank" 
-                 style="color:#4db6e6; text-decoration:none; font-size:14px;">
+                 style="color:#4db6e6; text-decoration:none; font-size:14px; padding:8px 16px; border:1px solid #4db6e6; border-radius:20px; display:inline-block;">
                 🔗 公式サイトで詳細を見る ↗
               </a>
             </div>
           `;
+          
+          // 情報パネルを表示
+          const infoPanel = isMobile ? 
+            document.getElementById("cardInfoPanelMobile") : 
+            document.getElementById("cardInfoPanel");
+          if (infoPanel) infoPanel.style.display = "block";
         } else {
           // 情報がない場合は情報パネルを非表示
           const infoPanel = isMobile ? 
@@ -1611,7 +1706,7 @@
       console.warn('Version display error:', error);
       const versionEl = document.getElementById('versionDisplay');
       if (versionEl) {
-        versionEl.textContent = '[v3.7.0-CENTRALIZED]';
+        versionEl.textContent = '[v3.9.0-CENTRALIZED]';
       }
     }
 
@@ -1665,7 +1760,8 @@
         url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
         owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
         card_type: card.card_type ?? "-",
-        tags: card.tags ?? []
+        tags: card.tags ?? [],
+        skills: card.skills ?? [] // スキル情報を追加
       }));
 
       setupFilters();
@@ -1699,7 +1795,8 @@
           url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
           owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
           card_type: card.card_type ?? "-",
-          tags: card.tags ?? []
+          tags: card.tags ?? [],
+          skills: card.skills ?? [] // スキル情報を追加
         }));
 
         setupFilters();
@@ -1792,7 +1889,8 @@
     if (!statusEl) return;
     
     try {
-      statusEl.textContent = 'バージョン情報を確認中...';
+      statusEl.textContent = '[確認中...]';
+      statusEl.style.color = '#007acc';
       
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         const messageChannel = new MessageChannel();
@@ -1825,14 +1923,14 @@
         if (versionCheckResult.hasUpdates && versionCheckResult.pageInfo) {
           const pageInfo = versionCheckResult.pageInfo;
           
+          statusEl.innerHTML = `🚀 更新利用可能`;
+          statusEl.style.color = '#ff6b35';
+          
           // 現在のページのみの詳細情報を生成
-          let detailMessage = `🚀 ${pageInfo.page} のバージョン不一致が検出されました:\n\n`;
-          detailMessage += `📊 アプリバージョン: v${versionCheckResult.currentAppVersion}\n`;
-          detailMessage += `🕐 チェック時刻: ${new Date(versionCheckResult.timestamp).toLocaleString('ja-JP')}\n\n`;
-          detailMessage += `📄 ${pageInfo.page}:\n`;
-          detailMessage += `  ┣ 期待バージョン: v${pageInfo.expectedVersion}\n`;
-          detailMessage += `  ┣ 実際のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
-          detailMessage += `  ┣ キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n`;
+          let detailMessage = `� ${pageInfo.page} のバージョン不一致が検出されました:\n\n`;
+          detailMessage += `📊 期待バージョン: v${pageInfo.expectedVersion}\n`;
+          detailMessage += `📊 現在のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
+          detailMessage += `📊 キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n\n`;
           
           // ミスマッチの理由を日本語で説明
           let reasonText = '';
@@ -1852,10 +1950,7 @@
             default:
               reasonText = pageInfo.reason;
           }
-          detailMessage += `  ┗ 理由: ${reasonText}\n\n`;
-          
-          statusEl.innerHTML = `🚀 このページの更新が利用可能です`;
-          console.log('Single page version check details:', versionCheckResult);
+          detailMessage += `理由: ${reasonText}\n\n`;
           
           setTimeout(() => {
             if (confirm(detailMessage + 'このページを更新してアプリケーションを再読み込みしますか？')) {
@@ -1900,23 +1995,25 @@
             }
           }, 2000);
         } else {
-          statusEl.textContent = '✅ このページのバージョンは最新です';
-          console.log('Single page version check result: Page is up to date', versionCheckResult);
+          statusEl.innerHTML = `✅ 最新 v${versionCheckResult.expectedVersion}`;
+          statusEl.style.color = '#4caf50';
           setTimeout(() => {
             displayVersionInfo();
-          }, 2000);
+          }, 3000);
         }
         
       } else {
-        statusEl.textContent = '[v3.7.0-SW-UNAVAILABLE]';
+        statusEl.textContent = '[v3.9.0-SW-UNAVAILABLE]';
+        statusEl.style.color = '#f44336';
       }
       
     } catch (error) {
       console.error('Update check failed:', error);
-      statusEl.textContent = '[v3.7.0-ERROR: ' + error.message + ']';
+      statusEl.textContent = '[v3.9.0-ERROR: ' + error.message + ']';
+      statusEl.style.color = '#f44336';
       setTimeout(() => {
         displayVersionInfo();
-      }, 3000);
+      }, 5000);
     }
   }
 
@@ -1940,11 +2037,11 @@
           [messageChannel.port2]
         );
       } else {
-        statusEl.textContent = '[v3.7.0-CENTRALIZED]';
+        statusEl.textContent = '[v3.9.0-CENTRALIZED]';
       }
     } catch (error) {
       console.warn('Version display error:', error);
-      statusEl.textContent = '[v3.7.0-CENTRALIZED]';
+      statusEl.textContent = '[v3.9.0-CENTRALIZED]';
     }
   }
 </script>

@@ -1,13 +1,13 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '3.20.0';
+const APP_VERSION = '4.0.0';
 const VERSION_DESCRIPTION = '強力なキャッシュクリア機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '3.10.0',  // 対象ページのみ更新 - バージョン不一致検出ページのみキャッシュクリア
-  'card_list.html': '3.8.0',  // 画像モーダル機能強化 - カード詳細情報表示機能追加
-  'holoca_skill_page.html': '3.7.0',  // ソート機能改善 - 商品フィルター適用時の一貫性向上
-  'deck_builder.html': '3.9.0'  // ソート機能改善 - 商品フィルター適用時の一貫性向上
+  'index.html': '3.11.0',  // バージョン表示統一とUI改善
+  'card_list.html': '3.9.0',  // モーダル画像大型化とスキル画像枠削除 - 画像表示最適化
+  'holoca_skill_page.html': '3.8.0',  // バージョン表示統一とUI改善
+  'deck_builder.html': '3.10.0'  // バージョン表示統一とフィルター機能改善
 };
 
 // ✅ 更新内容の詳細情報
@@ -232,9 +232,41 @@ self.addEventListener('message', async (event) => {
       console.log('Performing detailed version mismatch check...');
       try {
         const versionCheckResult = await checkPageVersions();
+        
+        // 全ページ情報を収集
+        const allPages = [];
+        for (const [page, expectedVersion] of Object.entries(PAGE_VERSIONS)) {
+          try {
+            const response = await fetch(`./${page}`, { cache: 'no-cache' });
+            let actualVersion = expectedVersion; // デフォルトは期待バージョン
+            
+            if (response.ok) {
+              const htmlText = await response.text();
+              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+              if (versionMatch) {
+                actualVersion = versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '');
+              }
+            }
+            
+            allPages.push({
+              page,
+              expectedVersion,
+              actualVersion
+            });
+          } catch (error) {
+            console.error(`Error checking ${page}:`, error);
+            allPages.push({
+              page,
+              expectedVersion,
+              actualVersion: 'error'
+            });
+          }
+        }
+        
         const detailedInfo = {
           hasUpdates: versionCheckResult.length > 0,
           outdatedPages: versionCheckResult,
+          allPages: allPages, // 全ページ情報を追加
           currentAppVersion: APP_VERSION,
           pageVersions: PAGE_VERSIONS,
           timestamp: new Date().toISOString()

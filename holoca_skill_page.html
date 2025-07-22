@@ -401,7 +401,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
                 <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.4.0-loading...]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.8.0-loading...]</span>
           <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
@@ -1059,7 +1059,8 @@ async function checkForUpdates() {
   if (!statusEl) return;
   
   try {
-    statusEl.textContent = 'バージョン情報を確認中...';
+    statusEl.textContent = '[確認中...]';
+    statusEl.style.color = '#007acc';
     
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const messageChannel = new MessageChannel();
@@ -1092,14 +1093,14 @@ async function checkForUpdates() {
       if (versionCheckResult.hasUpdates && versionCheckResult.pageInfo) {
         const pageInfo = versionCheckResult.pageInfo;
         
+        statusEl.innerHTML = `🚀 更新利用可能`;
+        statusEl.style.color = '#ff6b35';
+        
         // 現在のページのみの詳細情報を生成
         let detailMessage = `🚀 ${pageInfo.page} のバージョン不一致が検出されました:\n\n`;
-        detailMessage += `📊 アプリバージョン: v${versionCheckResult.currentAppVersion}\n`;
-        detailMessage += `🕐 チェック時刻: ${new Date(versionCheckResult.timestamp).toLocaleString('ja-JP')}\n\n`;
-        detailMessage += `📄 ${pageInfo.page}:\n`;
-        detailMessage += `  ┣ 期待バージョン: v${pageInfo.expectedVersion}\n`;
-        detailMessage += `  ┣ 実際のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
-        detailMessage += `  ┣ キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n`;
+        detailMessage += `📊 期待バージョン: v${pageInfo.expectedVersion}\n`;
+        detailMessage += `📊 現在のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
+        detailMessage += `📊 キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n\n`;
         
         // ミスマッチの理由を日本語で説明
         let reasonText = '';
@@ -1119,10 +1120,7 @@ async function checkForUpdates() {
           default:
             reasonText = pageInfo.reason;
         }
-        detailMessage += `  ┗ 理由: ${reasonText}\n\n`;
-        
-        statusEl.innerHTML = `🚀 このページの更新が利用可能です`;
-        console.log('Single page version check details:', versionCheckResult);
+        detailMessage += `理由: ${reasonText}\n\n`;
         
         setTimeout(() => {
           if (confirm(detailMessage + 'このページを更新してアプリケーションを再読み込みしますか？')) {
@@ -1167,23 +1165,25 @@ async function checkForUpdates() {
           }
         }, 2000);
       } else {
-        statusEl.textContent = '✅ このページのバージョンは最新です';
-        console.log('Single page version check result: Page is up to date', versionCheckResult);
+        statusEl.innerHTML = `✅ 最新 v${versionCheckResult.expectedVersion}`;
+        statusEl.style.color = '#4caf50';
         setTimeout(() => {
           displayVersionInfo();
-        }, 2000);
+        }, 3000);
       }
       
     } else {
-      statusEl.textContent = '[v3.5.0-SW-UNAVAILABLE]';
+      statusEl.textContent = '[v3.8.0-SW-UNAVAILABLE]';
+      statusEl.style.color = '#f44336';
     }
     
   } catch (error) {
     console.error('Update check failed:', error);
-    statusEl.textContent = '[v3.5.0-ERROR: ' + error.message + ']';
+    statusEl.textContent = '[v3.8.0-ERROR: ' + error.message + ']';
+    statusEl.style.color = '#f44336';
     setTimeout(() => {
       displayVersionInfo();
-    }, 3000);
+    }, 5000);
   }
 }
 
@@ -1199,7 +1199,7 @@ async function displayVersionInfo() {
     }
   } catch (error) {
     console.warn('Version display error:', error);
-    statusEl.textContent = '[v3.4.0-CENTRALIZED]';
+    statusEl.textContent = '[v3.8.0-CENTRALIZED]';
   }
 }
 

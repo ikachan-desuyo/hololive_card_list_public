@@ -415,7 +415,7 @@
         <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
       </div>
       <h2 class="deck-title">デッキ作成
-        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v3.6.0-loading...]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v3.10.0-loading...]</span>
         <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
       </h2>
       <button onclick="toggleDarkMode()">🌗</button>
@@ -859,6 +859,13 @@
           function populateChipGroup(id, items, withAll = true) {
             const container = document.getElementById(id);
             container.innerHTML = "";
+            
+            // 所持状態フィルターのラベルマップ
+            const ownedLabelMap = {
+              owned: "所持あり",
+              unowned: "所持なし"
+            };
+            
             if (withAll) {
               const allBtn = document.createElement("button");
               allBtn.textContent = "すべて";
@@ -869,7 +876,9 @@
             }
             [...items].sort().forEach(val => {
               const btn = document.createElement("button");
-              btn.textContent = val;
+              // 所持状態フィルターの場合は日本語ラベルを使用
+              const label = id === "ownedStateChipGroup" ? ownedLabelMap[val] ?? val : val;
+              btn.textContent = label;
               btn.className = "chip";
               btn.dataset.value = val;
               btn.onclick = () => toggleChip(btn);
@@ -892,7 +901,7 @@
           populateChipGroup("colorFilter", colorSet);
           populateChipGroup("bloomFilter", bloomSet);
           populateChipGroup("cardTypeChipGroup", typePartsSet); // ✅ カードタイプの分割チップ表示
-          populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false);
+          populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], true); // 「すべて」チップを追加
           populateSelect("productFilter", productSet, "収録商品");
           populateSelect("tagFilterSelect", tagSet, "タグ（選択）"); // ✅ タグはセレクト形式
         }
@@ -1031,7 +1040,7 @@
               rarity: rarity.length === 0 || rarity.includes(card.rarity),
               color: color.length === 0 || color.includes(card.color),
               bloom: bloom.length === 0 || bloom.includes(card.bloom),
-              product: !product || card.product === product,
+              product: !product || card.product.toLowerCase().includes(product.toLowerCase()),
               tag: !selectedTag || (card.tags && card.tags.includes(selectedTag)),
               cardType:
                 cardTypeFilters.length === 0 ||
@@ -1399,7 +1408,8 @@ async function checkForUpdates() {
   if (!statusEl) return;
   
   try {
-    statusEl.textContent = 'バージョン情報を確認中...';
+    statusEl.textContent = '[確認中...]';
+    statusEl.style.color = '#007acc';
     
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const messageChannel = new MessageChannel();
@@ -1429,17 +1439,17 @@ async function checkForUpdates() {
       // レスポンス待機（タイムアウト付き）
       const versionCheckResult = await Promise.race([checkPromise, timeout]);
       
-      if (versionCheckResult.hasUpdates) {
-        // バージョン不一致の詳細情報を生成
-        let detailMessage = `🚀 deck_builder.html のバージョン不一致が検出されました:\n\n`;
-        detailMessage += `📊 アプリバージョン: v${versionCheckResult.currentAppVersion}\n`;
-        detailMessage += `🕐 チェック時刻: ${new Date(versionCheckResult.timestamp).toLocaleString('ja-JP')}\n\n`;
-        
+      if (versionCheckResult.hasUpdates && versionCheckResult.pageInfo) {
         const pageInfo = versionCheckResult.pageInfo;
-        detailMessage += `📄 ${pageInfo.page}:\n`;
-        detailMessage += `  ┣ 期待バージョン: v${pageInfo.expectedVersion}\n`;
-        detailMessage += `  ┣ 実際のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
-        detailMessage += `  ┣ キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n`;
+        
+        statusEl.innerHTML = `� 更新利用可能`;
+        statusEl.style.color = '#ff6b35';
+        
+        // バージョン不一致の詳細情報を生成
+        let detailMessage = `� ${pageInfo.page} のバージョン不一致が検出されました:\n\n`;
+        detailMessage += `📊 期待バージョン: v${pageInfo.expectedVersion}\n`;
+        detailMessage += `📊 現在のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
+        detailMessage += `📊 キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n\n`;
         
         // ミスマッチの理由を日本語で説明
         let reasonText = '';
@@ -1507,23 +1517,25 @@ async function checkForUpdates() {
           }
         }, 2000);
       } else {
-        statusEl.textContent = '✅ このページのバージョンは最新です';
-        console.log('Single page version check result: Page is up to date', versionCheckResult);
+        statusEl.innerHTML = `✅ 最新 v${versionCheckResult.expectedVersion}`;
+        statusEl.style.color = '#4caf50';
         setTimeout(() => {
           displayVersionInfo();
-        }, 2000);
+        }, 3000);
       }
       
     } else {
-      statusEl.textContent = '[v3.7.0-SW-UNAVAILABLE]';
+      statusEl.textContent = '[v3.10.0-SW-UNAVAILABLE]';
+      statusEl.style.color = '#f44336';
     }
     
   } catch (error) {
     console.error('Update check failed:', error);
-    statusEl.textContent = '[v3.7.0-ERROR: ' + error.message + ']';
+    statusEl.textContent = '[v3.10.0-ERROR: ' + error.message + ']';
+    statusEl.style.color = '#f44336';
     setTimeout(() => {
       displayVersionInfo();
-    }, 3000);
+    }, 5000);
   }
 }
 
@@ -1539,7 +1551,7 @@ async function displayVersionInfo() {
     }
   } catch (error) {
     console.warn('Version display error:', error);
-    statusEl.textContent = '[v3.6.0-CENTRALIZED]';
+    statusEl.textContent = '[v3.10.0-CENTRALIZED]';
   }
 }
 
