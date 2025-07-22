@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.7.0-CENTRALIZED-VERSION - Enhanced mobile filter display and layout optimizations -->
+<!-- Version: 3.8.0-CENTRALIZED-VERSION - Enhanced image modal with detailed card information display -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -261,6 +261,21 @@
       background-color: #fff;
       border: 1px solid #ddd;
     }
+
+    img:focus {
+      outline: 2px solid #007acc;
+      outline-offset: 2px;
+    }
+
+    button:focus {
+      outline: 2px solid #007acc;
+      outline-offset: 1px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid #007acc;
+      outline-offset: 1px;
+    }
   
     /* ✅ プレビュー（簡易）表示全体レイアウト */
     #cardPreviewArea {
@@ -331,6 +346,11 @@
       font-size: 14px;
       user-select: none;
       transition: 0.2s;
+    }
+
+    .chip:focus {
+      outline: 2px solid #007acc;
+      outline-offset: 2px;
     }
 
     .chip:hover {
@@ -697,6 +717,7 @@
       </h2>
       
         <div class="top-nav">
+          <button onclick="location.href='index.html'">🏠 ホーム</button>
           <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>      <div class="top-controls">
@@ -730,8 +751,8 @@
     <!-- 固定対象：検索・ソート・フィルターのみ -->
     <div class="sticky-controls">
       <div class="top-controls-row">
-        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="renderTable()" />
-        <select id="sortMethod" onchange="renderTable()">
+        <input type="text" id="nameSearch" placeholder="カード名検索" oninput="saveFilterState(); renderTable()" />
+        <select id="sortMethod" onchange="saveFilterState(); renderTable()">
           <option value="release" selected>発売日順</option>
           <option value="id">カード番号順</option>
           <option value="name">名前順</option>
@@ -773,14 +794,14 @@
 
         <fieldset class="filter-group">
           <legend>収録商品</legend>
-          <select id="productFilter" onchange="renderTable()">
+          <select id="productFilter" onchange="saveFilterState(); renderTable()">
             <option value="">収録商品（選択）</option>
           </select>
         </fieldset>
 
         <fieldset class="filter-group">
           <legend>タグ絞り込み</legend>
-          <select id="tagsFilter" onchange="renderTable()">
+          <select id="tagsFilter" onchange="saveFilterState(); renderTable()">
             <option value="">タグ（選択）</option>
           </select>
         </fieldset>
@@ -811,28 +832,56 @@
     <!-- ✅ 簡易表示領域（スマホ最適化済） -->
     <div id="cardPreviewArea" style="display:none;"></div>
 
+    <!-- ローディングインジケーター -->
+    <div id="loadingIndicator" style="display:none; text-align:center; padding:20px; color:#666;">
+      <div style="display:inline-block;">📦 更にカードを読み込み中...</div>
+    </div>
+
     <!-- ✅ 画像ズーム表示モーダル -->
-    <div id="imageModal" onclick="hideImageModal()" style="
+    <div id="imageModal" onclick="hideImageModal()" onkeydown="if(event.key==='Escape'){hideImageModal()}" tabindex="0" role="dialog" aria-label="カード画像拡大表示" style="
       display:none;
       position:fixed;
       top:0; left:0;
       width:100vw; height:100vh;
       background:rgba(0,0,0,0.85);
-      text-align:center;
       z-index:1000;
-      cursor:zoom-out;">
-      <img src="" style="
-        margin-top:5vh;
-        width:100%;
-        height:auto;
-        max-height:100dvh;
-        object-fit:contain;">
+      cursor:zoom-out;
+      overflow-y:auto;">
+      
+      <!-- デスクトップ用レイアウト -->
+      <div class="modal-desktop" style="display:flex; height:100vh; align-items:center; justify-content:center;">
+        <div style="display:flex; max-width:95vw; max-height:90vh; background:rgba(40,40,40,0.95); border-radius:10px; overflow:hidden;">
+          <!-- 画像エリア -->
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; min-width:60%; background:#000;">
+            <img id="modalImage" src="" alt="カード画像拡大表示" style="max-width:100%; max-height:100%; object-fit:contain;" onclick="event.stopPropagation();">
+          </div>
+          <!-- 情報エリア -->
+          <div id="cardInfoPanel" style="width:320px; padding:20px; color:white; overflow-y:auto; background:rgba(0,0,0,0.8);" onclick="event.stopPropagation();">
+            <div id="cardInfoContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- モバイル用レイアウト -->
+      <div class="modal-mobile" style="display:none; flex-direction:column; height:100vh;">
+        <!-- 画像エリア（上部） -->
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; background:#000; min-height:60%;">
+          <img id="modalImageMobile" src="" alt="カード画像拡大表示" style="max-width:100%; max-height:100%; object-fit:contain;" onclick="event.stopPropagation();">
+        </div>
+        <!-- 情報エリア（下部） -->
+        <div id="cardInfoPanelMobile" style="background:rgba(0,0,0,0.9); color:white; padding:15px; max-height:40%; overflow-y:auto;" onclick="event.stopPropagation();">
+          <div id="cardInfoContentMobile"></div>
+        </div>
+      </div>
+
+      <div style="position:absolute; top:10px; right:20px; color:white; font-size:18px; cursor:pointer; z-index:1001;" onclick="hideImageModal()" aria-label="閉じる">✕</div>
     </div>
     <script>
       let cards = [];
       let releaseMap = {};
       let viewMode = "compact";
-      let renderLimit = 100;
+      let renderLimit = 50; // 初期表示数を50に削減
+      let isRendering = false; // レンダリング中フラグを追加
 
       const ownedLabelMap = {
         owned: "所持あり",
@@ -861,6 +910,18 @@
           btn.className = "chip";
           btn.dataset.value = val;
           btn.onclick = () => toggleChip(btn);
+          btn.setAttribute('tabindex', '0'); // キーボードナビゲーション対応
+          btn.setAttribute('role', 'button'); // スクリーンリーダー対応
+          btn.setAttribute('aria-label', `フィルター: ${label}`);
+          
+          // キーボードイベント追加
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleChip(btn);
+            }
+          });
+          
           container.appendChild(btn);
         });
       }
@@ -871,6 +932,7 @@
         if (allBtn) allBtn.classList.remove("selected");
 
         btn.classList.toggle("selected");
+        saveFilterState(); // フィルター状態を保存
         renderTable();
       }
 
@@ -878,19 +940,122 @@
         const group = allBtn.parentElement;
         group.querySelectorAll(".chip").forEach(btn => btn.classList.remove("selected"));
         allBtn.classList.add("selected");
+        saveFilterState(); // フィルター状態を保存
         renderTable();
       }
 
       function getCheckedFromChips(id) {
-        const allSelected = document.querySelector(`#${id} .chip.all-chip.selected`);
-        if (allSelected) return [];
-        return [...document.querySelectorAll(`#${id} .chip.selected:not(.all-chip)`)].map(btn => btn.dataset.value);
+        const group = document.getElementById(id);
+        if (!group) return [];
+        
+        const allSelected = group.querySelector(".chip.all-chip.selected");
+        if (allSelected) return []; // 「すべて」が選択されている場合は空配列を返す
+        
+        const selected = [...group.querySelectorAll(".chip.selected:not(.all-chip)")].map(btn => btn.dataset.value);
+        return selected;
       }
 
       function setViewMode(mode) {
         viewMode = mode;
         renderLimit = 100;
+        localStorage.setItem("viewMode", mode); // ビューモードを保存
         renderTable();
+      }
+    
+      // フィルター状態を保存する関数
+      function saveFilterState() {
+        const filterState = {
+          nameSearch: document.getElementById("nameSearch")?.value || "",
+          sortMethod: document.getElementById("sortMethod")?.value || "release",
+          productFilter: document.getElementById("productFilter")?.value || "",
+          tagsFilter: document.getElementById("tagsFilter")?.value || "",
+          ownedState: getCheckedFromChips("ownedStateChipGroup"),
+          rarity: getCheckedFromChips("rarityFilter"),
+          color: getCheckedFromChips("colorFilter"),
+          bloom: getCheckedFromChips("bloomFilter"),
+          cardType: getCheckedFromChips("cardTypeFilter")
+        };
+        localStorage.setItem("filterState", JSON.stringify(filterState));
+      }
+
+      // フィルター状態を復元する関数
+      function restoreFilterState() {
+        try {
+          const savedState = localStorage.getItem("filterState");
+          if (!savedState) return;
+          
+          const filterState = JSON.parse(savedState);
+          
+          // 基本フィルター復元
+          if (filterState.nameSearch) {
+            const nameSearch = document.getElementById("nameSearch");
+            if (nameSearch) nameSearch.value = filterState.nameSearch;
+          }
+          
+          if (filterState.sortMethod) {
+            const sortMethod = document.getElementById("sortMethod");
+            if (sortMethod) sortMethod.value = filterState.sortMethod;
+          }
+          
+          if (filterState.productFilter) {
+            const productFilter = document.getElementById("productFilter");
+            if (productFilter) productFilter.value = filterState.productFilter;
+          }
+          
+          if (filterState.tagsFilter) {
+            const tagsFilter = document.getElementById("tagsFilter");
+            if (tagsFilter) tagsFilter.value = filterState.tagsFilter;
+          }
+          
+          // チップ状態復元（少し遅延させて確実に復元）
+          setTimeout(() => {
+            restoreChipState("ownedStateChipGroup", filterState.ownedState);
+            restoreChipState("rarityFilter", filterState.rarity);
+            restoreChipState("colorFilter", filterState.color);
+            restoreChipState("bloomFilter", filterState.bloom);
+            restoreChipState("cardTypeFilter", filterState.cardType);
+          }, 100);
+          
+        } catch (error) {
+          console.warn("Failed to restore filter state:", error);
+        }
+      }
+
+      // チップ状態を復元するヘルパー関数
+      function restoreChipState(groupId, selectedValues) {
+        if (!selectedValues || !Array.isArray(selectedValues)) {
+          // 保存された状態がない場合は「すべて」を選択
+          const group = document.getElementById(groupId);
+          if (group) {
+            const allBtn = group.querySelector('.chip.all-chip');
+            if (allBtn) {
+              group.querySelectorAll(".chip").forEach(chip => chip.classList.remove("selected"));
+              allBtn.classList.add("selected");
+            }
+          }
+          return;
+        }
+        
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        
+        // すべてのチップを初期化
+        group.querySelectorAll(".chip").forEach(chip => chip.classList.remove("selected"));
+        
+        // 選択値が空の場合は「すべて」を選択
+        if (selectedValues.length === 0) {
+          const allBtn = group.querySelector('.chip.all-chip');
+          if (allBtn) {
+            allBtn.classList.add("selected");
+          }
+          return;
+        }
+        
+        // 保存された選択状態を復元
+        selectedValues.forEach(value => {
+          const chip = group.querySelector(`[data-value="${value}"]`);
+          if (chip) chip.classList.add("selected");
+        });
       }
     
       function toggleFilters() {
@@ -937,14 +1102,89 @@
         renderTable();
       }
     
-      function showImageModal(src) {
+      function showImageModal(src, cardData = null) {
         const modal = document.getElementById("imageModal");
-        modal.querySelector("img").src = src;
+        const isMobile = window.innerWidth <= 768;
+        
+        // レイアウトの切り替え
+        const desktopLayout = modal.querySelector(".modal-desktop");
+        const mobileLayout = modal.querySelector(".modal-mobile");
+        
+        if (isMobile) {
+          desktopLayout.style.display = "none";
+          mobileLayout.style.display = "flex";
+          document.getElementById("modalImageMobile").src = src;
+        } else {
+          desktopLayout.style.display = "flex";
+          mobileLayout.style.display = "none";
+          document.getElementById("modalImage").src = src;
+        }
+        
+        // カード情報を表示
+        if (cardData) {
+          const infoContent = isMobile ? 
+            document.getElementById("cardInfoContentMobile") : 
+            document.getElementById("cardInfoContent");
+          
+          const bloomText = cardData.card_type === "Buzzホロメン" ? "1stBuzz" : cardData.bloom;
+          const productText = cardData.product.includes(",") ? 
+            cardData.product.replace(/,\s*/g, " / ") : cardData.product;
+          
+          infoContent.innerHTML = `
+            <h3 style="margin-top:0; color:#4db6e6;">${cardData.name}</h3>
+            <div style="margin-bottom:15px;">
+              <div style="margin:8px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
+              <div style="margin:8px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.card_type}</div>
+              <div style="margin:8px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
+              <div style="margin:8px 0;"><strong>🎨 色:</strong> ${cardData.color}</div>
+              <div style="margin:8px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
+              ${cardData.hp ? `<div style="margin:8px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
+              <div style="margin:8px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
+              <div style="margin:8px 0;"><strong>🃏 所持枚数:</strong> ${cardData.owned || 0}枚</div>
+            </div>
+            ${cardData.tags && cardData.tags.length > 0 ? 
+              `<div style="margin:15px 0;">
+                <strong>🏷️ タグ:</strong><br>
+                <div style="margin-top:5px;">
+                  ${cardData.tags.map(tag => 
+                    `<span style="background:#007acc; color:white; padding:2px 8px; border-radius:12px; margin:2px 4px 2px 0; display:inline-block; font-size:12px;">${tag}</span>`
+                  ).join('')}
+                </div>
+              </div>` : ''
+            }
+            <div style="margin:15px 0;">
+              <a href="https://hololive-official-cardgame.com/cardlist/?id=${cardData.id}" target="_blank" 
+                 style="color:#4db6e6; text-decoration:none; font-size:14px;">
+                🔗 公式サイトで詳細を見る ↗
+              </a>
+            </div>
+          `;
+        } else {
+          // 情報がない場合は情報パネルを非表示
+          const infoPanel = isMobile ? 
+            document.getElementById("cardInfoPanelMobile") : 
+            document.getElementById("cardInfoPanel");
+          if (infoPanel) infoPanel.style.display = "none";
+        }
+        
         modal.style.display = "block";
+        modal.focus(); // フォーカスをモーダルに移動
+        document.body.style.overflow = "hidden"; // スクロールを無効化
       }
     
       function hideImageModal() {
-        document.getElementById("imageModal").style.display = "none";
+        const modal = document.getElementById("imageModal");
+        modal.style.display = "none";
+        document.body.style.overflow = ""; // スクロールを復元
+        
+        // 情報パネルを再表示（次回のために）
+        const infoPanels = [
+          document.getElementById("cardInfoPanel"),
+          document.getElementById("cardInfoPanelMobile")
+        ];
+        infoPanels.forEach(panel => {
+          if (panel) panel.style.display = "";
+        });
       }
       
       function setupFilters() {
@@ -969,7 +1209,14 @@
         populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
         populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
         populateChipGroup("cardTypeFilter", [...cardTypeSet].sort(), true, true);
-        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false); // ←両方選択のまま
+        populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], true, true); // すべてボタンを追加
+        
+        // 「すべて」ボタンがある場合は確実に選択状態にする
+        setTimeout(() => {
+          document.querySelectorAll('.chip.all-chip').forEach(btn => {
+            btn.classList.add('selected');
+          });
+        }, 50);
 
         const select = document.getElementById("productFilter");
         select.innerHTML = `<option value="">すべての商品</option>`;
@@ -1007,13 +1254,32 @@
         return earliestDate;
       }
 
+      // フィルターされた商品に基づく発売日取得（フィルター適用時専用）
+      function getFilteredReleaseDate(productString, filteredProduct) {
+        if (!filteredProduct) {
+          return getEarliestReleaseDate(productString);
+        }
+        
+        const products = productString.split(',').map(p => p.trim());
+        const matchingProduct = products.find(p => p.toLowerCase().includes(filteredProduct));
+        
+        if (matchingProduct && releaseMap[matchingProduct]) {
+          return releaseMap[matchingProduct];
+        }
+        
+        return getEarliestReleaseDate(productString);
+      }
+
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
+        const productFilter = document.getElementById("productFilter")?.value.toLowerCase() || "";
+        
         let sorted = [...cards];
         if (method === "release") {
           sorted.sort((a, b) => {
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // フィルター商品が設定されている場合は、その商品の発売日を優先
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             
             // 1. 発売日順
             if (ra !== rb) return ra.localeCompare(rb);
@@ -1026,24 +1292,24 @@
               return aIsYell ? 1 : -1; // エールを後ろに
             }
             
-            // 3. 同じ商品内ではカード番号順
+            // 3. 同じ商品内ではカード番号順（フィルター適用時は特に重要）
             return a.id.localeCompare(b.id);
           });
         } else if (method === "id") {
           sorted.sort((a, b) => {
             if (a.id !== b.id) return a.id.localeCompare(b.id);
-            // 同じIDの場合は発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じIDの場合は、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             return ra.localeCompare(rb);
           });
         } else if (method === "name") {
           sorted.sort((a, b) => {
             const nameCompare = a.name.localeCompare(b.name, "ja");
             if (nameCompare !== 0) return nameCompare;
-            // 同じ名前の場合は発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じ名前の場合は、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             return ra.localeCompare(rb);
           });
         } else if (method === "rarity") {
@@ -1055,9 +1321,9 @@
           sorted.sort((a, b) => {
             const rarityDiff = (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0);
             if (rarityDiff !== 0) return rarityDiff;
-            // 同じレアリティ内では発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じレアリティ内では、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             if (ra !== rb) return ra.localeCompare(rb);
             return a.id.localeCompare(b.id);
           });
@@ -1067,6 +1333,22 @@
     </script>
 <script>
   function renderTable() {
+    // レンダリング中の場合は処理をスキップ
+    if (isRendering) return;
+    isRendering = true;
+    
+    // デバウンス処理のため、前回のタイマーをクリア
+    if (window.renderTimer) {
+      clearTimeout(window.renderTimer);
+    }
+    
+    window.renderTimer = setTimeout(() => {
+      performRender();
+      isRendering = false;
+    }, 100); // 100ms のデバウンス
+  }
+  
+  function performRender() {
     const keyword = document.getElementById("nameSearch").value.toLowerCase();
     const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
     const ownedStates = getCheckedFromChips("ownedStateChipGroup");
@@ -1116,28 +1398,26 @@
       previewArea.style.display = "none";
       tableArea.style.display = "";
 
-      displayCards.forEach(card => {
-        const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
-        const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
+        displayCards.forEach(card => {
+          const bloomText = card.card_type === "Buzzホロメン" ? "1stBuzz" : card.bloom;
+          const productText = card.product.includes(",") ? card.product.replace(/,\s*/g, "<br>") : card.product;
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><img src="${card.image}" loading="lazy" alt="${card.name}" onclick="showImageModal('${card.image}')"></td>
-          <td>
-            <div style="font-weight: bold;">${card.name}</div>
-            <div style="font-size:13px;">📄 ${card.id}<br>🃏 ${card.card_type}</div>
-          </td>
-          <td>${card.rarity}</td>
-          <td>${card.color}</td>
-          <td>${bloomText}</td>
-          <td>${card.hp ?? "-"}</td>
-          <td>${productText}</td>
-          <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)"></td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      // ✅ フィルター後全件の統計を表示
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><img src="${card.image}" loading="lazy" alt="${card.name}のカード画像" onclick="showImageModal('${card.image}', ${JSON.stringify(card).replace(/"/g, '&quot;')})" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showImageModal('${card.image}', ${JSON.stringify(card).replace(/"/g, '&quot;')});}"></td>
+            <td>
+              <div style="font-weight: bold;">${card.name}</div>
+              <div style="font-size:13px;">📄 ${card.id}<br>🃏 ${card.card_type}</div>
+            </td>
+            <td>${card.rarity}</td>
+            <td>${card.color}</td>
+            <td>${bloomText}</td>
+            <td>${card.hp ?? "-"}</td>
+            <td>${productText}</td>
+            <td><input type="number" min="0" value="${card.owned}" onchange="updateOwned('${card.id}', this.value)" aria-label="${card.name}の所持枚数"></td>
+          `;
+          tbody.appendChild(row);
+        });      // ✅ フィルター後全件の統計を表示
       document.getElementById("countDisplay").textContent =
         `所持枚数：${ownedCount} / 表示：${shown}種類 / 所持種類数：${ownedTypes}(${ratio}%)`;
       document.getElementById("typeDisplay").textContent = ``;
@@ -1160,11 +1440,18 @@
 
       const img = document.createElement("img");
       img.src = card.image;
-      img.alt = card.name;
+      img.alt = `${card.name}のカード画像`;
       img.loading = "lazy";
       img.style.width = "100%";
       img.style.cursor = "zoom-in";
-      img.onclick = () => showImageModal(card.image);
+      img.setAttribute('tabindex', '0');
+      img.onclick = () => showImageModal(card.image, card);
+      img.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          showImageModal(card.image, card);
+        }
+      });
 
       const info = document.createElement("div");
       info.innerHTML = `
@@ -1246,8 +1533,9 @@
       const filterToggleBtn = document.getElementById('filterToggleBtn');
       
       if (filtersWrapper && filterToggleBtn) {
-        filtersWrapper.style.display = 'block';
-        filterToggleBtn.textContent = '🔼 フィルター非表示';
+        // デスクトップでもデフォルトは非表示に変更
+        filtersWrapper.style.display = 'none';
+        filterToggleBtn.textContent = '� フィルター表示';
       }
       
       if (wasMobile) console.log('Switched to desktop layout - filters always visible');
@@ -1260,9 +1548,23 @@
     if (viewMode === "compact" || viewMode === "table") {
       const bottom = window.innerHeight + window.scrollY;
       const docHeight = document.body.offsetHeight;
-      if (bottom >= docHeight - 100) {
-        renderLimit += 40;
+      if (bottom >= docHeight - 200 && !isRendering) { // 200px手前で追加読み込み開始
+        renderLimit += 30; // 追加読み込み数を30に削減
+        
+        // ローディング表示
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'block';
+        }
+        
         renderTable();
+        
+        // ローディング表示を非表示
+        setTimeout(() => {
+          if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+          }
+        }, 500);
       }
     }
   });
@@ -1271,7 +1573,22 @@
     if (localStorage.getItem("darkMode") === "true") {
       document.body.classList.add("dark");
     }
+    
+    // 保存されたビューモードを復元
+    const savedViewMode = localStorage.getItem("viewMode");
+    if (savedViewMode && (savedViewMode === "table" || savedViewMode === "compact")) {
+      viewMode = savedViewMode;
+    }
+    
     updateMobileLayout();
+
+    // フィルターを確実にデフォルト非表示に設定
+    const filtersWrapper = document.getElementById('filtersWrapper');
+    const filterToggleBtn = document.getElementById('filterToggleBtn');
+    if (filtersWrapper && filterToggleBtn) {
+      filtersWrapper.style.display = 'none';
+      filterToggleBtn.textContent = '🔽 フィルター表示';
+    }
 
     // ✅ Service Worker からバージョン情報を取得して表示
     try {
@@ -1352,7 +1669,12 @@
       }));
 
       setupFilters();
-      renderTable();
+      
+      // フィルター状態を復元（非同期で少し遅延させる）
+      setTimeout(() => {
+        restoreFilterState();
+        renderTable();
+      }, 200);
     } catch (err) {
       console.error(err);
       
@@ -1622,7 +1944,7 @@
       }
     } catch (error) {
       console.warn('Version display error:', error);
-      statusEl.textContent = '[v3.4.0-CENTRALIZED]';
+      statusEl.textContent = '[v3.7.0-CENTRALIZED]';
     }
   }
 </script>

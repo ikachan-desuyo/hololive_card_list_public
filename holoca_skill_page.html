@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.6.0-CENTRALIZED-VERSION - Single page version check system -->
+<!-- Version: 3.7.0-CENTRALIZED-VERSION - Enhanced sorting with product filter consistency -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -580,15 +580,34 @@
         return earliestDate;
       }
 
+      // フィルターされた商品に基づく発売日取得（フィルター適用時専用）
+      function getFilteredReleaseDate(productString, filteredProduct) {
+        if (!filteredProduct) {
+          return getEarliestReleaseDate(productString);
+        }
+        
+        const products = productString.split(',').map(p => p.trim());
+        const matchingProduct = products.find(p => p.toLowerCase().includes(filteredProduct));
+        
+        if (matchingProduct && releaseMap[matchingProduct]) {
+          return releaseMap[matchingProduct];
+        }
+        
+        return getEarliestReleaseDate(productString);
+      }
+
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
+        // 収録商品フィルターの値を取得（holoca_skill_pageでは複数の商品フィルターがある可能性を考慮）
+        const productFilter = document.getElementById("productFilter")?.value?.toLowerCase() || 
+                             document.querySelector('select[id*="product"]')?.value?.toLowerCase() || "";
         const sorted = [...cards];
     
         if (method === "release") {
           sorted.sort((a, b) => {
-            // 1. 発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 1. フィルター商品が設定されている場合は、その商品の発売日を優先
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             if (ra !== rb) return ra.localeCompare(rb);
             
             // 2. 同じ発売日の場合、エールかどうかをチェック
@@ -605,18 +624,18 @@
         } else if (method === "id") {
           sorted.sort((a, b) => {
             if (a.id !== b.id) return a.id.localeCompare(b.id);
-            // 同じIDの場合は発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じIDの場合は、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             return ra.localeCompare(rb);
           });
         } else if (method === "name") {
           sorted.sort((a, b) => {
             const nameCompare = a.name.localeCompare(b.name, "ja");
             if (nameCompare !== 0) return nameCompare;
-            // 同じ名前の場合は発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じ名前の場合は、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             return ra.localeCompare(rb);
           });
         } else if (method === "rarity") {
@@ -628,9 +647,9 @@
           sorted.sort((a, b) => {
             const rarityDiff = (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0);
             if (rarityDiff !== 0) return rarityDiff;
-            // 同じレアリティ内では発売日順
-            const ra = getEarliestReleaseDate(a.product);
-            const rb = getEarliestReleaseDate(b.product);
+            // 同じレアリティ内では、フィルター商品の発売日順
+            const ra = getFilteredReleaseDate(a.product, productFilter);
+            const rb = getFilteredReleaseDate(b.product, productFilter);
             if (ra !== rb) return ra.localeCompare(rb);
             return a.id.localeCompare(b.id);
           });
