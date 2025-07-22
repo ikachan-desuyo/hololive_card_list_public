@@ -398,6 +398,7 @@
         ];
 
         let versionCheckResults = [];
+        let hasVersionError = false;
         for (const page of pages) {
           try {
             const response = await fetch(page.name + '?v=' + Date.now());
@@ -418,13 +419,14 @@
                   versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (期待値: v' + page.expected + ')');
                 }
               } else {
-                // デバッグ用：最初の200文字を表示
-                const preview = content.substring(0, 200).replace(/\\n/g, ' ');
-                versionCheckResults.push('❌ ' + page.name + ': バージョン情報が見つかりません (先頭: ' + preview + '...)');
+                // バージョン情報が見つからない場合
+                hasVersionError = true;
+                versionCheckResults.push('❌ ' + page.name + ': バージョン情報が見つかりません → 更新が必要');
               }
             }
           } catch (error) {
-            versionCheckResults.push(`❌ ${page.name}: 確認エラー`);
+            hasVersionError = true;
+            versionCheckResults.push('❌ ' + page.name + ': 確認エラー → 更新が必要');
           }
         }
 
@@ -433,6 +435,38 @@
           const cacheNames = await caches.keys();
           await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
           console.log('Mobile: All caches cleared');
+        }
+
+        // バージョンエラーがある場合の自動対処
+        if (hasVersionError) {
+          statusEl.innerHTML = '⚠️ ページのバージョン情報に問題があります。自動修復を実行中...<br><small>' + versionCheckResults.join('<br>') + '</small>';
+          statusEl.style.color = '#ff9800';
+          
+          // 全キャッシュをクリアして強制更新
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+          
+          // Service Workerも更新
+          if (serviceWorkerRegistration) {
+            await serviceWorkerRegistration.update();
+            if (serviceWorkerRegistration.waiting) {
+              serviceWorkerRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
+            }
+          }
+          
+          // 少し待ってから再確認を提案
+          setTimeout(() => {
+            if (confirm('🔧 キャッシュをクリアしてService Workerを更新しました。\n\nページを再読み込みして修復を完了しますか？')) {
+              window.location.href = window.location.href + '?fix=' + Date.now();
+            } else {
+              statusEl.innerHTML = '⚠️ 手動での再読み込みが必要です<br><small>' + versionCheckResults.join('<br>') + '</small>';
+              statusEl.style.color = '#f44336';
+            }
+            btnEl.disabled = false;
+            btnEl.textContent = '🔄 更新確認';
+          }, 1000);
+          
+          return; // 通常の更新チェックをスキップ
         }
 
         // Force check for updates
