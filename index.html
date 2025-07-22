@@ -290,7 +290,7 @@
             // Check for waiting service worker
             if (registration.waiting) {
               console.log('SW update available');
-              if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+              if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
                 registration.waiting.postMessage({type: 'SKIP_WAITING'});
               }
             }
@@ -301,7 +301,7 @@
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
+                    if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
                       newWorker.postMessage({type: 'SKIP_WAITING'});
                     }
                   }
@@ -405,7 +405,7 @@
             statusEl.textContent = '✅ 新しいバージョンが見つかりました！';
             statusEl.style.color = '#4caf50';
             
-            if (confirm('新しいバージョンが利用可能です。全ページを更新してアプリケーションを再読み込みしますか？')) {
+            if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。全ページを更新してアプリケーションを再読み込みしますか？')) {
               // Clear all caches and reload
               caches.keys().then(cacheNames => {
                 Promise.all(

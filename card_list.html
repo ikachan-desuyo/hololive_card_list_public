@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.0 - Added copyright notice and legal disclaimers -->
+<!-- Version: 3.1-RELEASE-DATE-SORTING - Improved release date sorting in all sort methods -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1176,8 +1176,18 @@
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content available, reload the page
-                if (confirm('新しいバージョンが利用可能です。ページを更新しますか？')) {
-                  window.location.reload();
+                if (confirm('🚀 新しいバージョンが利用可能です。発売日順ソートが改善されました。ページを更新しますか？')) {
+                  // モバイル対応：強制的にキャッシュをクリアして更新
+                  if (/Mobi|Android/i.test(navigator.userAgent)) {
+                    caches.keys().then(cacheNames => {
+                      return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                    }).then(() => {
+                      navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'});
+                      setTimeout(() => window.location.reload(true), 100);
+                    });
+                  } else {
+                    window.location.reload();
+                  }
                 }
               }
             });
