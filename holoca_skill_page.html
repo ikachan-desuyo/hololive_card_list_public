@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.1-RELEASE-DATE-SORTING - Improved release date sorting in all sort methods -->
+<!-- Version: 3.2-SORT-IMPROVEMENTS - Enhanced sorting with earliest release date logic and yell card prioritization -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cache-bust" content="v3.0-copyright-20250122">
+  <meta name="cache-bust" content="v3.2-sort-improvements-20250122">
   <meta name="last-modified" content="Wed, 22 Jul 2025 13:00:00 GMT">
   <title>カード詳細検索ページ</title>
   <style>
@@ -401,7 +401,7 @@
           <button onclick="location.href='deck_builder.html'">⚔️ デッキ作成</button>
         </div>
         <h2 style="margin: 0;">カード詳細検索 
-          <span style="font-size: 12px; color: #999; font-weight: normal;">[v3.1-RELEASE-DATE-SORTING]</span>
+          <span style="font-size: 12px; color: #999; font-weight: normal;">[v3.2-SORT-IMPROVEMENTS]</span>
         </h2>
         <button onclick="toggleDarkMode()" style="padding: 2px 6px; font-size: 14px; min-width: auto; width: 28px; height: 28px;">🌗</button>
       </div>
@@ -565,24 +565,51 @@
         document.getElementById("imageModal").style.display = "none";
       }
     
+      // 共通のヘルパー関数：複数商品名から最も早い発売日を取得
+      function getEarliestReleaseDate(productString) {
+        const products = productString.split(',').map(p => p.trim());
+        let earliestDate = "9999-12-31";
+        
+        for (const product of products) {
+          const date = releaseMap[product];
+          if (date && date < earliestDate) {
+            earliestDate = date;
+          }
+        }
+        return earliestDate;
+      }
+
       function sortCards(cards) {
         const method = document.getElementById("sortMethod")?.value ?? "release";
         const sorted = [...cards];
     
         if (method === "release") {
           sorted.sort((a, b) => {
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            // 1. 発売日順
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             if (ra !== rb) return ra.localeCompare(rb);
+            
+            // 2. 同じ発売日の場合、エールかどうかをチェック
+            const aIsYell = a.card_type && a.card_type.includes("エール");
+            const bIsYell = b.card_type && b.card_type.includes("エール");
+            
+            if (aIsYell !== bIsYell) {
+              return aIsYell ? 1 : -1; // エールを後ろに
+            }
+            
+            // 3. 商品名順
             if (a.product !== b.product) return a.product.localeCompare(b.product);
+            
+            // 4. 同じ商品内ではカード番号順
             return a.id.localeCompare(b.id);
           });
         } else if (method === "id") {
           sorted.sort((a, b) => {
             if (a.id !== b.id) return a.id.localeCompare(b.id);
             // 同じIDの場合は発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             return ra.localeCompare(rb);
           });
         } else if (method === "name") {
@@ -590,8 +617,8 @@
             const nameCompare = a.name.localeCompare(b.name, "ja");
             if (nameCompare !== 0) return nameCompare;
             // 同じ名前の場合は発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             return ra.localeCompare(rb);
           });
         } else if (method === "rarity") {
@@ -604,8 +631,8 @@
             const rarityDiff = (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0);
             if (rarityDiff !== 0) return rarityDiff;
             // 同じレアリティ内では発売日順
-            const ra = releaseMap[a.product] ?? "9999-12-31";
-            const rb = releaseMap[b.product] ?? "9999-12-31";
+            const ra = getEarliestReleaseDate(a.product);
+            const rb = getEarliestReleaseDate(b.product);
             if (ra !== rb) return ra.localeCompare(rb);
             if (a.product !== b.product) return a.product.localeCompare(b.product);
             return a.id.localeCompare(b.id);

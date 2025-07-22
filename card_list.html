@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.1-RELEASE-DATE-SORTING - Improved release date sorting in all sort methods -->
+<!-- Version: 3.2-SORT-IMPROVEMENTS - Enhanced sorting with earliest release date logic and yell card prioritization -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -582,7 +582,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;">[v3.1-RELEASE-DATE-SORTING]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;">[v3.2-SORT-IMPROVEMENTS]</span>
       </h2>
       
         <div class="top-nav">
@@ -877,8 +877,21 @@
               console.log(`Available dates:`, Object.keys(releaseMap).filter(key => key.includes("クインテット")));
             }
             
+            // 1. 発売日順
             if (ra !== rb) return ra.localeCompare(rb);
+            
+            // 2. 同じ発売日の場合、エールかどうかをチェック
+            const aIsYell = a.card_type && a.card_type.includes("エール");
+            const bIsYell = b.card_type && b.card_type.includes("エール");
+            
+            if (aIsYell !== bIsYell) {
+              return aIsYell ? 1 : -1; // エールを後ろに
+            }
+            
+            // 3. 商品名順
             if (a.product !== b.product) return a.product.localeCompare(b.product);
+            
+            // 4. 同じ商品内ではカード番号順
             return a.id.localeCompare(b.id);
           });
         } else if (method === "id") {
