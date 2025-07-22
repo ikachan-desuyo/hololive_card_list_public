@@ -629,8 +629,8 @@
         <!-- フィルター表示/非表示を最後に -->
         <button onclick="toggleFilters()" id="filterToggleBtn">🔽 フィルター表示</button>
       </div>
-    </div>
 
+      <!-- フィルター部分もsticky-controls内に移動 -->
       <div id="filtersWrapper">
         <fieldset class="filter-group">
           <legend>所持状態</legend>
@@ -656,12 +656,25 @@
         </fieldset>
 
         <fieldset class="filter-group">
+          <legend>カードタイプ</legend>
+          <div id="cardTypeFilter" class="chip-group"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
           <legend>収録商品</legend>
           <select id="productFilter" onchange="renderTable()">
             <option value="">収録商品（選択）</option>
           </select>
         </fieldset>
+
+        <fieldset class="filter-group">
+          <legend>タグ絞り込み</legend>
+          <select id="tagsFilter" onchange="renderTable()">
+            <option value="">タグ（選択）</option>
+          </select>
+        </fieldset>
       </div>
+    </div>
 
     <div class="sticky-info">
       <div id="countDisplay" style="font-weight:bold;"></div>
@@ -882,10 +895,7 @@
               return aIsYell ? 1 : -1; // エールを後ろに
             }
             
-            // 3. 商品名順
-            if (a.product !== b.product) return a.product.localeCompare(b.product);
-            
-            // 4. 同じ商品内ではカード番号順
+            // 3. 同じ商品内ではカード番号順
             return a.id.localeCompare(b.id);
           });
         } else if (method === "id") {
@@ -918,7 +928,6 @@
             const ra = getEarliestReleaseDate(a.product);
             const rb = getEarliestReleaseDate(b.product);
             if (ra !== rb) return ra.localeCompare(rb);
-            if (a.product !== b.product) return a.product.localeCompare(b.product);
             return a.id.localeCompare(b.id);
           });
         }

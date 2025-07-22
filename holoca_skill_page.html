@@ -598,10 +598,7 @@
               return aIsYell ? 1 : -1; // エールを後ろに
             }
             
-            // 3. 商品名順
-            if (a.product !== b.product) return a.product.localeCompare(b.product);
-            
-            // 4. 同じ商品内ではカード番号順
+            // 3. 同じ商品内ではカード番号順
             return a.id.localeCompare(b.id);
           });
         } else if (method === "id") {
@@ -634,7 +631,6 @@
             const ra = getEarliestReleaseDate(a.product);
             const rb = getEarliestReleaseDate(b.product);
             if (ra !== rb) return ra.localeCompare(rb);
-            if (a.product !== b.product) return a.product.localeCompare(b.product);
             return a.id.localeCompare(b.id);
           });
         }

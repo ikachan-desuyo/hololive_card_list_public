@@ -927,10 +927,7 @@
                 return aIsYell ? 1 : -1; // エールを後ろに
               }
               
-              // 3. 商品名順
-              if (a.product !== b.product) return a.product.localeCompare(b.product);
-              
-              // 4. 同じ商品内ではカード番号順
+              // 3. 同じ商品内ではカード番号順
               return a.id.localeCompare(b.id);
             });
           } else if (method === "id") {
@@ -950,7 +947,7 @@
               const rb = getEarliestReleaseDate(b.product);
               return ra.localeCompare(rb);
             });
-          } else if (method === "rarity") {
+                    } else if (method === "rarity") {
             const rank = { 
               "SEC": 14, "OUR": 13, "UR": 12, "SY": 11, "OSR": 10, 
               "SR": 9, "P": 8, "S": 7, "OC": 6, "RR": 5, 
@@ -963,7 +960,6 @@
               const ra = getEarliestReleaseDate(a.product);
               const rb = getEarliestReleaseDate(b.product);
               if (ra !== rb) return ra.localeCompare(rb);
-              if (a.product !== b.product) return a.product.localeCompare(b.product);
               return a.id.localeCompare(b.id);
             });
           }
