@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.4.0-CENTRALIZED-VERSION - Centralized version management system -->
+<!-- Version: 3.6.0-CENTRALIZED-VERSION - Single page version check system -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1419,15 +1419,41 @@
           
           setTimeout(() => {
             if (confirm(detailMessage + 'このページを更新してアプリケーションを再読み込みしますか？')) {
-              // キャッシュをクリアして強制更新
-              caches.keys().then(cacheNames => {
-                return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-              }).then(() => {
-                navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-                setTimeout(() => {
-                  location.reload(true);
-                }, 500);
-              });
+              // より強力なキャッシュクリア処理
+              console.log('Starting forced cache clear and update...');
+              
+              // Service Workerに強制更新を要求
+              if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'FORCE_UPDATE' });
+              }
+              
+              // ブラウザレベルでのキャッシュクリア
+              if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                  return Promise.all(cacheNames.map(cacheName => {
+                    console.log('Deleting cache:', cacheName);
+                    return caches.delete(cacheName);
+                  }));
+                }).then(() => {
+                  console.log('All browser caches cleared');
+                  // Service Workerの更新を待つ
+                  return new Promise(resolve => setTimeout(resolve, 1000));
+                }).then(() => {
+                  // より強力なリロード
+                  console.log('Performing hard reload...');
+                  if (window.location.reload) {
+                    window.location.reload(true); // 強制リロード
+                  } else {
+                    window.location.href = window.location.href + '?t=' + Date.now();
+                  }
+                }).catch(error => {
+                  console.error('Cache clear failed, forcing reload anyway:', error);
+                  window.location.href = window.location.href + '?t=' + Date.now();
+                });
+              } else {
+                // キャッシュAPIが使えない場合のフォールバック
+                window.location.href = window.location.href + '?t=' + Date.now();
+              }
             } else {
               // バージョン情報を再表示
               displayVersionInfo();

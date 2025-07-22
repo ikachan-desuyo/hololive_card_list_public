@@ -1,6 +1,6 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '3.19.0';
-const VERSION_DESCRIPTION = '単一ページバージョンチェック機能追加';
+const APP_VERSION = '3.20.0';
+const VERSION_DESCRIPTION = '強力なキャッシュクリア機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
@@ -13,12 +13,12 @@ const PAGE_VERSIONS = {
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
   title: '🚀 新しいバージョンが利用可能です',
-  description: '単一ページバージョンチェック機能を追加しました',
+  description: '強力なキャッシュクリア機能を追加し、更新の確実性を向上させました',
   changes: [
-    '✅ 個別ページのバージョンチェック機能を追加',
-    '✅ ページ固有の更新確認ダイアログを実装',
-    '✅ 不要な全体バージョンチェック情報を削除',
-    '✅ より精密なバージョン管理システムを導入'
+    '🔥 FORCE_UPDATE メッセージタイプを追加',
+    '💪 より強力なキャッシュクリア処理を実装',
+    '⚡ キャッシュバスティング機能を強化',
+    '🔄 確実なページ更新システムを導入'
   ]
 };
 
@@ -186,6 +186,19 @@ self.addEventListener('message', async (event) => {
       self.skipWaiting();
       break;
       
+    case 'FORCE_UPDATE':
+      console.log('Received FORCE_UPDATE message, clearing all caches and forcing update');
+      // 全キャッシュを強制削除
+      const allCacheNames = await caches.keys();
+      await Promise.all(allCacheNames.map(cacheName => caches.delete(cacheName)));
+      console.log('All caches cleared for force update');
+      // 新しいキャッシュを作成
+      const newCache = await caches.open(CACHE_NAME);
+      await newCache.addAll(urlsToCache);
+      console.log('New cache created:', CACHE_NAME);
+      self.skipWaiting();
+      break;
+      
     case 'GET_VERSION_INFO':
       // バージョン情報を返す
       const versionInfo = await getVersionInfo();
@@ -349,31 +362,46 @@ self.addEventListener('activate', (event) => {
   console.log('Service Worker activating... Clearing ALL caches aggressively');
   event.waitUntil(
     Promise.all([
-      // Delete ALL caches (not just old ones)
+      // Delete ALL caches (not just old ones) - more aggressive clearing
       caches.keys().then((cacheNames) => {
         console.log('Found ALL caches:', cacheNames);
         return Promise.all(
           cacheNames.map((cacheName) => {
             console.log('Force deleting cache:', cacheName);
-            return caches.delete(cacheName);
+            return caches.delete(cacheName).then(success => {
+              console.log(`Cache ${cacheName} deletion result:`, success);
+              return success;
+            });
           })
         );
-      }).then(() => {
-        // Recreate the current cache
+      }).then((results) => {
+        console.log('All cache deletion results:', results);
+        // Recreate the current cache with fresh content
         return caches.open(CACHE_NAME).then(cache => {
-          console.log('Recreating cache:', CACHE_NAME);
-          return cache.addAll(urlsToCache);
+          console.log('Recreating cache with fresh content:', CACHE_NAME);
+          // Use cache-busting for critical files
+          const cacheBustingUrls = urlsToCache.map(url => {
+            if (url.endsWith('.html') || url === './') {
+              return `${url}?v=${APP_VERSION}&t=${Date.now()}`;
+            }
+            return url;
+          });
+          return cache.addAll(cacheBustingUrls).then(() => {
+            console.log('Fresh cache created successfully');
+          });
         });
       }),
       // Immediately claim all clients
       self.clients.claim().then(() => {
         console.log('Claimed all clients');
-        // Notify all clients to reload
+        // Notify all clients to reload with force
         return self.clients.matchAll().then(clients => {
           clients.forEach(client => {
             client.postMessage({
               type: 'CACHE_UPDATED',
-              message: 'All caches cleared, please reload'
+              message: 'All caches cleared forcefully, please perform hard reload',
+              forceReload: true,
+              timestamp: Date.now()
             });
           });
         });
@@ -396,16 +424,26 @@ self.addEventListener('fetch', (event) => {
 
   if (isHTMLFile) {
     event.respondWith(
-      // Network First: まずネットワークから取得を試行
-      fetch(event.request)
+      // Network First: まずネットワークから取得を試行（キャッシュバスティング付き）
+      fetch(event.request.url + (event.request.url.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
         .then((response) => {
           if (response && response.status === 200) {
-            // ネットワークから取得成功時はキャッシュを更新
+            // ネットワークから取得成功時はキャッシュを更新（古いキャッシュは削除）
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
+              // 古いバージョンを削除してから新しいものを保存
+              cache.delete(event.request).then(() => {
+                cache.put(event.request, responseToCache);
+              });
             });
-            console.log('Serving fresh HTML from network:', event.request.url);
+            console.log('Serving fresh HTML from network with cache-busting:', event.request.url);
             return response;
           }
           throw new Error('Network response not ok');
