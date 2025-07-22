@@ -406,10 +406,11 @@
             const response = await fetch(page.name + '?v=' + Date.now());
             if (response.ok) {
               const content = await response.text();
-              // シンプルなパターンでバージョンを抽出
-              let versionMatch = content.match(/Version: ([0-9.]+[^\\s]*)/);
+              // バージョンを正確に抽出（- や英数字を含む完全なバージョン文字列）
+              let versionMatch = content.match(/Version: ([^-\s]+(?:-[A-Z-]+)*)/);
               if (!versionMatch) {
-                versionMatch = content.match(/Version: ([^-\\s]+(?:-[^-\\s]+)*)/);
+                // より広範囲なパターンでもう一度試行
+                versionMatch = content.match(/Version: ([^\s]+)/);
               }
               
               if (versionMatch) {
