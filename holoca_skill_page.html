@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.3-SORT-PRIORITY-SIMPLIFIED - Simplified sorting priorities by removing 3rd level conditions -->
+<!-- Version: 3.3.0-CENTRALIZED-VERSION - Centralized version management system -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -948,7 +948,7 @@
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New content available, reload the page immediately
-                  console.log('🚀 強制更新: ソート機能が改善されました');
+                  console.log('🚀 強制更新: エールフィルター機能が修正されました');
                   // Clear all caches first
                   caches.keys().then(cacheNames => {
                     return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 3.3-SORT-PRIORITY-SIMPLIFIED - Simplified sorting priorities by removing 3rd level conditions -->
+<!-- Version: 3.3.0-CENTRALIZED-VERSION - Centralized version management system -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -346,6 +346,23 @@
     .chip.all-chip {
       font-weight: bold;
     }
+
+    /* ダークモード時のチップスタイル */
+    .dark .chip {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .dark .chip:hover {
+      background: #555;
+    }
+
+    .dark .chip.selected {
+      background: #007acc;
+      color: #fff;
+      border-color: #005999;
+    }
   
     /* ✅ スマホ専用表示レイアウト追加調整 */
     .mobile-layout #cardPreviewArea div > div {
@@ -582,7 +599,7 @@
   <div class="container">
     <div class="container-top">
       <h2>ホロライブカード一覧 
-        <span style="font-size: 12px; color: #999; font-weight: normal;">[v3.3-SORT-PRIORITY-SIMPLIFIED]</span>
+        <span style="font-size: 12px; color: #999; font-weight: normal;" id="versionDisplay">[v3.3.0-loading...]</span>
       </h2>
       
         <div class="top-nav">
@@ -837,7 +854,7 @@
       }
       
       function setupFilters() {
-        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set();
+        const raritySet = new Set(), colorSet = new Set(), bloomSet = new Set(), productSet = new Set(), tagSet = new Set(), cardTypeSet = new Set();
         cards.forEach(c => {
           raritySet.add(c.rarity);
           colorSet.add(c.color);
@@ -845,11 +862,19 @@
           if (!c.product.includes(",")) {
             productSet.add(c.product);
           }
+          // タグの処理（存在する場合）
+          if (c.tags && Array.isArray(c.tags)) {
+            c.tags.forEach(tag => tagSet.add(tag));
+          }
+          // カードタイプを「・」で分割
+          const typeParts = c.card_type?.split("・") ?? [];
+          typeParts.forEach(part => cardTypeSet.add(part.trim()));
         });
 
         populateChipGroup("rarityFilter", [...raritySet].sort(), true, true);
         populateChipGroup("colorFilter", [...colorSet].sort(), true, true);
         populateChipGroup("bloomFilter", [...bloomSet].sort(), true, true);
+        populateChipGroup("cardTypeFilter", [...cardTypeSet].sort(), true, true);
         populateChipGroup("ownedStateChipGroup", ["owned", "unowned"], false); // ←両方選択のまま
 
         const select = document.getElementById("productFilter");
@@ -860,6 +885,18 @@
           opt.textContent = val;
           select.appendChild(opt);
         });
+
+        // タグフィルター設定
+        const tagsSelect = document.getElementById("tagsFilter");
+        if (tagsSelect) {
+          tagsSelect.innerHTML = `<option value="">タグ（選択）</option>`;
+          [...tagSet].sort().forEach(val => {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            tagsSelect.appendChild(opt);
+          });
+        }
       }
       
       // 共通のヘルパー関数：複数商品名から最も早い発売日を取得
@@ -942,7 +979,9 @@
     const rarity = getCheckedFromChips("rarityFilter");
     const color = getCheckedFromChips("colorFilter");
     const bloom = getCheckedFromChips("bloomFilter");
+    const cardType = getCheckedFromChips("cardTypeFilter");
     const product = document.getElementById("productFilter").value.toLowerCase();
+    const tagFilter = document.getElementById("tagsFilter")?.value.toLowerCase() || "";
 
     const tableArea = document.getElementById("cardTable");
     const previewArea = document.getElementById("cardPreviewArea");
@@ -960,7 +999,9 @@
         rarity: rarity.length === 0 || rarity.includes(card.rarity),
         color: color.length === 0 || color.includes(card.color),
         bloom: bloom.length === 0 || bloom.includes(card.bloom),
-        product: !product || card.product.toLowerCase().includes(product)
+        cardType: cardType.length === 0 || cardType.some(type => card.card_type?.includes(type)),
+        product: !product || card.product.toLowerCase().includes(product),
+        tags: !tagFilter || (card.tags && Array.isArray(card.tags) && card.tags.map(t => t.toLowerCase()).includes(tagFilter))
       };
       return !Object.values(match).includes(false);
     });
@@ -1113,6 +1154,31 @@
     }
     updateMobileLayout();
 
+    // ✅ Service Worker からバージョン情報を取得して表示
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'VERSION_INFO_RESPONSE') {
+            const versionEl = document.getElementById('versionDisplay');
+            if (versionEl && event.data.data) {
+              versionEl.textContent = `[v${event.data.data.pageVersions['card_list.html']}-CENTRALIZED]`;
+            }
+          }
+        };
+        navigator.serviceWorker.controller.postMessage(
+          { type: 'GET_VERSION_INFO' },
+          [messageChannel.port2]
+        );
+      }
+    } catch (error) {
+      console.warn('Version display error:', error);
+      const versionEl = document.getElementById('versionDisplay');
+      if (versionEl) {
+        versionEl.textContent = '[v3.3.0-CENTRALIZED]';
+      }
+    }
+
     try {
       // Try to load from localStorage first (for offline use)
       const cachedCardData = localStorage.getItem('cardData');
@@ -1162,7 +1228,8 @@
         image: card.image_url,
         url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
         owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-        card_type: card.card_type ?? "-"
+        card_type: card.card_type ?? "-",
+        tags: card.tags ?? []
       }));
 
       setupFilters();
@@ -1190,7 +1257,8 @@
           image: card.image_url,
           url: `https://hololive-official-cardgame.com/cardlist/?id=${key}`,
           owned: parseInt(localStorage.getItem("count_" + key) ?? "0"),
-          card_type: card.card_type ?? "-"
+          card_type: card.card_type ?? "-",
+          tags: card.tags ?? []
         }));
 
         setupFilters();
@@ -1225,8 +1293,25 @@
             const newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content available, reload the page immediately
-                console.log('🚀 強制更新: ソート機能が改善されました');
+                // Get update message from centralized system
+                const messageChannel = new MessageChannel();
+                messageChannel.port1.onmessage = (event) => {
+                  if (event.data.type === 'UPDATE_MESSAGE_RESPONSE') {
+                    console.log('🚀 強制更新:', event.data.data.details.description);
+                  } else {
+                    console.log('🚀 強制更新: エールフィルター機能が修正されました');
+                  }
+                };
+                
+                try {
+                  navigator.serviceWorker.controller.postMessage(
+                    { type: 'GET_UPDATE_MESSAGE' },
+                    [messageChannel.port2]
+                  );
+                } catch (msgError) {
+                  console.log('🚀 強制更新: エールフィルター機能が修正されました');
+                }
+                
                 // Clear all caches first
                 caches.keys().then(cacheNames => {
                   return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));

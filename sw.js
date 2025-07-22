@@ -1,5 +1,27 @@
-// Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.15-sort-priority-simplified'; // ソート優先度簡略化版
+// Service Worker for offline caching with centralized version management
+const APP_VERSION = '3.16.0';
+const VERSION_DESCRIPTION = 'エールフィルター機能修正';
+
+// ✅ 各ページのバージョン情報を一元管理
+const PAGE_VERSIONS = {
+  'index.html': '3.7.0',
+  'card_list.html': '3.3.0', 
+  'holoca_skill_page.html': '3.3.0',
+  'deck_builder.html': '3.5.0'
+};
+
+// ✅ 更新内容の詳細情報
+const UPDATE_DETAILS = {
+  title: '🚀 新しいバージョンが利用可能です',
+  description: 'デッキ作成ページのエールフィルター機能が修正されました',
+  changes: [
+    '✅ エールカードのフィルタリング精度向上',
+    '✅ 複合カードタイプの正確な判定',
+    '✅ モバイル版でのフィルター動作改善'
+  ]
+};
+
+const CACHE_NAME = `hololive-card-tool-v${APP_VERSION}-${VERSION_DESCRIPTION.replace(/\s+/g, '-')}`;
 const urlsToCache = [
   './',
   './index.html',
@@ -33,6 +55,62 @@ const urlsToCache = [
   './images/tokkou_50_yellow.png'
 ];
 
+// ✅ バージョン比較機能
+function compareVersions(current, cached) {
+  if (!cached) return true; // キャッシュされていない場合は更新が必要
+  
+  const currentParts = current.split('.').map(n => parseInt(n, 10));
+  const cachedParts = cached.split('.').map(n => parseInt(n, 10));
+  
+  for (let i = 0; i < Math.max(currentParts.length, cachedParts.length); i++) {
+    const currentPart = currentParts[i] || 0;
+    const cachedPart = cachedParts[i] || 0;
+    
+    if (currentPart > cachedPart) return true;
+    if (currentPart < cachedPart) return false;
+  }
+  
+  return false; // 同じバージョン
+}
+
+// ✅ バージョン情報を取得する機能
+async function getVersionInfo() {
+  return {
+    appVersion: APP_VERSION,
+    pageVersions: PAGE_VERSIONS,
+    updateDetails: UPDATE_DETAILS,
+    cacheName: CACHE_NAME
+  };
+}
+
+// ✅ ページバージョンをチェックする機能
+async function checkPageVersions() {
+  const outdatedPages = [];
+  
+  for (const [page, currentVersion] of Object.entries(PAGE_VERSIONS)) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const cachedResponse = await cache.match(`./${page}`);
+      
+      if (!cachedResponse) {
+        outdatedPages.push({page, reason: 'not_cached', currentVersion});
+        continue;
+      }
+      
+      // レスポンスヘッダーからバージョンを取得（将来的な拡張用）
+      const cachedVersion = cachedResponse.headers.get('X-App-Version');
+      if (compareVersions(currentVersion, cachedVersion)) {
+        outdatedPages.push({page, reason: 'version_mismatch', currentVersion, cachedVersion});
+      }
+    } catch (error) {
+      console.error(`Error checking version for ${page}:`, error);
+      outdatedPages.push({page, reason: 'error', currentVersion});
+    }
+  }
+  
+  return outdatedPages;
+}
+
 // Install event - cache resources and immediately take control
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing... Force update mode');
@@ -51,11 +129,46 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Listen for skip waiting message from client
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('Received SKIP_WAITING message, taking control');
-    self.skipWaiting();
+// Listen for messages from client
+self.addEventListener('message', async (event) => {
+  const { type, data } = event.data || {};
+  
+  switch (type) {
+    case 'SKIP_WAITING':
+      console.log('Received SKIP_WAITING message, taking control');
+      self.skipWaiting();
+      break;
+      
+    case 'GET_VERSION_INFO':
+      // バージョン情報を返す
+      const versionInfo = await getVersionInfo();
+      event.ports[0]?.postMessage({
+        type: 'VERSION_INFO_RESPONSE',
+        data: versionInfo
+      });
+      break;
+      
+    case 'CHECK_OUTDATED_PAGES':
+      // 古いページをチェック
+      const outdatedPages = await checkPageVersions();
+      event.ports[0]?.postMessage({
+        type: 'OUTDATED_PAGES_RESPONSE',
+        data: outdatedPages
+      });
+      break;
+      
+    case 'GET_UPDATE_MESSAGE':
+      // 更新メッセージを生成
+      const message = `${UPDATE_DETAILS.title}\n\n${UPDATE_DETAILS.description}\n\n` +
+        UPDATE_DETAILS.changes.join('\n') + '\n\nページを更新しますか？';
+      event.ports[0]?.postMessage({
+        type: 'UPDATE_MESSAGE_RESPONSE',
+        data: { message, details: UPDATE_DETAILS }
+      });
+      break;
+      
+    default:
+      console.log('Unknown message type:', type);
   }
 });
 
