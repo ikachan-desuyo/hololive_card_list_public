@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.5-rarity-order-update'; // レアリティ順序更新
+const CACHE_NAME = 'hololive-card-tool-v3.6-release-date-sorting'; // 発売日順ソート改善
 const urlsToCache = [
   './',
   './index.html',

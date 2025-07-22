@@ -907,16 +907,38 @@
               return a.id.localeCompare(b.id);
             });
           } else if (method === "id") {
-            sorted.sort((a, b) => a.id.localeCompare(b.id));
+            sorted.sort((a, b) => {
+              if (a.id !== b.id) return a.id.localeCompare(b.id);
+              // 同じIDの場合は発売日順
+              const ra = releaseMap[a.product] ?? "9999-12-31";
+              const rb = releaseMap[b.product] ?? "9999-12-31";
+              return ra.localeCompare(rb);
+            });
           } else if (method === "name") {
-            sorted.sort((a, b) => a.name.localeCompare(b.name, "ja"));
+            sorted.sort((a, b) => {
+              const nameCompare = a.name.localeCompare(b.name, "ja");
+              if (nameCompare !== 0) return nameCompare;
+              // 同じ名前の場合は発売日順
+              const ra = releaseMap[a.product] ?? "9999-12-31";
+              const rb = releaseMap[b.product] ?? "9999-12-31";
+              return ra.localeCompare(rb);
+            });
           } else if (method === "rarity") {
             const rank = { 
               "SEC": 14, "OUR": 13, "UR": 12, "SY": 11, "OSR": 10, 
               "SR": 9, "P": 8, "S": 7, "OC": 6, "RR": 5, 
               "R": 4, "U": 3, "C": 2, "‐": 1, "-": 1 
             };
-            sorted.sort((a, b) => (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0));
+            sorted.sort((a, b) => {
+              const rarityDiff = (rank[b.rarity] ?? 0) - (rank[a.rarity] ?? 0);
+              if (rarityDiff !== 0) return rarityDiff;
+              // 同じレアリティ内では発売日順
+              const ra = releaseMap[a.product] ?? "9999-12-31";
+              const rb = releaseMap[b.product] ?? "9999-12-31";
+              if (ra !== rb) return ra.localeCompare(rb);
+              if (a.product !== b.product) return a.product.localeCompare(b.product);
+              return a.id.localeCompare(b.id);
+            });
           }
           return sorted;
         }
