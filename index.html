@@ -401,11 +401,21 @@
         let versionCheckResults = [];
         let hasVersionError = false;
         let hasVersionMismatch = false;
+        
+        // まず、キャッシュされたファイルのバージョンを確認
         for (const page of pages) {
           try {
-            const response = await fetch(page.name + '?v=' + Date.now());
-            if (response.ok) {
-              const content = await response.text();
+            // キャッシュされたファイルをチェック（キャッシュバスターなし）
+            let cachedResponse;
+            try {
+              cachedResponse = await fetch(page.name);
+            } catch (e) {
+              // キャッシュにない場合は新しいファイルを取得
+              cachedResponse = await fetch(page.name + '?v=' + Date.now());
+            }
+            
+            if (cachedResponse.ok) {
+              const content = await cachedResponse.text();
               // バージョンを正確に抽出（- や英数字を含む完全なバージョン文字列）
               let versionMatch = content.match(/Version: ([^-\s]+(?:-[A-Z-]+)*)/);
               if (!versionMatch) {
@@ -416,8 +426,27 @@
               if (versionMatch) {
                 const actualVersion = versionMatch[1];
                 pageVersions[page.name] = actualVersion;
-                if (actualVersion === page.expected) {
-                  versionCheckResults.push('✅ ' + page.name + ': v' + actualVersion);
+                
+                // 次に、最新ファイルのバージョンも確認（比較用）
+                let latestVersion = actualVersion;
+                try {
+                  const latestResponse = await fetch(page.name + '?v=' + Date.now());
+                  if (latestResponse.ok) {
+                    const latestContent = await latestResponse.text();
+                    const latestMatch = latestContent.match(/Version: ([^-\s]+(?:-[A-Z-]+)*)/);
+                    if (latestMatch) {
+                      latestVersion = latestMatch[1];
+                    }
+                  }
+                } catch (e) {
+                  console.log('Failed to fetch latest version for', page.name);
+                }
+                
+                if (actualVersion === page.expected && actualVersion === latestVersion) {
+                  versionCheckResults.push('✅ ' + page.name + ': v' + actualVersion + ' (最新)');
+                } else if (actualVersion === page.expected && actualVersion !== latestVersion) {
+                  hasVersionMismatch = true;
+                  versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (キャッシュ) → v' + latestVersion + ' (最新) 更新が必要');
                 } else {
                   hasVersionMismatch = true;
                   versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (期待値: v' + page.expected + ') → 更新が必要');
@@ -443,15 +472,18 @@
 
         // バージョンエラーまたは不一致がある場合の自動対処
         if (hasVersionError || hasVersionMismatch) {
-          const problemType = hasVersionError ? 'バージョン情報に問題があります' : 'バージョンが一致しません';
-          statusEl.innerHTML = '⚠️ ページの' + problemType + '。自動修復を実行中...<br><small>' + versionCheckResults.join('<br>') + '</small>';
+          const problemType = hasVersionError ? 'バージョン情報に問題があります' : 'キャッシュされたファイルが古い状態です';
+          statusEl.innerHTML = '⚠️ ' + problemType + '。自動修復を実行中...<br><small>' + versionCheckResults.join('<br>') + '</small>';
           statusEl.style.color = '#ff9800';
           
-          // 全キャッシュをクリアして強制更新
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+          // ブラウザの全キャッシュを強制クリア
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+            console.log('All browser caches cleared');
+          }
           
-          // Service Workerも更新
+          // Service Worker を更新して新しいファイルをキャッシュ
           if (serviceWorkerRegistration) {
             await serviceWorkerRegistration.update();
             if (serviceWorkerRegistration.waiting) {
@@ -459,12 +491,16 @@
             }
           }
           
-          // 少し待ってから再確認を提案
+          // 少し待ってから修復完了を確認
           setTimeout(() => {
-            if (confirm('🔧 キャッシュをクリアしてService Workerを更新しました。\n\nページを再読み込みして修復を完了しますか？')) {
-              window.location.href = window.location.href + '?fix=' + Date.now();
+            const message = '🔧 キャッシュクリアとService Worker更新を実行しました。\n\n' +
+                           '各ページが最新バージョンで表示されるようにページを強制再読み込みしますか？\n\n' +
+                           '※この操作により、古いキャッシュが完全にクリアされます。';
+            if (confirm(message)) {
+              // 強制リロードでキャッシュを完全にバイパス
+              window.location.replace(window.location.href.split('?')[0] + '?forcecache=' + Date.now());
             } else {
-              statusEl.innerHTML = '⚠️ 手動での再読み込みが必要です<br><small>' + versionCheckResults.join('<br>') + '</small>';
+              statusEl.innerHTML = '⚠️ 手動での強制再読み込み（Ctrl+F5またはCmd+Shift+R）が必要です<br><small>' + versionCheckResults.join('<br>') + '</small>';
               statusEl.style.color = '#f44336';
             }
             btnEl.disabled = false;
