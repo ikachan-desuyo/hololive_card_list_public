@@ -392,6 +392,7 @@
         // 各ページのバージョンを確認
         const pageVersions = {};
         const pages = [
+          { name: 'index.html', expected: '3.4-MOBILE-UPDATE-FIX' },
           { name: 'card_list.html', expected: '3.1-RELEASE-DATE-SORTING' },
           { name: 'holoca_skill_page.html', expected: '3.1-RELEASE-DATE-SORTING' },
           { name: 'deck_builder.html', expected: '3.2-RELEASE-DATE-SORTING' }
@@ -399,6 +400,7 @@
 
         let versionCheckResults = [];
         let hasVersionError = false;
+        let hasVersionMismatch = false;
         for (const page of pages) {
           try {
             const response = await fetch(page.name + '?v=' + Date.now());
@@ -416,7 +418,8 @@
                 if (actualVersion === page.expected) {
                   versionCheckResults.push('✅ ' + page.name + ': v' + actualVersion);
                 } else {
-                  versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (期待値: v' + page.expected + ')');
+                  hasVersionMismatch = true;
+                  versionCheckResults.push('⚠️ ' + page.name + ': v' + actualVersion + ' (期待値: v' + page.expected + ') → 更新が必要');
                 }
               } else {
                 // バージョン情報が見つからない場合
@@ -437,9 +440,10 @@
           console.log('Mobile: All caches cleared');
         }
 
-        // バージョンエラーがある場合の自動対処
-        if (hasVersionError) {
-          statusEl.innerHTML = '⚠️ ページのバージョン情報に問題があります。自動修復を実行中...<br><small>' + versionCheckResults.join('<br>') + '</small>';
+        // バージョンエラーまたは不一致がある場合の自動対処
+        if (hasVersionError || hasVersionMismatch) {
+          const problemType = hasVersionError ? 'バージョン情報に問題があります' : 'バージョンが一致しません';
+          statusEl.innerHTML = '⚠️ ページの' + problemType + '。自動修復を実行中...<br><small>' + versionCheckResults.join('<br>') + '</small>';
           statusEl.style.color = '#ff9800';
           
           // 全キャッシュをクリアして強制更新
