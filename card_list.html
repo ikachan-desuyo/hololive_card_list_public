@@ -871,12 +871,6 @@
             const ra = getEarliestReleaseDate(a.product);
             const rb = getEarliestReleaseDate(b.product);
             
-            // デバッグログ：クインテットスペクトラムの場合のみ
-            if (a.product.includes("クインテット") || b.product.includes("クインテット")) {
-              console.log(`Debug sort - Product: "${a.product}" -> Date: "${ra}", Product: "${b.product}" -> Date: "${rb}"`);
-              console.log(`Available dates:`, Object.keys(releaseMap).filter(key => key.includes("クインテット")));
-            }
-            
             // 1. 発売日順
             if (ra !== rb) return ra.localeCompare(rb);
             
@@ -1208,25 +1202,29 @@
       navigator.serviceWorker.register('./sw.js')
         .then((registration) => {
           console.log('SW registered: ', registration);
+          
+          // Listen for messages from Service Worker
+          navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'CACHE_UPDATED') {
+              console.log('Cache updated, forcing reload');
+              window.location.reload(true);
+            }
+          });
+          
           // Check for updates
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content available, reload the page
-                if (confirm('🚀 新しいバージョンが利用可能です。バージョン不一致の自動修復機能が追加されました。ページを更新しますか？')) {
-                  // モバイル対応：強制的にキャッシュをクリアして更新
-                  if (/Mobi|Android/i.test(navigator.userAgent)) {
-                    caches.keys().then(cacheNames => {
-                      return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-                    }).then(() => {
-                      navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'});
-                      setTimeout(() => window.location.reload(true), 100);
-                    });
-                  } else {
-                    window.location.reload();
-                  }
-                }
+                // New content available, reload the page immediately
+                console.log('🚀 強制更新: ソート機能が改善されました');
+                // Clear all caches first
+                caches.keys().then(cacheNames => {
+                  return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                }).then(() => {
+                  // Force reload without user confirmation
+                  window.location.reload(true);
+                });
               }
             });
           });

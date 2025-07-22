@@ -1,5 +1,5 @@
 // Service Worker for offline caching
-const CACHE_NAME = 'hololive-card-tool-v3.12-sort-improvements'; // ソート機能改善版
+const CACHE_NAME = 'hololive-card-tool-v3.13-force-cache-clear'; // 強制キャッシュクリア
 const urlsToCache = [
   './',
   './index.html',
@@ -35,17 +35,15 @@ const urlsToCache = [
 
 // Install event - cache resources and immediately take control
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+  console.log('Service Worker installing... Force update mode');
+  // 強制的に即座にスキップ待機
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        // モバイル向け：即座に有効化
-        console.log('Mobile: Force skip waiting');
-        self.skipWaiting();
       })
       .catch((error) => {
         console.log('Cache failed:', error);
@@ -63,22 +61,34 @@ self.addEventListener('message', (event) => {
 
 // Activate event - clean up old caches and claim clients when skip waiting
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
+  console.log('Service Worker activating... Clearing all old caches');
   event.waitUntil(
     Promise.all([
-      // Delete all old caches
+      // Delete all old caches aggressively
       caches.keys().then((cacheNames) => {
+        console.log('Found caches:', cacheNames);
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
-              console.log('Deleting old cache:', cacheName);
+              console.log('Force deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       }),
-      // Claim clients when activated after skip waiting
-      self.clients.claim()
+      // Immediately claim all clients
+      self.clients.claim().then(() => {
+        console.log('Claimed all clients');
+        // Notify all clients to reload
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_UPDATED',
+              message: 'New version available, please reload'
+            });
+          });
+        });
+      })
     ])
   );
 });
