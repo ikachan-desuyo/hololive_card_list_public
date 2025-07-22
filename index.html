@@ -423,7 +423,7 @@
             
             // 古いキャッシュがある場合は自動クリア提案
             if (!hasUpdates) {
-              const oldCaches = cacheNames.filter(name => !name.includes('v3.14-ultimate-cache-fix'));
+              const oldCaches = cacheNames.filter(name => !name.includes('v3.15-sort-priority-simplified'));
               if (oldCaches.length > 0) {
                 statusEl.innerHTML += '<br><small>古いキャッシュを検出: ' + oldCaches.join(', ') + '</small>';
                 if (confirm('古いキャッシュが見つかりました。クリアして最新状態にしますか？')) {
