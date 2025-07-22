@@ -1,24 +1,24 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '3.18.0';
-const VERSION_DESCRIPTION = 'ネットワーク優先バージョンチェック修正';
+const APP_VERSION = '3.19.0';
+const VERSION_DESCRIPTION = '単一ページバージョンチェック機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '3.9.0',
-  'card_list.html': '3.5.0', 
-  'holoca_skill_page.html': '3.5.0',
-  'deck_builder.html': '3.7.0'  // テスト用に高く設定
+  'card_list.html': '3.6.0',  // 単一ページバージョンチェック対応
+  'holoca_skill_page.html': '3.6.0',  // 単一ページバージョンチェック対応
+  'deck_builder.html': '3.8.0'  // 単一ページバージョンチェック対応
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
   title: '🚀 新しいバージョンが利用可能です',
-  description: 'バージョンチェック機能とエールフィルターが修正されました',
+  description: '単一ページバージョンチェック機能を追加しました',
   changes: [
-    '✅ バージョンチェック機能の精度向上',
-    '✅ エールカードのフィルタリング精度向上',
-    '✅ 複合カードタイプの正確な判定',
-    '✅ モバイル版でのフィルター動作改善'
+    '✅ 個別ページのバージョンチェック機能を追加',
+    '✅ ページ固有の更新確認ダイアログを実装',
+    '✅ 不要な全体バージョンチェック情報を削除',
+    '✅ より精密なバージョン管理システムを導入'
   ]
 };
 
@@ -116,16 +116,37 @@ async function checkPageVersions() {
       
       console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
       
-      // 実際のバージョンと期待するバージョンが異なる場合、または
-      // キャッシュされたバージョンが古い場合に更新が必要
-      if (compareVersions(expectedVersion, actualVersion) || 
-          compareVersions(actualVersion, cachedVersion)) {
+      // 詳細なバージョン比較とミスマッチの理由を判定
+      let mismatchReason = null;
+      let needsUpdate = false;
+      
+      if (!actualVersion) {
+        mismatchReason = 'actual_version_not_found';
+        needsUpdate = true;
+      } else if (compareVersions(expectedVersion, actualVersion)) {
+        mismatchReason = 'expected_vs_actual_mismatch';
+        needsUpdate = true;
+      } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
+        mismatchReason = 'actual_vs_cached_mismatch';
+        needsUpdate = true;
+      } else if (!cachedVersion) {
+        mismatchReason = 'no_cached_version';
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
         outdatedPages.push({
           page, 
-          reason: 'version_mismatch', 
+          reason: mismatchReason || 'version_mismatch', 
           expectedVersion, 
           actualVersion, 
-          cachedVersion
+          cachedVersion,
+          details: {
+            expectedVersion,
+            actualVersion: actualVersion || 'unknown',
+            cachedVersion: cachedVersion || 'none',
+            mismatchType: mismatchReason
+          }
         });
       }
     } catch (error) {
@@ -193,6 +214,129 @@ self.addEventListener('message', async (event) => {
         type: 'UPDATE_MESSAGE_RESPONSE',
         data: { message, details: UPDATE_DETAILS }
       });
+      break;
+      
+    case 'CHECK_VERSION_MISMATCH':
+      // 詳細なバージョンチェック
+      console.log('Performing detailed version mismatch check...');
+      try {
+        const versionCheckResult = await checkPageVersions();
+        const detailedInfo = {
+          hasUpdates: versionCheckResult.length > 0,
+          outdatedPages: versionCheckResult,
+          currentAppVersion: APP_VERSION,
+          pageVersions: PAGE_VERSIONS,
+          timestamp: new Date().toISOString()
+        };
+        
+        event.ports[0]?.postMessage({
+          type: 'VERSION_MISMATCH_RESPONSE',
+          data: detailedInfo
+        });
+      } catch (error) {
+        console.error('Version check error:', error);
+        event.ports[0]?.postMessage({
+          type: 'VERSION_MISMATCH_ERROR',
+          error: error.message
+        });
+      }
+      break;
+      
+    case 'CHECK_SINGLE_PAGE_VERSION':
+      // 単一ページのバージョンチェック
+      console.log('Performing single page version check for:', data?.page);
+      try {
+        const targetPage = data?.page;
+        if (!targetPage || !PAGE_VERSIONS[targetPage]) {
+          throw new Error(`Invalid page: ${targetPage}`);
+        }
+        
+        const expectedVersion = PAGE_VERSIONS[targetPage];
+        let pageInfo = null;
+        
+        // ネットワークから最新のページを取得
+        const response = await fetch(`./${targetPage}`, { cache: 'no-cache' });
+        if (!response.ok) {
+          pageInfo = {
+            page: targetPage,
+            reason: 'fetch_failed',
+            expectedVersion,
+            actualVersion: null,
+            cachedVersion: null
+          };
+        } else {
+          const htmlText = await response.text();
+          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+          const actualVersion = versionMatch ? versionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+          
+          // キャッシュされたバージョンもチェック
+          const cache = await caches.open(CACHE_NAME);
+          const cachedResponse = await cache.match(`./${targetPage}`);
+          let cachedVersion = null;
+          
+          if (cachedResponse) {
+            const cachedText = await cachedResponse.text();
+            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*) -/);
+            cachedVersion = cachedVersionMatch ? cachedVersionMatch[1].replace(/-CENTRALIZED-VERSION$/, '') : null;
+          }
+          
+          console.log(`Single page ${targetPage}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
+          
+          // バージョン比較とミスマッチの理由を判定
+          let mismatchReason = null;
+          let needsUpdate = false;
+          
+          if (!actualVersion) {
+            mismatchReason = 'actual_version_not_found';
+            needsUpdate = true;
+          } else if (compareVersions(expectedVersion, actualVersion)) {
+            mismatchReason = 'expected_vs_actual_mismatch';
+            needsUpdate = true;
+          } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
+            mismatchReason = 'actual_vs_cached_mismatch';
+            needsUpdate = true;
+          } else if (!cachedVersion) {
+            mismatchReason = 'no_cached_version';
+            needsUpdate = true;
+          }
+          
+          if (needsUpdate) {
+            pageInfo = {
+              page: targetPage,
+              reason: mismatchReason || 'version_mismatch',
+              expectedVersion,
+              actualVersion,
+              cachedVersion,
+              details: {
+                expectedVersion,
+                actualVersion: actualVersion || 'unknown',
+                cachedVersion: cachedVersion || 'none',
+                mismatchType: mismatchReason
+              }
+            };
+          }
+        }
+        
+        const singlePageResult = {
+          hasUpdates: pageInfo !== null,
+          pageInfo: pageInfo,
+          currentAppVersion: APP_VERSION,
+          targetPage: targetPage,
+          expectedVersion: expectedVersion,
+          timestamp: new Date().toISOString()
+        };
+        
+        event.ports[0]?.postMessage({
+          type: 'SINGLE_PAGE_VERSION_RESPONSE',
+          data: singlePageResult
+        });
+      } catch (error) {
+        console.error('Single page version check error:', error);
+        event.ports[0]?.postMessage({
+          type: 'SINGLE_PAGE_VERSION_ERROR',
+          error: error.message
+        });
+      }
       break;
       
     default:

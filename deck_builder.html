@@ -1384,61 +1384,103 @@ async function checkForUpdates() {
   try {
     statusEl.textContent = 'バージョン情報を確認中...';
     
-    // ✅ 新しいバージョン管理システムを使用
-    const outdatedPages = await checkOutdatedPages();
-    
-    if (outdatedPages.data && outdatedPages.data.length > 0) {
-      try {
-        // 統一されたバージョン管理システムからメッセージを取得
-        const updateMessage = await getUpdateMessage();
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const messageChannel = new MessageChannel();
+      
+      // タイムアウト設定（10秒）
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Service Worker timeout')), 10000)
+      );
+      
+      // Service Workerからのレスポンスを待機
+      const checkPromise = new Promise((resolve, reject) => {
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'SINGLE_PAGE_VERSION_RESPONSE') {
+            resolve(event.data.data);
+          } else if (event.data.type === 'SINGLE_PAGE_VERSION_ERROR') {
+            reject(new Error(event.data.error));
+          }
+        };
+      });
+      
+      // 現在のページの単一バージョンチェック要求を送信
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'CHECK_SINGLE_PAGE_VERSION', data: { page: 'deck_builder.html' } },
+        [messageChannel.port2]
+      );
+      
+      // レスポンス待機（タイムアウト付き）
+      const versionCheckResult = await Promise.race([checkPromise, timeout]);
+      
+      if (versionCheckResult.hasUpdates) {
+        // バージョン不一致の詳細情報を生成
+        let detailMessage = `🚀 deck_builder.html のバージョン不一致が検出されました:\n\n`;
+        detailMessage += `📊 アプリバージョン: v${versionCheckResult.currentAppVersion}\n`;
+        detailMessage += `🕐 チェック時刻: ${new Date(versionCheckResult.timestamp).toLocaleString('ja-JP')}\n\n`;
         
-        if (updateMessage && updateMessage.data) {
-          statusEl.innerHTML = `🚀 新しいバージョンが利用可能です！<br><small>${updateMessage.data.details.description}</small>`;
-          
-          setTimeout(() => {
-            if (confirm(updateMessage.data.message)) {
-              // Service Workerに更新を通知してページを更新
-              if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                  type: 'SKIP_WAITING'
-                });
-              }
+        const pageInfo = versionCheckResult.pageInfo;
+        detailMessage += `📄 ${pageInfo.page}:\n`;
+        detailMessage += `  ┣ 期待バージョン: v${pageInfo.expectedVersion}\n`;
+        detailMessage += `  ┣ 実際のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
+        detailMessage += `  ┣ キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n`;
+        
+        // ミスマッチの理由を日本語で説明
+        let reasonText = '';
+        switch(pageInfo.reason) {
+          case 'expected_vs_actual_mismatch':
+            reasonText = '期待バージョンと実際バージョンが不一致';
+            break;
+          case 'actual_vs_cached_mismatch':
+            reasonText = '実際バージョンとキャッシュバージョンが不一致';
+            break;
+          case 'actual_version_not_found':
+            reasonText = '実際のバージョン情報が見つかりません';
+            break;
+          case 'no_cached_version':
+            reasonText = 'キャッシュにバージョン情報がありません';
+            break;
+          default:
+            reasonText = pageInfo.reason;
+        }
+        detailMessage += `  ┗ 理由: ${reasonText}\n\n`;
+        
+        statusEl.innerHTML = `🚀 このページの更新が利用可能です`;
+        console.log('Single page version check details:', versionCheckResult);
+        
+        setTimeout(() => {
+          if (confirm(detailMessage + 'このページを更新してアプリケーションを再読み込みしますか？')) {
+            // キャッシュをクリアして強制更新
+            caches.keys().then(cacheNames => {
+              return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+            }).then(() => {
+              navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
               setTimeout(() => {
                 location.reload(true);
               }, 500);
-            } else {
-              // バージョン情報を表示
-              displayVersionInfo();
-            }
-          }, 2000);
-        }
-      } catch (versionError) {
-        console.error('Version system error:', versionError);
-        console.warn('Version system fallback:', versionError);
-        if (confirm('🚀 新しいバージョンが利用可能です。ページを更新してアプリケーションを再読み込みしますか？')) {
-          location.reload(true);
-        }
+            });
+          } else {
+            // バージョン情報を再表示
+            displayVersionInfo();
+          }
+        }, 2000);
+      } else {
+        statusEl.textContent = '✅ このページのバージョンは最新です';
+        console.log('Single page version check result: Page is up to date', versionCheckResult);
+        setTimeout(() => {
+          displayVersionInfo();
+        }, 2000);
       }
+      
     } else {
-      statusEl.textContent = '✅ 全ページ更新済み';
-      setTimeout(() => {
-        displayVersionInfo();
-      }, 2000);
-    }
-    
-    // バージョン情報の表示
-    try {
-      const versionInfo = await getVersionInfo();
-      if (versionInfo && versionInfo.data) {
-        statusEl.textContent = `[v${versionInfo.data.pageVersions['deck_builder.html']}-CENTRALIZED]`;
-      }
-    } catch (error) {
-      console.warn('Version display error:', error);
+      statusEl.textContent = '[v3.7.0-SW-UNAVAILABLE]';
     }
     
   } catch (error) {
     console.error('Update check failed:', error);
-    statusEl.textContent = '[v3.6.0-ERROR]';
+    statusEl.textContent = '[v3.7.0-ERROR: ' + error.message + ']';
+    setTimeout(() => {
+      displayVersionInfo();
+    }, 3000);
   }
 }
 
