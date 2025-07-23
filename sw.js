@@ -1,12 +1,12 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.4.2';
-const VERSION_DESCRIPTION = 'モーダル内独自収録商品フィルター追加';
+const APP_VERSION = '4.4.3';
+const VERSION_DESCRIPTION = 'ViewMode状態保存機能追加';
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
   'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
   'card_list.html': '4.1.1-CSV-ENHANCEMENT-UPDATE',  // CSV機能改良 - 追加修正と改善
-  'collection_binder.html': '4.4.2-MODAL-PRODUCT-FILTER-FIX',  // モーダル内独自収録商品フィルター追加
+  'collection_binder.html': '4.4.3-VIEWMODE-PERSISTENCE',  // ViewMode状態保存機能追加
   'binder_collection.html': '4.1.3-MOBILE-IMPROVEMENTS',  // 複数バインダー管理システム - UI改善と追加修正
   'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
   'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善

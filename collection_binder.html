@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.4.2-MODAL-PRODUCT-FILTER-FIX - Added independent product filter in card selection modal -->
+<!-- Version: 4.4.3-VIEWMODE-PERSISTENCE - Added persistent view mode state saving -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1478,12 +1478,33 @@
       totalCards: 0,
       ownedCards: 0,
       autoArrangeVisible: false,
-      viewMode: false // false: 編集モード, true: 閲覧モード
+      viewMode: loadViewModePreference() // 保存された設定を読み込み
     };
 
     let cardsData = [];
     let userCollection = {};
     let binderCollection = { binders: [] };
+    
+    // 表示モード設定の保存・読み込み
+    function saveViewModePreference(viewMode) {
+      localStorage.setItem('binderViewMode', JSON.stringify(viewMode));
+      console.log('View mode preference saved:', viewMode ? '閲覧モード' : '編集モード');
+    }
+    
+    function loadViewModePreference() {
+      const saved = localStorage.getItem('binderViewMode');
+      if (saved !== null) {
+        try {
+          const viewMode = JSON.parse(saved);
+          console.log('View mode preference loaded:', viewMode ? '閲覧モード' : '編集モード');
+          return viewMode;
+        } catch (error) {
+          console.error('Error loading view mode preference:', error);
+        }
+      }
+      console.log('Using default view mode: 編集モード');
+      return false; // デフォルトは編集モード
+    }
     
     // カード選択関連の変数
     let currentSlotIndex = null;
@@ -1536,6 +1557,11 @@
       initializeBinder();
       updateStats();
       initializeMobileFeatures();
+      
+      // ViewModeボタンの状態を確実に設定
+      setTimeout(() => {
+        updateViewModeButton();
+      }, 100);
       
       console.log('Initialization complete');
       
@@ -1781,8 +1807,25 @@
 
     // バインダーの初期化
     function initializeBinder() {
+      // 保存されたviewModeに基づいてボタンの表示を設定
+      updateViewModeButton();
+      
       // バインダーデータが既に読み込まれているので、直接レンダリング
       renderBinder();
+    }
+    
+    // ViewModeボタンの表示を更新
+    function updateViewModeButton() {
+      const btn = document.getElementById('viewModeBtn');
+      if (!btn) return;
+      
+      if (binderState.viewMode) {
+        btn.textContent = '✏️ 編集モード';
+        btn.title = '編集モードに切替';
+      } else {
+        btn.textContent = '👁️ 閲覧モード';
+        btn.title = '閲覧モードに切替';
+      }
     }
 
     // バインダータイトルの更新
@@ -3435,6 +3478,10 @@
     // 閲覧/編集モード切替
     function toggleViewMode() {
       binderState.viewMode = !binderState.viewMode;
+      
+      // 設定を保存
+      saveViewModePreference(binderState.viewMode);
+      
       const btn = document.getElementById('viewModeBtn');
       
       if (binderState.viewMode) {
