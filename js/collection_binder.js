@@ -40,6 +40,10 @@
     let selectedCardId = null;
     let availableCards = [];
 
+    // カードナビゲーション用の変数
+    let currentModalCard = null;
+    let currentPageCards = [];
+
     // モバイル用の変数
     let touchStartX = 0;
     let touchStartY = 0;
@@ -536,6 +540,7 @@
       }
 
       updateStats();
+      updateCurrentPageCards(); // カードナビゲーション用にページのカードリストを更新
     }
 
     // ページHTMLを作成する関数
@@ -1803,6 +1808,9 @@
       const modal = document.getElementById("imageModal");
       const isMobile = window.innerWidth <= 768;
 
+      // 現在表示中のカード情報を保存（ナビゲーション用）
+      currentModalCard = cardData;
+
       // レイアウトの切り替え
       const desktopLayout = modal.querySelector(".modal-desktop");
       const mobileLayout = modal.querySelector(".modal-mobile");
@@ -1827,16 +1835,18 @@
           (cardData.product.includes(",") ?
             cardData.product.replace(/,\s*/g, " / ") : cardData.product) : "不明";
 
-        // スキル情報を取得
+        // スキル情報を取得（フォントサイズを統一）
         const skillsHtml = cardData.skills && cardData.skills.length > 0 ?
           renderSkills(cardData.skills) : "<div style='font-size:13px; color:#aaa;'>スキルなし</div>";
 
         // Bloom情報を正しく処理
         let bloomText = '不明';
-        if (cardData.cardType === "Buzzホロメン" || cardData.card_type === "Buzzホロメン") {
-          bloomText = "1stBuzz";
-        } else if (cardData.bloom && cardData.bloom !== "" && cardData.bloom !== "null") {
+        if (cardData.bloom_level !== undefined && cardData.bloom_level !== null && cardData.bloom_level !== "") {
+          bloomText = cardData.bloom_level;
+        } else if (cardData.bloom !== undefined && cardData.bloom !== null && cardData.bloom !== "" && cardData.bloom !== "null") {
           bloomText = cardData.bloom;
+        } else if (cardData.cardType === "Buzzホロメン" || cardData.card_type === "Buzzホロメン") {
+          bloomText = "1stBuzz";
         }
 
         if (isMobile) {
@@ -1859,7 +1869,7 @@
 
             <div style="margin:12px 0; border-top:1px solid #555; padding-top:12px;">
               <strong style="font-size:14px; color:#667eea;">⚡ スキル:</strong>
-              <div style="margin-top:8px;">
+              <div style="margin-top:8px; font-size:13px;">
                 ${skillsHtml}
               </div>
             </div>
@@ -1882,7 +1892,7 @@
 
             <div style="margin:15px 0; border-top:1px solid #555; padding-top:15px;">
               <strong style="font-size:15px; color:#667eea;">⚡ スキル:</strong><br>
-              <div style="margin-top:10px;">
+              <div style="margin-top:10px; font-size:14px;">
                 ${skillsHtml}
               </div>
             </div>
@@ -1906,6 +1916,44 @@
     function closeImageModal() {
       document.getElementById("imageModal").style.display = "none";
       document.body.style.overflow = "auto";
+    }
+
+    // カードナビゲーション機能
+    function updateCurrentPageCards() {
+      currentPageCards = [];
+      const currentPageData = binderState.pages[binderState.currentPage];
+      if (currentPageData && currentPageData.slots) {
+        currentPageData.slots.forEach(slot => {
+          if (slot.cardId) {
+            const card = cardsData.find(c => c.id === slot.cardId);
+            if (card) {
+              currentPageCards.push(card);
+            }
+          }
+        });
+      }
+    }
+
+    function previousCardDetail() {
+      if (!currentModalCard || currentPageCards.length === 0) return;
+      
+      const currentIndex = currentPageCards.findIndex(card => card.id === currentModalCard.id);
+      if (currentIndex > 0) {
+        const prevCard = currentPageCards[currentIndex - 1];
+        const imageUrl = prevCard.image_url || prevCard.image || './images/placeholder.png';
+        showImageModal(imageUrl, prevCard);
+      }
+    }
+
+    function nextCardDetail() {
+      if (!currentModalCard || currentPageCards.length === 0) return;
+      
+      const currentIndex = currentPageCards.findIndex(card => card.id === currentModalCard.id);
+      if (currentIndex < currentPageCards.length - 1) {
+        const nextCard = currentPageCards[currentIndex + 1];
+        const imageUrl = nextCard.image_url || nextCard.image || './images/placeholder.png';
+        showImageModal(imageUrl, nextCard);
+      }
     }
 
     // カード画像クリック処理
@@ -1977,19 +2025,19 @@
 
         // 表示タイプ別に処理
         if (skill.text) {
-          return `<div style="margin-bottom:12px;"><strong>【${skill.type}】</strong>${iconsBlock}<br><span style="font-size:13px;">${skill.text}</span></div>`;
+          return `<div style="margin-bottom:12px;"><strong>【${skill.type}】</strong>${iconsBlock}<br><span class="skill-text" style="font-size:13px;">${skill.text}</span></div>`;
         } else if (skill.type === "キーワード") {
           const subtype = skill.subtype ? `<strong>【${skill.subtype}】</strong>` : "";
           const name = skill.name ?? "";
           const desc = skill.description ?? "";
-          return `<div style="margin-bottom:12px;">${subtype}${iconsBlock}<br><strong style="font-size:14px;">${name}</strong><br><span style="font-size:13px;">${desc}</span></div>`;
+          return `<div style="margin-bottom:12px;">${subtype}${iconsBlock}<br><strong style="font-size:14px;">${name}</strong><br><span class="skill-description" style="font-size:13px;">${desc}</span></div>`;
         } else {
           const typePart = `<strong>【${skill.type}】</strong>`;
           const namePart = skill.name ? `[${skill.name}]` : "";
           const dmg = skill.dmg ? `（${skill.dmg}）` : "";
           const subtype = skill.subtype ? `<br><em>${skill.subtype}</em>` : "";
           const desc = skill.description ?? "";
-          return `<div style="margin-bottom:12px;">${typePart}<strong>${namePart}${dmg}</strong>${subtype}${iconsBlock}<br><span style="font-size:13px;">${desc}</span></div>`;
+          return `<div style="margin-bottom:12px;">${typePart}<strong>${namePart}${dmg}</strong>${subtype}${iconsBlock}<br><span class="skill-description" style="font-size:13px;">${desc}</span></div>`;
         }
       }).join("");
     }
