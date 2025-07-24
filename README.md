@@ -1,8 +1,15 @@
 # 📚 Hololive Card Web Tools v4.5.0
+# 📚 ホロライブカードWebツール v4.5.0
 
 [![Version](https://img.shields.io/badge/version-4.5.0-blue.svg)](https://github.com/ikachan-desuyo/hololive_card_list_check)
 [![PWA](https://img.shields.io/badge/PWA-ready-green.svg)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 [![Offline](https://img.shields.io/badge/offline-support-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
+
+[English](#english) | [日本語](#japanese)
+
+---
+
+# Japanese
 
 ## 🚀 最新アップデート v4.5.0
 
@@ -18,7 +25,267 @@
 - 🔄 メッセージハンドラーの分離
 - ⚡ コードの可読性と保守性向上
 
-## 🏠 Main Page (`index.html`) v4.5.0
+## 🏠 メインページ (`index.html`) v4.5.0
+
+すべての利用可能なツールへのナビゲーションを備えたランディングページ：
+- **カードリスト**: 高度な検索機能付きカードコレクション管理
+- **カード詳細検索**: 詳細フィルターとスキル解析による高度検索
+- **デッキビルダー**: UI改善されたカードデッキ作成・管理
+- **コレクションバインダー**: ドラッグ&ドロップ機能付き仮想バインダー管理
+- **バインダーコレクション**: カスタムカバー付き複数バインダー管理
+
+## 🗂 ホロライブカードリスト (`card_list.html`) v4.5.0
+
+検索機能が大幅に強化された、ホロライブカードの閲覧・フィルタリング・管理のためのレスポンシブカードリストツール。
+
+### ✅ 機能
+
+#### 強化された検索システム
+- **統一検索**: ひらがな/カタカナ統一、大文字/小文字統一検索
+- **リアルタイムフィルタリング**: 入力と同時に結果を表示
+- **キーワード検索**: 名前、ID、タグ、スキルを統一検索で検索
+- **商品フィルター**: オートコンプリート機能付き部分一致ドロップダウン
+
+#### 表示モード
+- **テーブルビュー**: グリッドレイアウトでの構造化詳細表示
+- **コンパクトビュー**: モバイル最適化された画像重視表示
+- **スクロールベース読み込み**: パフォーマンス向上のための段階的カード表示（`renderLimit`）
+
+#### 高度フィルターシステム（チップスタイルUI）
+- **所有状況**: `所有` / `未所有` トグル
+- **レアリティ**: 自動生成ボタン + `すべて` ボタン
+- **色**: 自動生成ボタン + `すべて` ボタン
+- **ブルーム**: 自動生成ボタン + `すべて` ボタン
+- **動的カードタイプ**: 実データから自動生成、「・」分割タイプをサポート
+
+> 🧠 すべてのフィルターはチップスタイルのトグルボタンを使用。「すべて」ボタンは他の選択をクリアし、排他的になります。
+
+#### 統計ダッシュボード
+- リアルタイム表示：
+  - 表示カード数
+  - 所有カード数
+  - 所有率（%）
+- 常に**完全フィルター済みセット**から計算（表示項目のみではない）
+
+#### 所有管理
+- カードごとの手動入力（`localStorage`経由で保存）
+- **CSVインポート**: `id,ownedCount` フォーマット対応
+- **CSVエクスポート**: 所有データをクリップボードにコピー
+- ページ間データ同期
+
+#### モバイル最適化
+- セレクトボックス2列グリッドのレスポンシブレイアウト
+- 最適化されたカード詳細モーダル
+- タッチフレンドリーインターフェース
+- ダークモードトグル（ページ間永続化）
+
+---
+
+## 🔍 ホロライブカード詳細検索 (`holoca_skill_page.html`) v4.5.0
+
+検索正規化が強化された、カード能力での高度フィルタリングのためのスキルベース検索ツール。
+
+### ✅ 機能
+
+#### 強化された検索フィルター
+- **統一検索**: ひらがな/カタカナ統一、大文字/小文字統一検索
+- カード属性による検索：
+  - 名前 / ID / レアリティ / タイプ（統一検索付き）
+- スキルによる検索：
+  - スキルテキスト部分一致（統一検索付き）
+  - リーダー / ノーマルスキル分離
+  - コストタイプ / HPトリガー / スキルレベル条件
+- タグと商品のドロップダウン一致
+
+#### スキルロジック検出
+- キーワード自動ハイライト：
+  - バフ/デバフ用語（ATK UP、DMG DOWN）
+  - 発動タイミング（開始、回復）
+  - HPしきい値、スキルレベル
+- 解析強化のための視覚的強調
+
+#### 結果表示
+- 画像サムネイル（クリック可能なモーダルズーム）
+- 所有数（リストページと共有）
+- 商品またはカードタイプでグループ化
+- モバイル最適化レイアウト
+
+#### 統計
+- 総マッチ数
+- 結果中の総所有数
+
+---
+
+## 🃏 デッキビルダー (`deck_builder.html`) v4.5.0
+
+強化された検索とフィルタリング機能でカードデッキを作成・管理。
+
+### ✅ 機能
+
+#### 強化されたデッキビルディング
+- **統一検索**: ひらがな/カタカナ統一、大文字/小文字統一検索
+- ドラッグ&ドロップカード管理
+- リアルタイムデッキ検証
+- カード数追跡
+- エクスポート/インポート機能
+
+#### 高度フィルター
+- 色、レアリティ、タイプフィルタリング（統一検索付き）
+- コストベースフィルタリング
+- スキルベース検索
+- モバイル最適化インターフェース
+
+---
+
+## 📚 コレクションバインダー (`collection_binder.html`) v4.5.0
+
+高度機能でカードコレクションを整理するための仮想バインダー。
+
+### ✅ 機能
+
+#### 動的カード管理
+- **強化された検索**: ひらがな/カタカナ統一、大文字/小文字統一検索
+- **動的カードタイプフィルタリング**: 実データから自動生成
+- ドラッグ&ドロップ機能
+- グリッドベースレイアウト
+- リアルタイムフィルタリング
+
+#### 高度フィルタリング
+- **統一検索**: すべてのテキスト検索で統一機能を使用
+- データからの動的カードタイプ生成
+- 「・」分割カードタイプの個別表示
+- モバイル最適化2列グリッドレイアウト
+
+#### 視覚的強化
+- カードホバー効果
+- レスポンシブデザイン
+- ダークモードサポート
+- タッチフレンドリーインターフェース
+
+---
+
+## 🗂️ バインダーコレクション (`binder_collection.html`) v4.2.0
+
+カスタムカバーと説明付きで複数バインダーを管理。
+
+### ✅ 機能
+
+#### バインダー管理
+- 複数バインダー作成
+- カスタムカバー画像
+- バインダー説明
+- バインダーごとの独立データストレージ
+
+#### ユーザーインターフェース
+- モバイル最適化レイアウト
+- レスポンシブデザイン
+- バインダー間の簡単ナビゲーション
+
+---
+
+## 🛠️ 技術アーキテクチャ
+
+### モジュラーService Worker構造
+- **`sw.js`**: イベントリスナー付きメインService Worker
+- **`sw-version.js`**: バージョン管理と設定
+- **`sw-utils.js`**: バージョンチェック用ユーティリティ関数
+- **`sw-handlers.js`**: クライアント通信用メッセージハンドラー
+
+### Progressive Web App機能
+- **オフラインサポート**: インターネットなしでの完全機能
+- **キャッシュ戦略**: HTMLはネットワーク優先、アセットはキャッシュ優先
+- **バックグラウンド同期**: 接続復旧時のデータ更新
+- **レスポンシブデザイン**: すべてのデバイスサイズに最適化
+
+### 検索正規化
+- **テキスト正規化**: 統一検索のためのひらがな ⇔ カタカナ変換
+- **大文字小文字区別なし**: 自動大文字小文字正規化
+- **ページ間一貫性**: すべてのツールで同じ検索動作
+
+### データ管理
+- **LocalStorage**: 永続データストレージ
+- **ページ間同期**: ツール間での共有データ
+- **インポート/エクスポート**: データポータビリティのためのCSV機能
+
+---
+
+## 📱 モバイル最適化
+
+すべてのツールはモバイルデバイスで完全に最適化：
+- タッチフレンドリーインターフェース
+- スペース効率のための2列グリッドレイアウト
+- レスポンシブモーダルとオーバーレイ
+- 最適化された画像読み込み
+- スワイプジェスチャーサポート
+
+---
+
+## 🚀 はじめ方
+
+1. ウェブブラウザで `index.html` を開く
+2. 希望のツールにナビゲート
+3. ホロライブカードコレクションの管理を開始！
+
+### PWAインストール
+- Chrome/Edge: 「インストール」プロンプトまたは「ホーム画面に追加」をクリック
+- iOS Safari: 共有 → 「ホーム画面に追加」
+- Android: ブラウザメニューから「ホーム画面に追加」
+
+---
+
+## 🔧 開発
+
+### バージョン管理
+バージョン更新は `sw-version.js` で一元化。アップグレード手順は `VERSION_UPGRADE_GUIDE.md` を参照。
+
+### ファイル構造
+```
+├── index.html                 # メインランディングページ
+├── card_list.html            # カード閲覧ツール
+├── holoca_skill_page.html    # スキル検索ツール
+├── deck_builder.html         # デッキビルディングツール
+├── collection_binder.html    # 仮想バインダー
+├── binder_collection.html    # バインダー管理
+├── sw.js                     # メインservice worker
+├── sw-version.js             # バージョン設定
+├── sw-utils.js               # ユーティリティ関数
+├── sw-handlers.js            # メッセージハンドラー
+├── json_file/
+│   ├── card_data.json        # カードデータベース
+│   └── release_dates.json    # リリース情報
+└── images/                   # アセット画像
+```
+
+---
+
+## 📄 ライセンス・権利表記
+
+### ソフトウェアライセンス
+このプロジェクトはMITライセンスの下でライセンスされています。
+
+### 商標・権利表記
+- 「ホロライブ」「hololive」は株式会社カバーの商標です
+- このツールは株式会社カバーとは無関係の非公式ファンメイドツールです
+- カードデータの著作権は各権利者に帰属します
+
+### 免責事項
+このツールの使用により生じた損害について、作成者は一切の責任を負いません。このツールは教育・研究目的及び個人的なコレクション管理のためのツールとして提供されています。
+
+---
+
+## 📞 サポート
+
+質問や問題については、GitHubでissueを開いてください。
+
+---
+
+**ホロライブコミュニティのために ❤️ で作られました**
+
+---
+
+# English
+
+## 🚀 Latest Update v4.5.0
 
 Landing page with navigation to all available tools:
 - **Card List**: Browse and manage your card collection with advanced search
@@ -251,15 +518,18 @@ Version updates are centralized in `sw-version.js`. See `VERSION_UPGRADE_GUIDE.m
 
 ---
 
-## 📄 License
+## 📄 License & Legal Notice
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Software License
+This project is licensed under the MIT License.
 
----
+### Trademark & Copyright Notice
+- "Hololive" and "hololive" are trademarks of Cover Corporation
+- This tool is an unofficial fan-made tool unrelated to Cover Corporation
+- Copyright of card data belongs to respective rights holders
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Disclaimer
+The creator assumes no responsibility for any damages arising from the use of this tool. This tool is provided for educational, research purposes, and personal collection management.
 
 ---
 
@@ -269,4 +539,24 @@ For questions or issues, please open an issue on GitHub.
 
 ---
 
-**Made with ❤️ for the Hololive community**
+**ホロライブコミュニティのために ❤️ で作られました**
+
+---
+
+# English
+
+## 🚀 Latest Update v4.5.0
+
+**Major Search Improvements & Modular Structure**
+- 🔤 Hiragana/Katakana unified search functionality
+- 🔠 Case-insensitive unified search functionality
+- 🏷️ Dynamic card type filter generation
+- 📋 Individual display of "・" separated card types
+- 📱 Mobile card detail modal improvements
+- 🎨 Select box 2-column grid layout
+- 🔧 Service Worker modular structure
+- 📦 Utility function separation
+- 🔄 Message handler separation
+- ⚡ Code readability and maintainability improvements
+
+## 🏠 Main Page (`index.html`) v4.5.0
