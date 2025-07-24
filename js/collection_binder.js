@@ -146,8 +146,7 @@
           cardsData = [];
         }
 
-        // 収録商品リストを初期化
-        initializeProductList();
+        // 商品リストの初期化はloadUserCollection()後に実行される
       } catch (error) {
         console.error('Failed to load card data:', error);
         cardsData = []; // エラー時は空配列に設定
@@ -321,6 +320,9 @@
       binderState.ownedCards = ownedCount;
 
       console.log('Final owned cards count:', binderState.ownedCards);
+      
+      // ユーザーコレクション読み込み完了後に商品リストを初期化
+      initializeProductList();
     }
 
     // バインダーコレクションの読み込み

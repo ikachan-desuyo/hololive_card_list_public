@@ -2,7 +2,7 @@
 <html lang="ja">
 <!-- Version: 4.2.0-CREATE-IMPROVEMENTS - Binder creation functionality improvements with image processing and error handling -->
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="U            <input type="file" id="editCoverImageInput" accept="image/*" style="display: none;" onchange="handleEditCoverImageUpload(event)">F-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -109,6 +109,90 @@
         <div class="modal-actions">
           <button type="button" class="modal-btn secondary" onclick="closeCreateBinderModal()">キャンセル</button>
           <button type="submit" class="modal-btn primary" id="createBinderSubmitBtn">バインダーを作成</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- バインダー編集モーダル -->
+  <div class="modal" id="editBinderModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📝 バインダー設定の編集</h2>
+        <button class="modal-close" onclick="closeEditBinderModal()">×</button>
+      </div>
+      <form id="editBinderForm">
+        <div class="form-group">
+          <label class="form-label">バインダー名</label>
+          <input type="text" id="editBinderName" class="form-input" placeholder="バインダー名を入力" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">説明（任意）</label>
+          <textarea id="editBinderDescription" class="form-textarea" placeholder="バインダーの説明を入力（任意）" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">レイアウト</label>
+          <div class="layout-options">
+            <div class="layout-option" data-layout="3x3" onclick="selectEditLayout('3x3')">
+              <div class="layout-grid layout-3x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">3×3 (9枚)</div>
+            </div>
+
+            <div class="layout-option" data-layout="4x3" onclick="selectEditLayout('4x3')">
+              <div class="layout-grid layout-4x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">4×3 (12枚)</div>
+            </div>
+
+            <div class="layout-option" data-layout="3x4" onclick="selectEditLayout('3x4')">
+              <div class="layout-grid layout-3x4">
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">3×4 (12枚)</div>
+            </div>
+
+            <div class="layout-option" data-layout="2x3" onclick="selectEditLayout('2x3')">
+              <div class="layout-grid layout-2x3">
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+                <div class="layout-slot"></div><div class="layout-slot"></div>
+              </div>
+              <div class="layout-label">2×3 (6枚)</div>
+            </div>
+          </div>
+          <input type="hidden" id="editSelectedLayout" value="">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">表紙画像（任意）</label>
+          <div class="cover-upload-area" onclick="document.getElementById('editCoverImageInput').click()">
+            <div id="editCoverPreview" style="display: none;">
+              <img id="editCoverPreviewImage" class="cover-preview" alt="表紙プレビュー">
+            </div>
+            <div id="editCoverPlaceholder" class="cover-placeholder">
+              <div class="cover-icon">🖼️</div>
+              <div class="cover-text">クリックして画像を選択</div>
+            </div>
+          </div>
+          <input type="file" id="editCoverImageInput" accept="image/*" style="display: none;">
+          <button type="button" class="remove-cover-btn" id="editRemoveCoverBtn" onclick="removeEditCover()" style="display: none;">画像を削除</button>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="modal-btn secondary" onclick="closeEditBinderModal()">キャンセル</button>
+          <button type="submit" class="modal-btn primary">設定を保存</button>
         </div>
       </form>
     </div>
@@ -263,6 +347,26 @@
       document.getElementById('coverPreview').style.display = 'none';
       document.getElementById('coverUploadText').style.display = 'block';
       document.getElementById('coverImageInput').value = '';
+    }
+
+    // 編集用表紙画像のアップロード処理
+    function handleEditCoverImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const previewImage = document.getElementById('editCoverPreviewImage');
+          const preview = document.getElementById('editCoverPreview');
+          const placeholder = document.getElementById('editCoverPlaceholder');
+          const removeBtn = document.getElementById('editRemoveCoverBtn');
+
+          previewImage.src = e.target.result;
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          removeBtn.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     // バインダー作成フォームの送信
@@ -445,18 +549,219 @@
       window.location.href = url;
     }
 
+    // バインダー編集フォームの送信
+    document.getElementById('editBinderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (window.currentEditingIndex === null || window.currentEditingIndex === undefined) {
+        alert('編集対象のバインダーが見つかりません。');
+        return;
+      }
+
+      const binder = binderCollection.binders[window.currentEditingIndex];
+      const name = document.getElementById('editBinderName').value.trim();
+      const description = document.getElementById('editBinderDescription').value.trim();
+      const layout = document.getElementById('editSelectedLayout').value;
+      const coverImageInput = document.getElementById('editCoverImageInput');
+
+      if (!name) {
+        alert('バインダー名を入力してください。');
+        return;
+      }
+
+      // 基本情報の更新
+      binder.name = name;
+      binder.description = description;
+      
+      // レイアウトが変更された場合の処理
+      if (binder.layout !== layout) {
+        const layoutConfigs = {
+          '3x3': { cols: 3, rows: 3, slots: 9 },
+          '4x3': { cols: 4, rows: 3, slots: 12 },
+          '3x4': { cols: 3, rows: 4, slots: 12 },
+          '2x3': { cols: 2, rows: 3, slots: 6 }
+        };
+        
+        const newConfig = layoutConfigs[layout];
+        if (newConfig) {
+          binder.layout = layout;
+          binder.layoutConfig = newConfig;
+          
+          // 既存ページのスロット数を調整
+          binder.pages.forEach(page => {
+            if (page.slots.length > newConfig.slots) {
+              // スロット数が減る場合：はみ出したカードを削除
+              page.slots = page.slots.slice(0, newConfig.slots);
+            } else if (page.slots.length < newConfig.slots) {
+              // スロット数が増える場合：null で埋める
+              while (page.slots.length < newConfig.slots) {
+                page.slots.push(null);
+              }
+            }
+          });
+        }
+      }
+
+      binder.updatedAt = new Date().toISOString();
+
+      // 表紙画像の処理
+      if (coverImageInput.files[0]) {
+        const file = coverImageInput.files[0];
+
+        // ファイルサイズチェック（5MB制限）
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          alert('画像ファイルサイズが大きすぎます。5MB以下の画像を選択してください。');
+          return;
+        }
+
+        // ファイル形式チェック
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          alert('サポートされていない画像形式です。JPEG、PNG、GIF、WebP形式の画像を選択してください。');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const img = new Image();
+            img.onload = function() {
+              // Canvas で画像をリサイズ
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+
+              // 最大サイズを設定（400x300）
+              const maxWidth = 400;
+              const maxHeight = 300;
+              
+              let { width, height } = this;
+              
+              if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+
+              ctx.drawImage(this, 0, 0, width, height);
+
+              // WebP 形式で画質を調整して保存（ファイルサイズ削減）
+              const compressedDataUrl = canvas.toDataURL('image/webp', 0.8);
+              
+              binder.coverImage = compressedDataUrl;
+              finalizeBinderEdit();
+            };
+            img.src = e.target.result;
+          } catch (error) {
+            console.error('Image processing error:', error);
+            alert('画像の処理中にエラーが発生しました。');
+          }
+        };
+
+        reader.readAsDataURL(file);
+      } else {
+        // 画像が選択されていない場合は既存の画像をそのまま保持
+        finalizeBinderEdit();
+      }
+    });
+
+    // バインダー編集の完了
+    function finalizeBinderEdit() {
+      try {
+        saveBinderCollection();
+        closeEditBinderModal();
+        renderBinders();
+        alert('バインダー設定を更新しました！');
+      } catch (error) {
+        console.error('Binder edit error:', error);
+        alert('バインダーの更新中にエラーが発生しました。');
+      }
+    }
+
     // バインダーの編集
     function editBinder(index) {
       const binder = binderCollection.binders[index];
-
-      // 編集モーダルを開く（今回は簡易的にpromptを使用）
-      const newName = prompt('バインダー名を編集:', binder.name);
-      if (newName && newName.trim()) {
-        binder.name = newName.trim();
-        binder.updatedAt = new Date().toISOString();
-        saveBinderCollection();
-        renderBinders();
+      
+      // 編集対象のインデックスを保存
+      window.currentEditingIndex = index;
+      
+      // フォームに現在の値を設定
+      document.getElementById('editBinderName').value = binder.name;
+      document.getElementById('editBinderDescription').value = binder.description || '';
+      document.getElementById('editSelectedLayout').value = binder.layout || '3x3';
+      
+      // レイアウト選択の表示を更新
+      updateEditLayoutSelection(binder.layout || '3x3');
+      
+      // 表紙画像の設定
+      if (binder.coverImage) {
+        const preview = document.getElementById('editCoverPreview');
+        const previewImage = document.getElementById('editCoverPreviewImage');
+        const placeholder = document.getElementById('editCoverPlaceholder');
+        const removeBtn = document.getElementById('editRemoveCoverBtn');
+        
+        previewImage.src = binder.coverImage;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        removeBtn.style.display = 'block';
+      } else {
+        // 画像がない場合はリセット
+        resetEditCoverPreview();
       }
+      
+      // モーダルを開く
+      document.getElementById('editBinderModal').classList.add('show');
+    }
+
+    // 編集モーダルを閉じる
+    function closeEditBinderModal() {
+      document.getElementById('editBinderModal').classList.remove('show');
+      resetEditForm();
+    }
+
+    // 編集フォームのリセット
+    function resetEditForm() {
+      document.getElementById('editBinderForm').reset();
+      resetEditCoverPreview();
+      updateEditLayoutSelection('3x3');
+      window.currentEditingIndex = null;
+    }
+
+    // 編集用レイアウト選択
+    function selectEditLayout(layout) {
+      document.getElementById('editSelectedLayout').value = layout;
+      updateEditLayoutSelection(layout);
+    }
+
+    // 編集用レイアウト選択の表示更新
+    function updateEditLayoutSelection(layout) {
+      const options = document.querySelectorAll('#editBinderModal .layout-option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+        if (option.getAttribute('data-layout') === layout) {
+          option.classList.add('selected');
+        }
+      });
+    }
+
+    // 編集用表紙画像プレビューのリセット
+    function resetEditCoverPreview() {
+      const preview = document.getElementById('editCoverPreview');
+      const placeholder = document.getElementById('editCoverPlaceholder');
+      const removeBtn = document.getElementById('editRemoveCoverBtn');
+      
+      preview.style.display = 'none';
+      placeholder.style.display = 'flex';
+      removeBtn.style.display = 'none';
+      document.getElementById('editCoverImageInput').value = '';
+    }
+
+    // 編集用表紙画像の削除
+    function removeEditCover() {
+      resetEditCoverPreview();
     }
 
     // バインダーの削除
@@ -595,10 +900,18 @@
       }
     });
 
+    // 編集モーダルの外側クリックで閉じる
+    document.getElementById('editBinderModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeEditBinderModal();
+      }
+    });
+
     // ESCキーでモーダルを閉じる
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeCreateBinderModal();
+        closeEditBinderModal();
       }
     });
   </script>
