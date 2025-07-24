@@ -101,7 +101,6 @@
       <!-- バインダー管理ボタン -->
       <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
         <button class="compact-btn" onclick="addNewPage()" id="addPageBtn" title="新しいページを追加">➕ ページ追加</button>
-        <button class="compact-btn" onclick="showBinderSettings()" id="binderSettingsBtn" title="バインダー設定">⚙️ バインダー設定</button>
         <button class="compact-btn" onclick="toggleViewMode()" id="viewModeBtn" title="閲覧/編集モード切替">👁️ 閲覧モード</button>
         <button class="compact-btn" onclick="clearAllCards()" id="clearBtn" title="全カードを削除" style="background: #f44336; color: white;">🗑️ 初期化</button>
       </div>
@@ -201,67 +200,6 @@
         <button class="btn btn-secondary" onclick="closeCardSelector()">キャンセル</button>
         <button class="btn btn-primary" onclick="removeCardFromSlot()">カードを削除</button>
         <button class="btn btn-primary" onclick="placeSelectedCard()">カードを配置</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- バインダー設定モーダル -->
-  <div id="binderSettingsModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-      <div class="modal-header">
-        <h2>⚙️ バインダー設定</h2>
-        <button onclick="closeBinderSettings()" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body" style="padding: 20px;">
-        <!-- バインダー名設定 -->
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">📝 バインダー名:</label>
-          <input type="text" id="binderNameInput" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;" placeholder="マイバインダー">
-        </div>
-
-        <!-- バインダー説明設定 -->
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">📄 説明:</label>
-          <textarea id="binderDescriptionInput" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; min-height: 80px;" placeholder="バインダーの説明を入力してください"></textarea>
-        </div>
-
-        <!-- レイアウト設定 -->
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">📐 レイアウト:</label>
-          <select id="binderLayoutSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;">
-            <option value="3x3">3×3 (9枚/ページ)</option>
-            <option value="4x3">4×3 (12枚/ページ)</option>
-            <option value="4x4">4×4 (16枚/ページ)</option>
-            <option value="5x4">5×4 (20枚/ページ)</option>
-          </select>
-        </div>
-
-        <!-- 表紙画像設定 -->
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">🖼️ 表紙画像:</label>
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="file" id="binderCoverInput" accept="image/*" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            <button onclick="removeCoverImage()" style="padding: 8px 12px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">削除</button>
-          </div>
-          <div id="coverPreview" style="margin-top: 10px; max-width: 200px;">
-            <!-- 表紙プレビューがここに表示されます -->
-          </div>
-        </div>
-
-        <!-- 公開設定 -->
-        <div style="margin-bottom: 20px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="binderPublicCheckbox" style="transform: scale(1.2);">
-            <span style="font-weight: bold;">🌐 公開バインダー (他のユーザーと共有)</span>
-          </label>
-          <div style="margin-top: 5px; font-size: 12px; color: #666;">
-            チェックすると、このバインダーを他のユーザーに公開できます
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeBinderSettings()">キャンセル</button>
-        <button class="btn btn-primary" onclick="saveBinderSettings()">設定を保存</button>
       </div>
     </div>
   </div>
