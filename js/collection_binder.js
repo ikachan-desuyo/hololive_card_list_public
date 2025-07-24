@@ -1693,14 +1693,31 @@
         binderContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
       }
 
-      // スワップボタンの表示制御削除
-      // リサイズイベント（スワップモード・ボタン削除）
+      // スワップボタンの表示制御
+      updateSwapButtonVisibility();
+
+      // リサイズイベント
       window.addEventListener('resize', () => {
+        const wasMobile = isMobile;
         isMobile = window.innerWidth <= 768;
+        
+        // モバイル⇄デスクトップ切り替え時にスワップモードをリセット
+        if (wasMobile !== isMobile && swapMode) {
+          cancelSwapMode();
+        }
+        
+        updateSwapButtonVisibility();
       });
     }
 
-    // スワップボタン表示制御削除
+    // スワップボタンの表示制御
+    function updateSwapButtonVisibility() {
+      const swapButton = document.getElementById('swapButton');
+      if (swapButton) {
+        // モバイルかつ編集モードの場合のみ表示
+        swapButton.style.display = (isMobile && !binderState.viewMode) ? 'inline-block' : 'none';
+      }
+    }
 
     // タッチ開始
     function handleTouchStart(e) {
@@ -2218,25 +2235,26 @@
         });
         return;
       }
+      
       // 次のカードを探す（空のスロットをスキップ）
       let nextIndex = currentCardIndex + 1;
       while (nextIndex < allBinderCards.length) {
         const nextCardInfo = allBinderCards[nextIndex];
         if (nextCardInfo && nextCardInfo.card) {
-          // 空スロットはスキップ
-          if (!nextCardInfo.card.id) {
-            nextIndex++;
-            continue;
-          }
           // カードが見つかった場合
+          // 必要に応じてページを移動
           if (nextCardInfo.pageIndex !== binderState.currentPage) {
+            console.log('Moving to page:', nextCardInfo.pageIndex);
             binderState.currentPage = nextCardInfo.pageIndex;
-            renderBinder();
+            renderBinder(); // ページを再描画
+            
+            // ページ描画後に少し遅延してモーダルを表示
             setTimeout(() => {
               const imageUrl = nextCardInfo.card.image_url || nextCardInfo.card.image || './images/placeholder.png';
               showImageModal(imageUrl, nextCardInfo.card);
             }, 100);
           } else {
+            // 同じページ内での移動
             const imageUrl = nextCardInfo.card.image_url || nextCardInfo.card.image || './images/placeholder.png';
             showImageModal(imageUrl, nextCardInfo.card);
           }
@@ -2244,6 +2262,7 @@
         }
         nextIndex++;
       }
+      
       console.log('No next card found');
     }
 
@@ -2502,43 +2521,45 @@
     }
 
     // 全カード初期化
-    function previousCardDetail() {
-      if (!currentModalCard || allBinderCards.length === 0 || currentCardIndex <= 0) {
-        console.log('Cannot go to previous card:', {
-          hasCurrentCard: !!currentModalCard,
-          totalCards: allBinderCards.length,
-          currentIndex: currentCardIndex,
-          minIndex: 0
-        });
+    function clearAllCards() {
+      const totalCards = binderState.pages.reduce((count, page) => {
+        return count + page.slots.filter(slot => slot !== null).length;
+      }, 0);
+
+      if (totalCards === 0) {
+        if (isMobile) {
+          showMobileAlert('配置されているカードがありません', 'ℹ️');
+        } else {
+          alert('配置されているカードがありません');
+        }
         return;
       }
-      // 前のカードを探す（空のスロットをスキップ）
-      let prevIndex = currentCardIndex - 1;
-      while (prevIndex >= 0) {
-        const prevCardInfo = allBinderCards[prevIndex];
-        if (prevCardInfo && prevCardInfo.card) {
-          // 空スロットはスキップ
-          if (!prevCardInfo.card.id) {
-            prevIndex--;
-            continue;
-          }
-          // カードが見つかった場合
-          if (prevCardInfo.pageIndex !== binderState.currentPage) {
-            binderState.currentPage = prevCardInfo.pageIndex;
-            renderBinder();
-            setTimeout(() => {
-              const imageUrl = prevCardInfo.card.image_url || prevCardInfo.card.image || './images/placeholder.png';
-              showImageModal(imageUrl, prevCardInfo.card);
-            }, 100);
-          } else {
-            const imageUrl = prevCardInfo.card.image_url || prevCardInfo.card.image || './images/placeholder.png';
-            showImageModal(imageUrl, prevCardInfo.card);
-          }
-          return;
+
+      const confirmMessage = `${totalCards}枚の配置されたカードをすべて削除します。\nこの操作は取り消せません。\n\n実行しますか？`;
+
+      if (confirm(confirmMessage)) {
+        // 全ページのスロットを初期化
+        binderState.pages.forEach(page => {
+          const slotsPerPage = page.slots.length;
+          page.slots = Array(slotsPerPage).fill(null);
+        });
+
+        saveBinder();
+        renderBinder();
+
+        if (isMobile) {
+          showMobileAlert(`${totalCards}枚のカードを削除しました`, '✅');
+        } else {
+          alert(`${totalCards}枚のカードを削除しました`);
         }
-        prevIndex--;
       }
-      console.log('No previous card found');
+    }
+
+    function updateBinderTitle() {
+      const headerTitle = document.querySelector('.header h1');
+      if (headerTitle) {
+        headerTitle.textContent = `🎴 ${binderState.settings.name || 'コレクションバインダー'}`;
+      }
     }
 
     // バインダー更新通知のリスナー設定
