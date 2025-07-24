@@ -1,35 +1,8 @@
 // Service Worker for offline caching with centralized version management
-const APP_VERSION = '4.4.3';
-const VERSION_DESCRIPTION = 'ViewMode状態保存機能追加';
+// Version: 4.5.0-MODULAR-STRUCTURE
 
-// ✅ 各ページのバージョン情報を一元管理
-const PAGE_VERSIONS = {
-  'index.html': '4.2.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム追加
-  'card_list.html': '4.1.1-CSV-ENHANCEMENT-UPDATE',  // CSV機能改良 - 追加修正と改善
-  'collection_binder.html': '4.4.3-VIEWMODE-PERSISTENCE',  // ViewMode状態保存機能追加
-  'binder_collection.html': '4.1.3-MOBILE-IMPROVEMENTS',  // 複数バインダー管理システム - UI改善と追加修正
-  'holoca_skill_page.html': '4.0.0-CENTRALIZED-VERSION',  // バージョン表示統一とUI改善
-  'deck_builder.html': '4.0.0-CENTRALIZED-VERSION'  // バージョン表示統一とフィルター機能改善
-};
-
-// ✅ 更新内容の詳細情報
-const UPDATE_DETAILS = {
-  title: '� フィルター機能改善アップデート v4.4.2',
-  description: 'カード選択画面の収録商品フィルター機能を大幅改善しました',
-  changes: [
-    '🎯 モーダル内独自収録商品フィルター追加',
-    '� 自動配置エリアとカード選択モーダルのフィルター分離',
-    '� 所有カードのみを対象とした商品フィルタリング',
-    '⚡ リアルタイム統合フィルタリング機能',
-    '� カード名検索・レアリティ・タイプ・商品フィルターの連動',
-    '✅ フィルター機能の完全独立動作',
-    '�️ モバイル版カード画像表示強化',
-    '� モバイル版レイアウト改善',
-    '🏷️ カード選択画面UI統一',
-    '� フィルタリング処理の最適化'
-  ]
-};
-
+// Import version configuration and utility functions
+importScripts('./sw-version.js', './sw-utils.js', './sw-handlers.js');
 
 const CACHE_NAME = `hololive-card-tool-v${APP_VERSION}-${VERSION_DESCRIPTION.replace(/\s+/g, '-')}`;
 const urlsToCache = [
@@ -40,6 +13,9 @@ const urlsToCache = [
   './binder_collection.html',
   './holoca_skill_page.html',
   './deck_builder.html',
+  './sw-version.js',
+  './sw-utils.js',
+  './sw-handlers.js',
   './json_file/card_data.json',
   './json_file/release_dates.json',
   './images/placeholder.png',
@@ -66,132 +42,6 @@ const urlsToCache = [
   './images/tokkou_50_white.png',
   './images/tokkou_50_yellow.png'
 ];
-
-// ✅ バージョン比較機能
-function compareVersions(current, cached) {
-  if (!cached) return true; // キャッシュされていない場合は更新が必要
-  
-  const currentParts = current.split('.').map(n => parseInt(n, 10));
-  const cachedParts = cached.split('.').map(n => parseInt(n, 10));
-  
-  for (let i = 0; i < Math.max(currentParts.length, cachedParts.length); i++) {
-    const currentPart = currentParts[i] || 0;
-    const cachedPart = cachedParts[i] || 0;
-    
-    if (currentPart > cachedPart) return true;
-    if (currentPart < cachedPart) return false;
-  }
-  
-  return false; // 同じバージョン
-}
-
-// ✅ バージョン情報を取得する機能
-async function getVersionInfo() {
-  return {
-    appVersion: APP_VERSION,
-    pageVersions: PAGE_VERSIONS,
-    updateDetails: UPDATE_DETAILS,
-    versionDescription: VERSION_DESCRIPTION,
-    cacheName: CACHE_NAME
-  };
-}
-
-// ✅ ページバージョンをチェックする機能
-async function checkPageVersions() {
-  const outdatedPages = [];
-  
-  for (const [page, expectedVersion] of Object.entries(PAGE_VERSIONS)) {
-    try {
-      // ネットワークから最新のページを取得して比較
-      const response = await fetch(`./${page}`, { cache: 'no-cache' });
-      if (!response.ok) {
-        outdatedPages.push({page, reason: 'fetch_failed', expectedVersion});
-        continue;
-      }
-      
-      const htmlText = await response.text();
-      // より柔軟なバージョン検出：ヘッダーコメントと表示バージョンの両方をチェック
-      const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-      const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
-      
-      let actualVersion = null;
-      if (versionMatch) {
-        actualVersion = versionMatch[1]; // サフィックスを削除しない
-      } else if (displayVersionMatch) {
-        actualVersion = displayVersionMatch[1];
-      }
-      
-      console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}`);
-      
-      // キャッシュされたバージョンもチェック
-      const cache = await caches.open(CACHE_NAME);
-      const cachedResponse = await cache.match(`./${page}`);
-      let cachedVersion = null;
-      
-      if (cachedResponse) {
-        const cachedText = await cachedResponse.text();
-        const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-        const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
-        
-        if (cachedVersionMatch) {
-          cachedVersion = cachedVersionMatch[1]; // サフィックスを削除しない
-        } else if (cachedDisplayVersionMatch) {
-          cachedVersion = cachedDisplayVersionMatch[1];
-        }
-      }
-      
-      console.log(`Page ${page}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
-      
-      // 詳細なバージョン比較とミスマッチの理由を判定
-      let mismatchReason = null;
-      let needsUpdate = false;
-      
-      if (!actualVersion) {
-        mismatchReason = 'actual_version_not_found';
-        needsUpdate = true;
-      } else if (compareVersions(expectedVersion, actualVersion)) {
-        mismatchReason = 'expected_vs_actual_mismatch';
-        needsUpdate = true;
-      } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
-        mismatchReason = 'actual_vs_cached_mismatch';
-        needsUpdate = true;
-      }
-      // キャッシュにバージョン情報がない場合は更新しない
-      
-      if (needsUpdate) {
-        outdatedPages.push({
-          page, 
-          reason: mismatchReason || 'version_mismatch', 
-          expectedVersion, 
-          actualVersion, 
-          cachedVersion,
-          details: {
-            expectedVersion,
-            actualVersion: actualVersion || 'unknown',
-            cachedVersion: cachedVersion || 'none',
-            mismatchType: mismatchReason
-          }
-        });
-      }
-    } catch (error) {
-      console.error(`Error checking version for ${page}:`, error);
-      outdatedPages.push({page, reason: 'error', expectedVersion});
-    }
-  }
-  
-  return outdatedPages;
-}
-
-// ✅ バージョン情報をコンソールに表示
-function logVersionInfo() {
-  console.log(`%c🚀 Hololive Card Tool Service Worker v${APP_VERSION}`, 'color: #4CAF50; font-weight: bold; font-size: 16px;');
-  console.log(`%c📝 ${VERSION_DESCRIPTION}`, 'color: #2196F3; font-weight: bold;');
-  console.log('%c📚 ページバージョン情報:', 'color: #FF9800; font-weight: bold;');
-  Object.entries(PAGE_VERSIONS).forEach(([page, version]) => {
-    console.log(`  • ${page}: %c${version}`, 'color: #4CAF50;');
-  });
-  console.log(`%c🗂️ キャッシュ名: ${CACHE_NAME}`, 'color: #9C27B0;');
-}
 
 // Install event
 self.addEventListener('install', function(event) {
@@ -255,7 +105,7 @@ self.addEventListener('activate', function(event) {
           clients.forEach(client => {
             client.postMessage({
               type: 'CACHE_UPDATED',
-              message: 'Service Worker updated with drag & drop features',
+              message: 'Service Worker updated with modular structure',
               version: APP_VERSION,
               timestamp: Date.now()
             });
@@ -360,238 +210,8 @@ self.addEventListener('fetch', function(event) {
   }
 });
 
-// Message event - 詳細なメッセージハンドリング
-self.addEventListener('message', async function(event) {
-  const { type, data } = event.data || {};
-  
-  switch (type) {
-    case 'SKIP_WAITING':
-      console.log('Received SKIP_WAITING message, taking control');
-      self.skipWaiting();
-      break;
-      
-    case 'FORCE_UPDATE':
-      console.log('Received FORCE_UPDATE message, clearing all caches and forcing update');
-      // 全キャッシュを強制削除
-      const allCacheNames = await caches.keys();
-      await Promise.all(allCacheNames.map(cacheName => caches.delete(cacheName)));
-      console.log('All caches cleared for force update');
-      // 新しいキャッシュを作成
-      const newCache = await caches.open(CACHE_NAME);
-      await newCache.addAll(urlsToCache);
-      console.log('New cache created:', CACHE_NAME);
-      self.skipWaiting();
-      break;
-      
-    case 'GET_VERSION_INFO':
-      // バージョン情報を返す
-      const versionInfo = await getVersionInfo();
-      event.ports[0]?.postMessage({
-        type: 'VERSION_INFO_RESPONSE',
-        data: versionInfo
-      });
-      break;
-      
-    case 'CHECK_OUTDATED_PAGES':
-      // 古いページをチェック
-      console.log('Checking outdated pages...');
-      const outdatedPages = await checkPageVersions();
-      console.log('Outdated pages result:', outdatedPages);
-      event.ports[0]?.postMessage({
-        type: 'OUTDATED_PAGES_RESPONSE',
-        data: outdatedPages
-      });
-      break;
-      
-    case 'GET_UPDATE_MESSAGE':
-      // 更新メッセージを生成
-      const message = `${UPDATE_DETAILS.title}\n\n${UPDATE_DETAILS.description}\n\n` +
-        UPDATE_DETAILS.changes.join('\n') + '\n\nページを更新しますか？';
-      event.ports[0]?.postMessage({
-        type: 'UPDATE_MESSAGE_RESPONSE',
-        data: { message, details: UPDATE_DETAILS }
-      });
-      break;
-      
-    case 'CHECK_VERSION_MISMATCH':
-      // 詳細なバージョンチェック
-      console.log('Performing detailed version mismatch check...');
-      try {
-        const versionCheckResult = await checkPageVersions();
-        
-        // 全ページ情報を収集
-        const allPages = [];
-        for (const [page, expectedVersion] of Object.entries(PAGE_VERSIONS)) {
-          try {
-            const response = await fetch(`./${page}`, { cache: 'no-cache' });
-            let actualVersion = expectedVersion; // デフォルトは期待バージョン
-            
-            if (response.ok) {
-              const htmlText = await response.text();
-              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-              const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
-              
-              if (versionMatch) {
-                actualVersion = versionMatch[1];
-              } else if (displayVersionMatch) {
-                actualVersion = displayVersionMatch[1];
-              }
-            }
-            
-            allPages.push({
-              page,
-              expectedVersion,
-              actualVersion
-            });
-          } catch (error) {
-            console.error(`Error checking ${page}:`, error);
-            allPages.push({
-              page,
-              expectedVersion,
-              actualVersion: 'error'
-            });
-          }
-        }
-        
-        const detailedInfo = {
-          hasUpdates: versionCheckResult.length > 0,
-          outdatedPages: versionCheckResult,
-          allPages: allPages,
-          currentAppVersion: APP_VERSION,
-          pageVersions: PAGE_VERSIONS,
-          timestamp: new Date().toISOString()
-        };
-        
-        event.ports[0]?.postMessage({
-          type: 'VERSION_MISMATCH_RESPONSE',
-          data: detailedInfo
-        });
-      } catch (error) {
-        console.error('Version check error:', error);
-        event.ports[0]?.postMessage({
-          type: 'VERSION_MISMATCH_ERROR',
-          error: error.message
-        });
-      }
-      break;
-      
-    case 'CHECK_SINGLE_PAGE_VERSION':
-      // 単一ページのバージョンチェック
-      console.log('Performing single page version check for:', data?.page);
-      try {
-        const targetPage = data?.page;
-        if (!targetPage || !PAGE_VERSIONS[targetPage]) {
-          throw new Error(`Invalid page: ${targetPage}`);
-        }
-        
-        const expectedVersion = PAGE_VERSIONS[targetPage];
-        let pageInfo = null;
-        
-        // ネットワークから最新のページを取得
-        const response = await fetch(`./${targetPage}`, { cache: 'no-cache' });
-        if (!response.ok) {
-          pageInfo = {
-            page: targetPage,
-            reason: 'fetch_failed',
-            expectedVersion,
-            actualVersion: null,
-            cachedVersion: null
-          };
-        } else {
-          const htmlText = await response.text();
-          // より柔軟なバージョン検出
-          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-          const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
-          
-          let actualVersion = null;
-          if (versionMatch) {
-            actualVersion = versionMatch[1]; // サフィックスを削除しない
-          } else if (displayVersionMatch) {
-            actualVersion = displayVersionMatch[1];
-          }
-          
-          // キャッシュされたバージョンもチェック
-          const cache = await caches.open(CACHE_NAME);
-          const cachedResponse = await cache.match(`./${targetPage}`);
-          let cachedVersion = null;
-          
-          if (cachedResponse) {
-            const cachedText = await cachedResponse.text();
-            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-            const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
-            
-            if (cachedVersionMatch) {
-              cachedVersion = cachedVersionMatch[1]; // サフィックスを削除しない
-            } else if (cachedDisplayVersionMatch) {
-              cachedVersion = cachedDisplayVersionMatch[1];
-            }
-          }
-          
-          console.log(`Single page ${targetPage}: expected=${expectedVersion}, actual=${actualVersion}, cached=${cachedVersion}`);
-          
-          // バージョン比較とミスマッチの理由を判定
-          let mismatchReason = null;
-          let needsUpdate = false;
-          
-          if (!actualVersion) {
-            mismatchReason = 'actual_version_not_found';
-            needsUpdate = true;
-          } else if (compareVersions(expectedVersion, actualVersion)) {
-            mismatchReason = 'expected_vs_actual_mismatch';
-            needsUpdate = true;
-          } else if (cachedVersion && compareVersions(actualVersion, cachedVersion)) {
-            mismatchReason = 'actual_vs_cached_mismatch';
-            needsUpdate = true;
-          }
-          // キャッシュにバージョン情報がない場合は更新しない
-          
-          if (needsUpdate) {
-            pageInfo = {
-              page: targetPage,
-              reason: mismatchReason || 'version_mismatch',
-              expectedVersion,
-              actualVersion,
-              cachedVersion,
-              details: {
-                expectedVersion,
-                actualVersion: actualVersion || 'unknown',
-                cachedVersion: cachedVersion || 'none',
-                mismatchType: mismatchReason
-              }
-            };
-          }
-        }
-        
-        const singlePageResult = {
-          hasUpdates: pageInfo !== null,
-          pageInfo: pageInfo,
-          currentAppVersion: APP_VERSION,
-          targetPage: targetPage,
-          expectedVersion: expectedVersion,
-          timestamp: new Date().toISOString()
-        };
-        
-        event.ports[0]?.postMessage({
-          type: 'SINGLE_PAGE_VERSION_RESPONSE',
-          data: singlePageResult
-        });
-      } catch (error) {
-        console.error('Single page version check error:', error);
-        event.ports[0]?.postMessage({
-          type: 'SINGLE_PAGE_VERSION_ERROR',
-          error: error.message
-        });
-      }
-      break;
-      
-    default:
-      // 従来のメッセージハンドリング
-      if (event.data && event.data.type === 'GET_VERSION_INFO') {
-        event.ports[0].postMessage(getVersionInfo());
-      }
-      console.log('Message received:', type);
-  }
-});
+// Message event - delegate to handler
+self.addEventListener('message', handleMessage);
 
 // Background sync for data updates when connection is restored
 self.addEventListener('sync', function(event) {
@@ -600,20 +220,6 @@ self.addEventListener('sync', function(event) {
     event.waitUntil(updateCache());
   }
 });
-
-// Function to update cache with latest data
-async function updateCache() {
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll([
-      './json_file/card_data.json',
-      './json_file/release_dates.json'
-    ]);
-    console.log('Cache updated with latest data');
-  } catch (error) {
-    console.log('Failed to update cache:', error);
-  }
-}
 
 // ✅ エラーハンドリング
 self.addEventListener('error', function(event) {
@@ -625,4 +231,4 @@ self.addEventListener('unhandledrejection', function(event) {
 });
 
 // ✅ 初期化完了メッセージ
-console.log('%c🎉 Hololive Card Tool Service Worker initialized successfully!', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+console.log('%c🎉 Hololive Card Tool Service Worker initialized successfully with modular structure!', 'color: #4CAF50; font-weight: bold; font-size: 14px;');

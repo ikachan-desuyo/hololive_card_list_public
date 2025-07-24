@@ -902,8 +902,13 @@
     }
 
     .search-filters {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
+    }
+
+    .search-filters select:last-child {
+      grid-column: 1 / -1; /* 商品フィルターは1行使用 */
     }
 
     .search-filters select {
@@ -911,8 +916,9 @@
       padding: 8px 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
-      font-size: 0.9em;
+      font-size: 0.85em;
       background: white;
+      min-width: 0; /* グリッドでの幅制御のため */
     }
 
     .dark .search-filters select {
@@ -1129,8 +1135,13 @@
       }
 
       .search-filters {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
+      }
+
+      .search-filters select:last-child {
+        grid-column: 1 / -1; /* 商品フィルターは1行使用 */
       }
 
       .card-grid {
@@ -1445,12 +1456,7 @@
           </select>
           <select id="cardTypeFilter" onchange="filterCardsInSelector()">
             <option value="">すべてのタイプ</option>
-            <option value="ホロメン">ホロメン</option>
-            <option value="Buzzホロメン">Buzzホロメン</option>
-            <option value="サポート・アイテム">アイテム</option>
-            <option value="サポート・イベント">イベント</option>
-            <option value="サポート・ツール">ツール</option>
-            <option value="LIMITED">LIMITED</option>
+            <!-- カードタイプの選択肢は動的に生成されます -->
           </select>
           <select id="modalProductFilter" onchange="filterCardsInSelector()">
             <option value="">すべての商品</option>
@@ -1639,9 +1645,50 @@
       console.log('Initialized product list with', productSet.size, 'products (owned cards only)');
     }
 
+    // カードタイプフィルターの初期化（所有カードのみ）
+    function initializeCardTypeFilter() {
+      const cardTypeSelect = document.getElementById('cardTypeFilter');
+      if (!cardTypeSelect) return;
+      
+      const cardTypeSet = new Set();
+      
+      // 所有しているカードのカードタイプを収集
+      cardsData.forEach(card => {
+        if (userCollection[card.id] > 0 && card.card_type) {
+          // 「・」で分割して各部分を個別に追加
+          const typeParts = card.card_type.split('・');
+          typeParts.forEach(part => {
+            const trimmedPart = part.trim();
+            if (trimmedPart) {
+              cardTypeSet.add(trimmedPart);
+            }
+          });
+        }
+      });
+      
+      // プルダウンにオプションを追加
+      cardTypeSelect.innerHTML = '<option value="">すべてのタイプ</option>';
+      [...cardTypeSet].sort().forEach(cardType => {
+        const option = document.createElement('option');
+        option.value = cardType;
+        option.textContent = cardType;
+        cardTypeSelect.appendChild(option);
+      });
+      
+      console.log('Initialized card type list with', cardTypeSet.size, 'types (owned cards only)');
+    }
+
     // カード選択画面での統合フィルタリング
+    // テキスト正規化関数（ひらがな/カタカナ、大文字/小文字統一）
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .replace(/[ぁ-ゖ]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60))  // ひらがな→カタカナ変換
+        .replace(/[\u3041-\u3096]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60)); // 残りのひらがな→カタカナ
+    }
+
     function filterCardsInSelector() {
-      const searchTerm = document.getElementById('cardSearchInput').value.toLowerCase();
+      const searchTerm = normalizeText(document.getElementById('cardSearchInput').value);
       const rarityFilter = document.getElementById('rarityFilter').value;
       const cardTypeFilter = document.getElementById('cardTypeFilter').value;
       const modalProductFilter = document.getElementById('modalProductFilter').value;
@@ -1656,10 +1703,20 @@
       const filteredCards = ownedCards.filter(card => {
         const matchesProduct = !modalProductFilter || 
           (card.product && card.product.includes(modalProductFilter));
-        const matchesSearch = card.name.toLowerCase().includes(searchTerm);
+        const matchesSearch = normalizeText(card.name).includes(searchTerm);
         const matchesRarity = !rarityFilter || card.rarity === rarityFilter;
-        const matchesCardType = !cardTypeFilter || 
-          (card.card_type && card.card_type.includes(cardTypeFilter));
+        
+        // カードタイプフィルタリングの改善
+        let matchesCardType = true;
+        if (cardTypeFilter) {
+          // 「・」で分割されたカードタイプの各部分をチェック
+          if (card.card_type) {
+            const typeParts = card.card_type.split('・').map(part => part.trim());
+            matchesCardType = typeParts.includes(cardTypeFilter);
+          } else {
+            matchesCardType = false;
+          }
+        }
         
         return matchesProduct && matchesSearch && matchesRarity && matchesCardType;
       });
@@ -2169,6 +2226,9 @@
       
       // モーダル内商品フィルターを初期化
       populateModalProductFilter(availableCards);
+      
+      // カードタイプフィルターを初期化
+      initializeCardTypeFilter();
       
       // 検索フィールドをクリア
       document.getElementById('cardSearchInput').value = '';
@@ -3239,34 +3299,70 @@
         const skillsHtml = cardData.skills && cardData.skills.length > 0 ? 
           renderSkills(cardData.skills) : "<div style='font-size:13px; color:#aaa;'>スキルなし</div>";
         
-        infoContent.innerHTML = `
-          <h3 style="margin-top:0; color:#667eea; font-size:18px;">${cardData.name}</h3>
-          
-          <div style="margin-bottom:18px; font-size:14px;">
-            <div style="margin:6px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
-            <div style="margin:6px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.cardType || cardData.card_type || '不明'}</div>
-            <div style="margin:6px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
-            <div style="margin:6px 0;"><strong>🎨 色:</strong> ${cardData.color || '不明'}</div>
-            <div style="margin:6px 0;"><strong>� Bloom:</strong> ${cardData.cardType === "Buzzホロメン" || cardData.card_type === "Buzzホロメン" ? "1stBuzz" : (cardData.bloom || '不明')}</div>
-            ${cardData.hp ? `<div style="margin:6px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
-            <div style="margin:6px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
-            ${cardData.releaseDate ? `<div style="margin:6px 0;"><strong>📅 発売日:</strong> ${cardData.releaseDate}</div>` : ''}
-          </div>
-          
-          <div style="margin:15px 0; border-top:1px solid #555; padding-top:15px;">
-            <strong style="font-size:15px; color:#667eea;">⚡ スキル:</strong><br>
-            <div style="margin-top:10px;">
-              ${skillsHtml}
+        // Bloom情報を正しく処理
+        let bloomText = '不明';
+        if (cardData.cardType === "Buzzホロメン" || cardData.card_type === "Buzzホロメン") {
+          bloomText = "1stBuzz";
+        } else if (cardData.bloom && cardData.bloom !== "" && cardData.bloom !== "null") {
+          bloomText = cardData.bloom;
+        }
+        
+        if (isMobile) {
+          // モバイル版：グリッドレイアウトで効率的に配置
+          infoContent.innerHTML = `
+            <h3 style="margin-top:0; color:#667eea; font-size:16px; margin-bottom:12px;">${cardData.name}</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:15px; font-size:13px;">
+              <div><strong>🆔 カード番号:</strong><br>${cardData.id}</div>
+              <div><strong>🃏 カードタイプ:</strong><br>${cardData.cardType || cardData.card_type || '不明'}</div>
+              <div><strong>✨ レアリティ:</strong><br>${cardData.rarity}</div>
+              <div><strong>🎨 色:</strong><br>${cardData.color || '不明'}</div>
+              <div><strong>🌸 Bloom:</strong><br>${bloomText}</div>
+              ${cardData.hp ? `<div><strong>❤️ HP:</strong><br>${cardData.hp}</div>` : '<div></div>'}
             </div>
-          </div>
-          
-          <div style="margin:20px 0; text-align:center;">
-            <a href="https://hololive-official-cardgame.com/cardlist/?id=${cardData.id}" target="_blank" 
-               style="color:#667eea; text-decoration:none; font-size:14px; padding:8px 16px; border:1px solid #667eea; border-radius:20px; display:inline-block;">
-              🔗 公式サイトで詳細を見る ↗
-            </a>
-          </div>
-        `;
+            
+            <div style="margin-bottom:15px; font-size:13px;">
+              <div><strong>📦 収録商品:</strong><br>${productText}</div>
+            </div>
+            
+            <div style="margin:12px 0; border-top:1px solid #555; padding-top:12px;">
+              <strong style="font-size:14px; color:#667eea;">⚡ スキル:</strong>
+              <div style="margin-top:8px;">
+                ${skillsHtml}
+              </div>
+            </div>
+          `;
+        } else {
+          // デスクトップ版：従来のレイアウト
+          infoContent.innerHTML = `
+            <h3 style="margin-top:0; color:#667eea; font-size:18px;">${cardData.name}</h3>
+            
+            <div style="margin-bottom:18px; font-size:14px;">
+              <div style="margin:6px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
+              <div style="margin:6px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.cardType || cardData.card_type || '不明'}</div>
+              <div style="margin:6px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
+              <div style="margin:6px 0;"><strong>🎨 色:</strong> ${cardData.color || '不明'}</div>
+              <div style="margin:6px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
+              ${cardData.hp ? `<div style="margin:6px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
+              <div style="margin:6px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
+              ${cardData.releaseDate ? `<div style="margin:6px 0;"><strong>📅 発売日:</strong> ${cardData.releaseDate}</div>` : ''}
+            </div>
+            
+            <div style="margin:15px 0; border-top:1px solid #555; padding-top:15px;">
+              <strong style="font-size:15px; color:#667eea;">⚡ スキル:</strong><br>
+              <div style="margin-top:10px;">
+                ${skillsHtml}
+              </div>
+            </div>
+            
+            <div style="margin:20px 0; text-align:center;">
+              <a href="https://hololive-official-cardgame.com/cardlist/?id=${cardData.id}" target="_blank" 
+                 style="color:#667eea; text-decoration:none; font-size:14px; padding:8px 16px; border:1px solid #667eea; border-radius:20px; display:inline-block;">
+                🔗 公式サイトで詳細を見る ↗
+              </a>
+            </div>
+          `;
+        }
       }
       
       modal.style.display = "flex";
@@ -3420,6 +3516,17 @@
           element.style.display = binderState.viewMode ? 'none' : 'inline-block';
         }
       });
+      
+      // ページ追加ボタンと初期化ボタンも閲覧モードでは非表示
+      const pageAddBtn = document.querySelector('[onclick="addNewPage()"]');
+      const clearBtn = document.getElementById('clearBtn');
+      
+      if (pageAddBtn) {
+        pageAddBtn.style.display = binderState.viewMode ? 'none' : 'inline-block';
+      }
+      if (clearBtn) {
+        clearBtn.style.display = binderState.viewMode ? 'none' : 'inline-block';
+      }
       
       // 自動配置パネルを閉じる
       if (binderState.viewMode && binderState.autoArrangeVisible) {

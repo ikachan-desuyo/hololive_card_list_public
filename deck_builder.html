@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.0.0-CENTRALIZED-VERSION - Unified version management and filter improvements -->
+<!-- Version: 4.5.0-SEARCH-NORMALIZATION - Search functionality improvements with hiragana/katakana normalization -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -546,7 +546,7 @@
           return text
             .toLowerCase()
             .replace(/[ぁ-ゖ]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60))  // ひらがな→カタカナ変換
-            .replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60)); // カタカナ→ひらがな変換（双方向性）
+            .replace(/[\u3041-\u3096]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60)); // 残りのひらがな→カタカナ
         }
 
         function toggleDarkMode() {

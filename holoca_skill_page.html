@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.0.0-CENTRALIZED-VERSION - Unified version management and UI improvements -->
+<!-- Version: 4.5.0-SEARCH-NORMALIZATION - Search functionality improvements with hiragana/katakana normalization -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cache-bust" content="v3.2-sort-improvements-20250122">
+  <meta name="cache-bust" content="v4.5-search-normalization-20250724">
   <meta name="last-modified" content="Wed, 22 Jul 2025 13:00:00 GMT">
   <title>カード詳細検索ページ</title>
   <style>
@@ -787,16 +787,24 @@
       }).join("<br><br>");
     }
 
+    // テキスト正規化関数（ひらがな/カタカナ、大文字/小文字統一）
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .replace(/[ぁ-ゖ]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60))  // ひらがな→カタカナ変換
+        .replace(/[\u3041-\u3096]/g, s => String.fromCharCode(s.charCodeAt(0) + 0x60)); // 残りのひらがな→カタカナ
+    }
+
     function renderTable() {
-      const keyword = document.getElementById("keywordSearch").value.toLowerCase();
+      const keyword = normalizeText(document.getElementById("keywordSearch").value);
       const getChecked = id => [...document.querySelectorAll(`#${id} input:checked`)].map(el => el.value);
       const ownedStates = getCheckedFromChips("ownedStateChipGroup");
       const rarity = getCheckedFromChips("rarityFilter");
       const color = getCheckedFromChips("colorFilter");
       const bloom = getCheckedFromChips("bloomFilter");
       const cardType = getCheckedFromChips("cardTypeFilter");
-      const product = document.getElementById("productFilter").value.toLowerCase();
-      const tagFilter = document.getElementById("tagsFilter").value.toLowerCase();
+      const product = normalizeText(document.getElementById("productFilter").value);
+      const tagFilter = normalizeText(document.getElementById("tagsFilter").value);
 
       const tbody = document.querySelector("#cardTable tbody");
       tbody.innerHTML = "";
@@ -809,20 +817,20 @@
           (ownedStates.includes("unowned") && (!count || count == 0));
         if (!matchOwned) return false;
 
-        const allText = [
+        const allText = normalizeText([
           card.name, card.id, card.rarity, card.color, card.bloom,
           card.hp ?? card.life ?? "", card.product, card.card_type,
           card.tags.join(" "), renderSkills(card.skills).replace(/<br>/g, " ")
-        ].join(" ").toLowerCase();
+        ].join(" "));
 
         const match = {
           rarity: rarity.length === 0 || rarity.includes(card.rarity),
           color: color.length === 0 || color.includes(card.color),
           bloom: bloom.length === 0 || bloom.includes(card.bloom),
           cardType: cardType.length === 0 || cardType.some(type => card.card_type?.includes(type)),
-          product: !product || card.product.toLowerCase().includes(product),
+          product: !product || normalizeText(card.product).includes(product),
           keyword: !keyword || allText.includes(keyword),
-          tags: !tagFilter || card.tags.map(t => t.toLowerCase()).includes(tagFilter)
+          tags: !tagFilter || card.tags.map(t => normalizeText(t)).includes(tagFilter)
         };
 
         return !Object.values(match).includes(false);

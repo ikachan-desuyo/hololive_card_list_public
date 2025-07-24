@@ -801,7 +801,7 @@
         
         <div class="modal-actions">
           <button type="button" class="modal-btn secondary" onclick="closeCreateBinderModal()">キャンセル</button>
-          <button type="submit" class="modal-btn primary">バインダーを作成</button>
+          <button type="submit" class="modal-btn primary" id="createBinderSubmitBtn">バインダーを作成</button>
         </div>
       </form>
     </div>
@@ -925,6 +925,7 @@
       document.getElementById('createBinderModal').classList.remove('show');
       document.getElementById('createBinderForm').reset();
       resetCoverPreview();
+      resetSubmitButton(); // ボタン状態もリセット
       
       // レイアウト選択もリセット
       document.querySelectorAll('.layout-option').forEach(option => {
@@ -961,6 +962,15 @@
     document.getElementById('createBinderForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
+      // 重複送信防止
+      const submitBtn = document.getElementById('createBinderSubmitBtn');
+      if (submitBtn.disabled) {
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = '作成中...';
+      
       const name = document.getElementById('binderName').value.trim();
       const description = document.getElementById('binderDescription').value.trim();
       const selectedLayout = document.getElementById('selectedLayout').value;
@@ -968,6 +978,7 @@
       
       if (!name) {
         alert('バインダー名を入力してください');
+        resetSubmitButton();
         return;
       }
 
@@ -1005,33 +1016,119 @@
 
       // 表紙画像の処理
       if (coverImageInput.files[0]) {
+        const file = coverImageInput.files[0];
+        
+        // ファイルサイズチェック（5MB制限）
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          alert('画像ファイルサイズが大きすぎます。5MB以下の画像を選択してください。');
+          resetSubmitButton();
+          return;
+        }
+        
+        // ファイル形式チェック
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          alert('サポートされていない画像形式です。JPEG、PNG、GIF、WebPのいずれかを選択してください。');
+          resetSubmitButton();
+          return;
+        }
+        
         const reader = new FileReader();
-        reader.onload = function(e) {
-          newBinder.coverImage = e.target.result;
-          finalizeBinderCreation(newBinder);
+        
+        reader.onerror = function() {
+          alert('画像の読み込みに失敗しました。別の画像を選択してください。');
+          resetSubmitButton();
         };
-        reader.readAsDataURL(coverImageInput.files[0]);
+        
+        reader.onload = function(e) {
+          try {
+            // 画像サイズを圧縮
+            const img = new Image();
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              
+              // 最大サイズを設定（800x600）
+              const maxWidth = 800;
+              const maxHeight = 600;
+              let { width, height } = img;
+              
+              if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              // 圧縮された画像データを取得
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              newBinder.coverImage = compressedDataUrl;
+              finalizeBinderCreation(newBinder);
+            };
+            
+            img.onerror = function() {
+              alert('画像の処理に失敗しました。');
+              resetSubmitButton();
+            };
+            
+            img.src = e.target.result;
+          } catch (error) {
+            console.error('Image processing error:', error);
+            alert('画像の処理中にエラーが発生しました。');
+            resetSubmitButton();
+          }
+        };
+        
+        reader.readAsDataURL(file);
       } else {
         finalizeBinderCreation(newBinder);
       }
     });
 
+    // 送信ボタンのリセット
+    function resetSubmitButton() {
+      const submitBtn = document.getElementById('createBinderSubmitBtn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'バインダーを作成';
+    }
+
     // バインダー作成の完了
     function finalizeBinderCreation(binder) {
-      binderCollection.binders.push(binder);
-      saveBinderCollection();
-      closeCreateBinderModal();
-      renderBinders();
-      
-      // 作成完了アニメーション
-      setTimeout(() => {
-        const newCard = document.querySelector('.binder-card:last-child');
-        if (newCard && !newCard.classList.contains('new-binder-card')) {
-          newCard.classList.add('new');
-        }
-      }, 100);
-      
-      alert(`バインダー「${binder.name}」を作成しました！`);
+      try {
+        console.log('Creating binder:', binder);
+        binderCollection.binders.push(binder);
+        console.log('Binder added to collection');
+        
+        saveBinderCollection();
+        console.log('Binder collection saved');
+        
+        closeCreateBinderModal();
+        console.log('Modal closed');
+        
+        renderBinders();
+        console.log('Binders rendered');
+        
+        // 作成完了アニメーション
+        setTimeout(() => {
+          const newCard = document.querySelector('.binder-card:last-child');
+          if (newCard && !newCard.classList.contains('new-binder-card')) {
+            newCard.classList.add('new');
+          }
+        }, 100);
+        
+        alert(`バインダー「${binder.name}」を作成しました！`);
+        console.log('Binder creation completed successfully');
+        
+      } catch (error) {
+        console.error('Binder creation error:', error);
+        console.error('Error stack:', error.stack);
+        alert('バインダーの作成中にエラーが発生しました。コンソールでエラー詳細を確認してください。');
+        resetSubmitButton();
+      }
     }
 
     // バインダーを開く
