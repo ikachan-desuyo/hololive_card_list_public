@@ -1,5 +1,5 @@
-# 📚 Hololive Card Web Tools v4.5.0
-# 📚 ホロライブカードWebツール v4.5.0
+# 📚 Hololive Card Web Tools v4.5.1
+# 📚 ホロライブカードWebツール v4.5.1
 
 [![Version](https://img.shields.io/badge/version-4.5.0-blue.svg)](https://github.com/ikachan-desuyo/hololive_card_list_check)
 [![PWA](https://img.shields.io/badge/PWA-ready-green.svg)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
@@ -11,7 +11,13 @@
 
 # Japanese
 
-## 🚀 最新アップデート v4.5.0
+## 🚀 最新アップデート v4.5.1
+
+**バグ修正 (2025/07/24)**
+- **バインダー閲覧モード修正**: 閲覧モード時にページ追加ボタンと初期化ボタンが正しく非表示になるように修正
+- **HTMLタグ修正**: カード詳細検索ページのJavaScriptファイル末尾の不正なHTMLタグを削除
+
+**v4.5.0の機能**
 
 **検索機能大幅改善＆モジュラー構造化**
 - 🔤 ひらがな/カタカナ統一検索機能実装
@@ -137,7 +143,7 @@
 
 ---
 
-## 📚 コレクションバインダー (`collection_binder.html`) v4.5.0
+## 📚 コレクションバインダー (`collection_binder.html`) v4.5.1
 
 高度機能でカードコレクションを整理するための仮想バインダー。
 
@@ -285,8 +291,13 @@
 
 # English
 
-## 🚀 Latest Update v4.5.0
+## 🚀 Latest Update v4.5.1
 
+**Bug Fixes (2025/07/24)**
+- **Binder View Mode Fix**: Fixed page management buttons (add page, clear) not hiding properly in view-only mode
+- **HTML Tag Fix**: Removed invalid HTML tags at the end of card detail search JavaScript file
+
+**v4.5.0 Features**
 Landing page with navigation to all available tools:
 - **Card List**: Browse and manage your card collection with advanced search
 - **Card Detail Search**: Advanced search with detailed filters and skill analysis
@@ -397,7 +408,7 @@ Create and manage card decks with enhanced search and filtering capabilities.
 
 ---
 
-## 📚 Collection Binder (`collection_binder.html`) v4.5.0
+## 📚 Collection Binder (`collection_binder.html`) v4.5.1
 
 Virtual binder for organizing your card collection with advanced features.
 
