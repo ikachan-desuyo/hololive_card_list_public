@@ -395,14 +395,27 @@
     // ViewModeボタンの表示を更新
     function updateViewModeButton() {
       const btn = document.getElementById('viewModeBtn');
+      const addPageBtn = document.getElementById('addPageBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      
       if (!btn) return;
 
       if (binderState.viewMode) {
+        // 閲覧モード
         btn.textContent = '✏️ 編集モード';
         btn.title = '編集モードに切替';
+        
+        // ページ追加ボタンと初期化ボタンを非表示
+        if (addPageBtn) addPageBtn.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
       } else {
+        // 編集モード
         btn.textContent = '👁️ 閲覧モード';
         btn.title = '閲覧モードに切替';
+        
+        // ページ追加ボタンと初期化ボタンを表示
+        if (addPageBtn) addPageBtn.style.display = 'inline-block';
+        if (clearBtn) clearBtn.style.display = 'inline-block';
       }
     }
 
@@ -2109,16 +2122,30 @@
       saveViewModePreference(binderState.viewMode);
 
       const btn = document.getElementById('viewModeBtn');
+      const addPageBtn = document.getElementById('addPageBtn');
+      const clearBtn = document.getElementById('clearBtn');
 
       if (binderState.viewMode) {
+        // 閲覧モード
         btn.textContent = '✏️ 編集モード';
         btn.title = '編集モードに切替';
+        
+        // ページ追加ボタンと初期化ボタンを非表示
+        if (addPageBtn) addPageBtn.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
+        
         if (isMobile) {
           showMobileAlert('閲覧モードに切り替えました', 'ℹ️');
         }
       } else {
+        // 編集モード
         btn.textContent = '👁️ 閲覧モード';
         btn.title = '閲覧モードに切替';
+        
+        // ページ追加ボタンと初期化ボタンを表示
+        if (addPageBtn) addPageBtn.style.display = 'inline-block';
+        if (clearBtn) clearBtn.style.display = 'inline-block';
+        
         if (isMobile) {
           showMobileAlert('編集モードに切り替えました', 'ℹ️');
         }
