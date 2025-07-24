@@ -1,5 +1,5 @@
-// Service Worker Message Handlers
-// Version: 4.5.0-MODULAR-STRUCTURE
+// Service Worker event handlers and cache management
+// Version: 4.6.0-BINDER-SETTINGS
 
 // Message event handler function
 async function handleMessage(event) {

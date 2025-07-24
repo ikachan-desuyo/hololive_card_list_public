@@ -7,7 +7,16 @@
       totalCards: 0,
       ownedCards: 0,
       autoArrangeVisible: false,
-      viewMode: loadViewModePreference() // 保存された設定を読み込み
+      viewMode: loadViewModePreference(), // 保存された設定を読み込み
+      // バインダー設定
+      settings: {
+        name: 'マイバインダー',
+        description: '',
+        layout: '3x3',
+        coverImage: null,
+        isPublic: false,
+        lastModified: Date.now()
+      }
     };
 
     let cardsData = [];
@@ -43,6 +52,8 @@
     // カードナビゲーション用の変数
     let currentModalCard = null;
     let currentPageCards = [];
+    let allBinderCards = []; // 全バインダー内のカード（空スロットは除く）
+    let currentCardIndex = -1; // 全バインダー内での現在のカードインデックス
 
     // モバイル用の変数
     let touchStartX = 0;
@@ -389,6 +400,14 @@
 
     // バインダーの初期化
     function initializeBinder() {
+      // バインダーの設定を読み込み
+      if (binderState.binderData && binderState.binderData.settings) {
+        binderState.settings = { ...binderState.settings, ...binderState.binderData.settings };
+      }
+      
+      // バインダータイトルを更新
+      updateBinderTitle();
+      
       // 保存されたviewModeに基づいてボタンの表示を設定
       updateViewModeButton();
 
@@ -420,14 +439,6 @@
         // ページ追加ボタンと初期化ボタンを表示
         if (addPageBtn) addPageBtn.style.display = 'inline-block';
         if (clearBtn) clearBtn.style.display = 'inline-block';
-      }
-    }
-
-    // バインダータイトルの更新
-    function updateBinderTitle() {
-      const headerTitle = document.querySelector('.header h1');
-      if (binderState.binderData && headerTitle) {
-        headerTitle.innerHTML = `🎴 ${binderState.binderData.name}`;
       }
     }
 
@@ -541,6 +552,7 @@
 
       updateStats();
       updateCurrentPageCards(); // カードナビゲーション用にページのカードリストを更新
+      initializeProductList(); // 収録商品リストを更新
     }
 
     // ページHTMLを作成する関数
@@ -1810,6 +1822,12 @@
 
       // 現在表示中のカード情報を保存（ナビゲーション用）
       currentModalCard = cardData;
+      
+      // 全バインダー内での現在のカードインデックスを設定
+      if (cardData && allBinderCards.length > 0) {
+        currentCardIndex = allBinderCards.findIndex(item => item.card.id === cardData.id);
+        console.log('Current card index:', currentCardIndex, 'of', allBinderCards.length);
+      }
 
       // レイアウトの切り替え
       const desktopLayout = modal.querySelector(".modal-desktop");
@@ -1854,22 +1872,24 @@
           infoContent.innerHTML = `
             <h3 style="margin-top:0; color:#667eea; font-size:16px; margin-bottom:12px;">${cardData.name}</h3>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:15px; font-size:13px;">
-              <div><strong>🆔 カード番号:</strong><br>${cardData.id}</div>
-              <div><strong>🃏 カードタイプ:</strong><br>${cardData.cardType || cardData.card_type || '不明'}</div>
-              <div><strong>✨ レアリティ:</strong><br>${cardData.rarity}</div>
-              <div><strong>🎨 色:</strong><br>${cardData.color || '不明'}</div>
-              <div><strong>🌸 Bloom:</strong><br>${bloomText}</div>
-              ${cardData.hp ? `<div><strong>❤️ HP:</strong><br>${cardData.hp}</div>` : '<div></div>'}
-            </div>
-
             <div style="margin-bottom:15px; font-size:13px;">
-              <div><strong>📦 収録商品:</strong><br>${productText}</div>
+              <div style="margin-bottom:8px;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
+              <div style="margin-bottom:8px;"><strong>🃏 カードタイプ:</strong> ${cardData.cardType || cardData.card_type || '不明'}</div>
+              
+              <!-- レアリティ、色、Bloomを1行に3つ表示 -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom:8px; font-size:12px;">
+                <div><strong>✨ レアリティ:</strong><br>${cardData.rarity}</div>
+                <div><strong>🎨 色:</strong><br>${cardData.color || '不明'}</div>
+                <div><strong>🌸 Bloom:</strong><br>${bloomText}</div>
+              </div>
+              
+              ${cardData.hp ? `<div style="margin-bottom:8px;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
+              <div><strong>📦 収録商品:</strong> ${productText}</div>
             </div>
 
-            <div style="margin:12px 0; border-top:1px solid #555; padding-top:12px;">
+            <div style="margin:12px 0 30px 0; border-top:1px solid #555; padding-top:12px; padding-bottom:20px;">
               <strong style="font-size:14px; color:#667eea;">⚡ スキル:</strong>
-              <div style="margin-top:8px; font-size:13px;">
+              <div style="margin-top:8px; font-size:13px; padding-bottom:20px;">
                 ${skillsHtml}
               </div>
             </div>
@@ -1880,14 +1900,16 @@
             <h3 style="margin-top:0; color:#667eea; font-size:18px;">${cardData.name}</h3>
 
             <div style="margin-bottom:18px; font-size:14px;">
-              <div style="margin:6px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
-              <div style="margin:6px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.cardType || cardData.card_type || '不明'}</div>
-              <div style="margin:6px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
-              <div style="margin:6px 0;"><strong>🎨 色:</strong> ${cardData.color || '不明'}</div>
-              <div style="margin:6px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
-              ${cardData.hp ? `<div style="margin:6px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
-              <div style="margin:6px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
-              ${cardData.releaseDate ? `<div style="margin:6px 0;"><strong>📅 発売日:</strong> ${cardData.releaseDate}</div>` : ''}
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                <div style="margin:4px 0;"><strong>🆔 カード番号:</strong> ${cardData.id}</div>
+                <div style="margin:4px 0;"><strong>🃏 カードタイプ:</strong> ${cardData.cardType || cardData.card_type || '不明'}</div>
+                <div style="margin:4px 0;"><strong>✨ レアリティ:</strong> ${cardData.rarity}</div>
+                <div style="margin:4px 0;"><strong>🎨 色:</strong> ${cardData.color || '不明'}</div>
+                <div style="margin:4px 0;"><strong>🌸 Bloom:</strong> ${bloomText}</div>
+                ${cardData.hp ? `<div style="margin:4px 0;"><strong>❤️ HP:</strong> ${cardData.hp}</div>` : ''}
+              </div>
+              <div style="margin:8px 0;"><strong>📦 収録商品:</strong> ${productText}</div>
+              ${cardData.releaseDate ? `<div style="margin:8px 0;"><strong>📅 発売日:</strong> ${cardData.releaseDate}</div>` : ''}
             </div>
 
             <div style="margin:15px 0; border-top:1px solid #555; padding-top:15px;">
@@ -1911,6 +1933,36 @@
       modal.style.alignItems = "center";
       modal.style.justifyContent = "center";
       document.body.style.overflow = "hidden";
+      
+      // ナビゲーションボタンの表示状態を更新
+      updateNavigationButtons();
+    }
+
+    // ナビゲーションボタンの表示状態を更新
+    function updateNavigationButtons() {
+      const leftArrows = document.querySelectorAll('.nav-arrow-left, .nav-arrow-left-mobile');
+      const rightArrows = document.querySelectorAll('.nav-arrow-right, .nav-arrow-right-mobile');
+      
+      // 前のカードがあるかチェック
+      const hasPrevious = currentCardIndex > 0;
+      leftArrows.forEach(arrow => {
+        arrow.style.opacity = hasPrevious ? '1' : '0.3';
+        arrow.style.pointerEvents = hasPrevious ? 'auto' : 'none';
+      });
+      
+      // 次のカードがあるかチェック
+      const hasNext = currentCardIndex < allBinderCards.length - 1;
+      rightArrows.forEach(arrow => {
+        arrow.style.opacity = hasNext ? '1' : '0.3';
+        arrow.style.pointerEvents = hasNext ? 'auto' : 'none';
+      });
+      
+      console.log('Navigation buttons updated:', {
+        currentIndex: currentCardIndex,
+        totalCards: allBinderCards.length,
+        hasPrevious,
+        hasNext
+      });
     }
 
     function closeImageModal() {
@@ -1921,6 +1973,9 @@
     // カードナビゲーション機能
     function updateCurrentPageCards() {
       currentPageCards = [];
+      allBinderCards = [];
+      
+      // 現在のページのカードを更新
       const currentPageData = binderState.pages[binderState.currentPage];
       if (currentPageData && currentPageData.slots) {
         currentPageData.slots.forEach(slot => {
@@ -1932,27 +1987,94 @@
           }
         });
       }
+      
+      // 全バインダー内のカードを更新（ページ順序を維持）
+      if (binderState.pages && binderState.pages.length > 0) {
+        binderState.pages.forEach(page => {
+          if (page && page.slots) {
+            page.slots.forEach(slot => {
+              if (slot.cardId) {
+                const card = cardsData.find(c => c.id === slot.cardId);
+                if (card) {
+                  allBinderCards.push({
+                    card: card,
+                    pageIndex: binderState.pages.indexOf(page),
+                    slotIndex: page.slots.indexOf(slot)
+                  });
+                }
+              }
+            });
+          }
+        });
+      }
+      
+      console.log('Updated card navigation:', {
+        currentPageCards: currentPageCards.length,
+        allBinderCards: allBinderCards.length,
+        currentPage: binderState.currentPage
+      });
     }
 
     function previousCardDetail() {
-      if (!currentModalCard || currentPageCards.length === 0) return;
+      if (!currentModalCard || allBinderCards.length === 0 || currentCardIndex <= 0) {
+        console.log('Cannot go to previous card:', {
+          hasCurrentCard: !!currentModalCard,
+          totalCards: allBinderCards.length,
+          currentIndex: currentCardIndex
+        });
+        return;
+      }
       
-      const currentIndex = currentPageCards.findIndex(card => card.id === currentModalCard.id);
-      if (currentIndex > 0) {
-        const prevCard = currentPageCards[currentIndex - 1];
-        const imageUrl = prevCard.image_url || prevCard.image || './images/placeholder.png';
-        showImageModal(imageUrl, prevCard);
+      const prevIndex = currentCardIndex - 1;
+      const prevCardInfo = allBinderCards[prevIndex];
+      
+      // 必要に応じてページを移動
+      if (prevCardInfo.pageIndex !== binderState.currentPage) {
+        console.log('Moving to page:', prevCardInfo.pageIndex);
+        binderState.currentPage = prevCardInfo.pageIndex;
+        renderBinder(); // ページを再描画
+        
+        // ページ描画後に少し遅延してモーダルを表示
+        setTimeout(() => {
+          const imageUrl = prevCardInfo.card.image_url || prevCardInfo.card.image || './images/placeholder.png';
+          showImageModal(imageUrl, prevCardInfo.card);
+        }, 100);
+      } else {
+        // 同じページ内での移動
+        const imageUrl = prevCardInfo.card.image_url || prevCardInfo.card.image || './images/placeholder.png';
+        showImageModal(imageUrl, prevCardInfo.card);
       }
     }
 
     function nextCardDetail() {
-      if (!currentModalCard || currentPageCards.length === 0) return;
+      if (!currentModalCard || allBinderCards.length === 0 || currentCardIndex >= allBinderCards.length - 1) {
+        console.log('Cannot go to next card:', {
+          hasCurrentCard: !!currentModalCard,
+          totalCards: allBinderCards.length,
+          currentIndex: currentCardIndex,
+          maxIndex: allBinderCards.length - 1
+        });
+        return;
+      }
       
-      const currentIndex = currentPageCards.findIndex(card => card.id === currentModalCard.id);
-      if (currentIndex < currentPageCards.length - 1) {
-        const nextCard = currentPageCards[currentIndex + 1];
-        const imageUrl = nextCard.image_url || nextCard.image || './images/placeholder.png';
-        showImageModal(imageUrl, nextCard);
+      const nextIndex = currentCardIndex + 1;
+      const nextCardInfo = allBinderCards[nextIndex];
+      
+      // 必要に応じてページを移動
+      if (nextCardInfo.pageIndex !== binderState.currentPage) {
+        console.log('Moving to page:', nextCardInfo.pageIndex);
+        binderState.currentPage = nextCardInfo.pageIndex;
+        renderBinder(); // ページを再描画
+        
+        // ページ描画後に少し遅延してモーダルを表示
+        setTimeout(() => {
+          const imageUrl = nextCardInfo.card.image_url || nextCardInfo.card.image || './images/placeholder.png';
+          showImageModal(imageUrl, nextCardInfo.card);
+        }, 100);
+      } else {
+        // 同じページ内での移動
+        const imageUrl = nextCardInfo.card.image_url || nextCardInfo.card.image || './images/placeholder.png';
+        showImageModal(imageUrl, nextCardInfo.card);
       }
     }
 
@@ -2234,6 +2356,174 @@
         } else {
           alert(`${totalCards}枚のカードを削除しました`);
         }
+      }
+    }
+
+    // バインダー設定機能
+    function showBinderSettings() {
+      const modal = document.getElementById('binderSettingsModal');
+      
+      // 現在の設定をフォームに反映
+      document.getElementById('binderNameInput').value = binderState.settings.name || 'マイバインダー';
+      document.getElementById('binderDescriptionInput').value = binderState.settings.description || '';
+      document.getElementById('binderLayoutSelect').value = binderState.settings.layout || '3x3';
+      document.getElementById('binderPublicCheckbox').checked = binderState.settings.isPublic || false;
+      
+      // 表紙画像プレビュー
+      updateCoverPreview();
+      
+      modal.style.display = 'flex';
+    }
+
+    function closeBinderSettings() {
+      document.getElementById('binderSettingsModal').style.display = 'none';
+    }
+
+    function saveBinderSettings() {
+      const nameInput = document.getElementById('binderNameInput');
+      const descriptionInput = document.getElementById('binderDescriptionInput');
+      const layoutSelect = document.getElementById('binderLayoutSelect');
+      const publicCheckbox = document.getElementById('binderPublicCheckbox');
+      const coverInput = document.getElementById('binderCoverInput');
+
+      // 入力検証
+      if (!nameInput.value.trim()) {
+        alert('バインダー名を入力してください');
+        nameInput.focus();
+        return;
+      }
+
+      // 現在のレイアウトから新しいレイアウトへの変更を処理
+      const oldLayout = binderState.settings.layout || '3x3';
+      const newLayout = layoutSelect.value;
+      
+      if (oldLayout !== newLayout) {
+        if (hasCardsInBinder()) {
+          const confirmMessage = `レイアウトを変更すると、配置されたカードの位置が変わる可能性があります。\n続行しますか？`;
+          if (!confirm(confirmMessage)) {
+            return;
+          }
+        }
+      }
+
+      // 設定を更新
+      binderState.settings = {
+        ...binderState.settings,
+        name: nameInput.value.trim(),
+        description: descriptionInput.value.trim(),
+        layout: newLayout,
+        isPublic: publicCheckbox.checked,
+        lastModified: Date.now()
+      };
+
+      // 表紙画像の処理
+      if (coverInput.files && coverInput.files[0]) {
+        const file = coverInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          binderState.settings.coverImage = e.target.result;
+          finalizeSaveSettings(oldLayout, newLayout);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        finalizeSaveSettings(oldLayout, newLayout);
+      }
+    }
+
+    function finalizeSaveSettings(oldLayout, newLayout) {
+      // レイアウト変更の場合はページを再構築
+      if (oldLayout !== newLayout) {
+        rebuildPagesForLayout(newLayout);
+      }
+
+      // バインダーデータに設定を保存
+      if (binderState.binderData) {
+        binderState.binderData.settings = binderState.settings;
+      }
+
+      saveBinder();
+      updateBinderTitle();
+      renderBinder();
+      
+      closeBinderSettings();
+      
+      if (isMobile) {
+        showMobileAlert('バインダー設定を保存しました', '✅');
+      } else {
+        alert('バインダー設定を保存しました');
+      }
+    }
+
+    function removeCoverImage() {
+      binderState.settings.coverImage = null;
+      document.getElementById('binderCoverInput').value = '';
+      updateCoverPreview();
+    }
+
+    function updateCoverPreview() {
+      const preview = document.getElementById('coverPreview');
+      if (binderState.settings.coverImage) {
+        preview.innerHTML = `<img src="${binderState.settings.coverImage}" style="max-width: 100%; border-radius: 5px; border: 1px solid #ddd;">`;
+      } else {
+        preview.innerHTML = '<div style="padding: 20px; border: 2px dashed #ddd; border-radius: 5px; text-align: center; color: #666;">表紙画像なし</div>';
+      }
+    }
+
+    function hasCardsInBinder() {
+      return binderState.pages.some(page => 
+        page.slots.some(slot => slot !== null)
+      );
+    }
+
+    function rebuildPagesForLayout(newLayout) {
+      const layouts = {
+        '3x3': 9,
+        '4x3': 12,
+        '4x4': 16,
+        '5x4': 20
+      };
+      
+      const newSlotsPerPage = layouts[newLayout] || 9;
+      
+      // 既存のカードを収集
+      const allCards = [];
+      binderState.pages.forEach(page => {
+        page.slots.forEach(slot => {
+          if (slot !== null) {
+            allCards.push(slot);
+          }
+        });
+      });
+
+      // 新しいレイアウトでページを再構築
+      binderState.pages = [];
+      let cardIndex = 0;
+      
+      while (cardIndex < allCards.length) {
+        const newPage = {
+          slots: Array(newSlotsPerPage).fill(null)
+        };
+        
+        for (let i = 0; i < newSlotsPerPage && cardIndex < allCards.length; i++) {
+          newPage.slots[i] = allCards[cardIndex];
+          cardIndex++;
+        }
+        
+        binderState.pages.push(newPage);
+      }
+
+      // カードがある場合は最低1ページ、ない場合も1ページは必要
+      if (binderState.pages.length === 0) {
+        binderState.pages.push({
+          slots: Array(newSlotsPerPage).fill(null)
+        });
+      }
+    }
+
+    function updateBinderTitle() {
+      const headerTitle = document.querySelector('.header h1');
+      if (headerTitle) {
+        headerTitle.textContent = `🎴 ${binderState.settings.name || 'コレクションバインダー'}`;
       }
     }
 

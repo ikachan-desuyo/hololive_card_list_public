@@ -1,5 +1,5 @@
 // Service Worker for offline caching with centralized version management
-// Version: 4.5.0-MODULAR-STRUCTURE
+// Version: 4.6.0-BINDER-SETTINGS
 
 // Import version configuration and utility functions
 importScripts('./sw-version.js', './sw-utils.js', './sw-handlers.js');

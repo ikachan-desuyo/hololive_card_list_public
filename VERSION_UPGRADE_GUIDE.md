@@ -6,30 +6,32 @@
 ```javascript
 // 以下の値を更新してください：
 
-const APP_VERSION = '4.X.X';  // 新しいバージョン番号
-const VERSION_DESCRIPTION = '新機能の説明';  // バージョンの説明
+const APP_VERSION = '4.6.0';  // 新しいバージョン番号
+const VERSION_DESCRIPTION = 'BINDER-SETTINGS - Added comprehensive binder settings with layout management and metadata editing';  // バージョンの説明
 
-// 各ページのバージョンを必要に応じて更新
-const PAGE_VERSIONS = {
-  'index.html': '4.X.X-FEATURE-NAME',
-  'card_list.html': '4.X.X-FEATURE-NAME',
-  // ... 他のページ
-};
-
-// 更新内容の詳細を更新
-const UPDATE_DETAILS = {
-  title: '🎯 新機能追加 vX.X.X',
-  description: '新機能の説明',
-  changes: [
-    '🆕 新機能1',
-    '🔧 改善1',
-    // ... 変更内容
-  ]
+// VERSION_HISTORYに新しいバージョンを追加
+const VERSION_HISTORY = {
+  '4.6.0': {
+    description: 'BINDER-SETTINGS - Added comprehensive binder settings',
+    features: [
+      'バインダー設定モーダル追加',
+      'レイアウト変更機能',
+      // ... 機能リスト
+    ],
+    date: '2025-07-24'
+  },
+  // ... 過去のバージョン
 };
 ```
 
-### 2. 各HTMLページのバージョンコメント
-各HTMLファイルの先頭にある`<!-- Version: X.X.X-FEATURE-NAME -->`を更新
+### 2. Service Worker関連ファイルのバージョンコメント
+以下のファイルのバージョンコメントを更新：
+- `sw.js`
+- `sw-utils.js` 
+- `sw-handlers.js`
+
+### 3. 該当HTMLページのバージョンコメント
+変更があったHTMLファイルのバージョンコメントを更新
 
 ### 3. 確認事項
 - [ ] `sw-version.js`のAPP_VERSION更新

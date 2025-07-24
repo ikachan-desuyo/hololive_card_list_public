@@ -1,5 +1,5 @@
-// Service Worker Utility Functions
-// Version: 4.5.0-MODULAR-STRUCTURE
+// Utility functions for Service Worker operations
+// Version: 4.6.0-BINDER-SETTINGS
 
 // ✅ バージョン比較機能
 function compareVersions(current, cached) {
