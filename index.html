@@ -286,13 +286,13 @@
     // ✅ Service Worker との通信機能
     async function sendMessageToSW(type, data = null) {
       if (!navigator.serviceWorker.controller) return null;
-      
+
       return new Promise((resolve) => {
         const messageChannel = new MessageChannel();
         messageChannel.port1.onmessage = (event) => {
           resolve(event.data);
         };
-        
+
         navigator.serviceWorker.controller.postMessage(
           { type, data },
           [messageChannel.port2]
@@ -323,10 +323,10 @@
         })
           .then((registration) => {
             console.log('SW registered: ', registration);
-            
+
             // モバイル向け：即座に更新チェック
             registration.update();
-            
+
             // ✅ 新しいバージョン管理システムで更新確認
             const checkForUpdates = async () => {
               try {
@@ -335,10 +335,10 @@
                   setTimeout(checkForUpdates, 1000);
                   return;
                 }
-                
+
                 const updateMessage = await getUpdateMessage();
                 if (!updateMessage) return;
-                
+
                 if (confirm(updateMessage.data.message)) {
                   // 全キャッシュクリア後にリロード
                   const cacheNames = await caches.keys();
@@ -349,13 +349,13 @@
                 console.error('Version check error:', error);
               }
             };
-            
+
             // Check for waiting service worker with new system
             if (registration.waiting) {
               console.log('SW update available');
               setTimeout(checkForUpdates, 500);
             }
-            
+
             // Listen for updates with new system
             registration.addEventListener('updatefound', () => {
               const newWorker = registration.installing;
@@ -429,7 +429,7 @@
     async function checkForUpdates() {
       const statusEl = document.getElementById('updateStatus');
       const btnEl = document.getElementById('updateCheckBtn');
-      
+
       if (!navigator.onLine) {
         statusEl.textContent = '⚠️ オフライン状態では更新確認できません';
         statusEl.style.color = '#ff9800';
@@ -444,12 +444,12 @@
 
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           const messageChannel = new MessageChannel();
-          
+
           // タイムアウト設定（10秒）
-          const timeout = new Promise((_, reject) => 
+          const timeout = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Service Worker timeout')), 10000)
           );
-          
+
           // Service Workerからのレスポンスを待機
           const checkPromise = new Promise((resolve, reject) => {
             messageChannel.port1.onmessage = (event) => {
@@ -460,28 +460,28 @@
               }
             };
           });
-          
+
           // 詳細バージョンチェック要求を送信
           navigator.serviceWorker.controller.postMessage(
             { type: 'CHECK_VERSION_MISMATCH' },
             [messageChannel.port2]
           );
-          
+
           // レスポンス待機（タイムアウト付き）
           const versionCheckResult = await Promise.race([checkPromise, timeout]);
-          
+
           if (versionCheckResult.hasUpdates) {
             // バージョン不一致の詳細情報を生成
             let detailMessage = '🚀 バージョンの不一致が検出されました:\n\n';
             detailMessage += `📊 アプリバージョン: v${versionCheckResult.currentAppVersion}\n`;
             detailMessage += `🕐 チェック時刻: ${new Date(versionCheckResult.timestamp).toLocaleString('ja-JP')}\n\n`;
-            
+
             versionCheckResult.outdatedPages.forEach(pageInfo => {
               detailMessage += `📄 ${pageInfo.page}:\n`;
               detailMessage += `  ┣ 期待バージョン: v${pageInfo.expectedVersion}\n`;
               detailMessage += `  ┣ 実際のバージョン: v${pageInfo.actualVersion || '不明'}\n`;
               detailMessage += `  ┣ キャッシュバージョン: v${pageInfo.cachedVersion || 'なし'}\n`;
-              
+
               // ミスマッチの理由を日本語で説明
               let reasonText = '';
               switch(pageInfo.reason) {
@@ -502,27 +502,27 @@
               }
               detailMessage += `  ┗ 理由: ${reasonText}\n\n`;
             });
-            
+
             statusEl.innerHTML = `🚀 更新が利用可能です (${versionCheckResult.outdatedPages.length}ページ)<br><small>詳細情報を確認してください</small>`;
             statusEl.style.color = '#4caf50';
             console.log('Version check details:', versionCheckResult);
-            
+
             setTimeout(() => {
               if (confirm(detailMessage + 'バージョン不一致のページを更新してアプリケーションを再読み込みしますか？')) {
                 statusEl.innerHTML = `⚡ 更新中...<br><small>対象ページのキャッシュをクリア中</small>`;
                 statusEl.style.color = '#ff9800';
-                
+
                 // バージョン不一致のページのみをターゲットにした更新処理
                 console.log('Starting targeted cache clear and update for outdated pages...');
-                
+
                 // Service Workerに強制更新を要求（対象ページのみ）
                 if (navigator.serviceWorker.controller) {
-                  navigator.serviceWorker.controller.postMessage({ 
+                  navigator.serviceWorker.controller.postMessage({
                     type: 'FORCE_UPDATE',
                     outdatedPages: versionCheckResult.outdatedPages.map(p => p.page)
                   });
                 }
-                
+
                 // 対象ページのキャッシュクリア + 必要最小限の全体キャッシュクリア
                 if ('caches' in window) {
                   caches.keys().then(cacheNames => {
@@ -561,14 +561,14 @@
             // 最新の場合、比較したバージョン情報を詳細表示
             let versionDetails = `✅ 最新バージョン v${versionCheckResult.currentAppVersion}<br>`;
             versionDetails += `<small>📊 各ページのバージョン情報:<br><br>`;
-            
+
             if (versionCheckResult.allPages && versionCheckResult.allPages.length > 0) {
               versionCheckResult.allPages.forEach(pageInfo => {
                 const pageName = pageInfo.page.replace('.html', '');
                 const expectedV = pageInfo.expectedVersion;
                 const actualV = pageInfo.actualVersion;
                 const status = expectedV === actualV ? '✅' : '⚠️';
-                
+
                 versionDetails += `${status} ${pageName}<br>`;
                 versionDetails += `&nbsp;&nbsp;├ 最新: v${expectedV}<br>`;
                 versionDetails += `&nbsp;&nbsp;└ 現在: v${actualV}<br><br>`;
@@ -577,7 +577,7 @@
               versionDetails += `全ページのバージョンが最新です`;
             }
             versionDetails += `</small>`;
-            
+
             statusEl.innerHTML = versionDetails;
             statusEl.style.color = '#4caf50';
             setTimeout(() => {
@@ -588,7 +588,7 @@
           statusEl.textContent = '⚠️ Service Worker が利用できません';
           statusEl.style.color = '#ff9800';
         }
-        
+
       } catch (error) {
         console.error('Update check failed:', error);
         statusEl.textContent = '❌ 更新確認に失敗しました: ' + error.message;

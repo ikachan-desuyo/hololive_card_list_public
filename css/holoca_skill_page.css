@@ -1,0 +1,378 @@
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      font-size: 15px;
+      transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
+      padding-bottom: 50px; /* 最下部に余白を追加 */
+    }
+
+    .dark {
+      background: #222;
+      color: #eee;
+    }
+
+    .dark table {
+      background: #333;
+    }
+
+    .dark th, .dark td {
+      border-color: #666;
+    }
+
+    .dark input, .dark select, .dark textarea {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .container {
+      max-width: none;
+      width: fit-content;
+      margin: 0 auto;
+      padding: 10px 10px 30px 10px; /* 下部に余白を追加 */
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 100;
+      border-bottom: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .dark .top-bar {
+      background: #222;
+      border-color: #444;
+    }
+
+    .top-bar .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .top-bar .nav-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .top-bar button {
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      margin-right: 5px;
+    }
+
+    .dark .top-bar button {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .top-bar button:hover {
+      background: #f0f0f0;
+    }
+
+    .dark .top-bar button:hover {
+      background: #555;
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .filter-group {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .dark .filter-group {
+      border-color: #666;
+    }
+
+    .filter-group legend {
+      font-weight: bold;
+      padding: 0 6px;
+    }
+
+    #filtersWrapper {
+      display: none;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .filter-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: auto;
+      margin-bottom: 30px; /* テーブル下部に余白を追加 */
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f8f8f8;
+      z-index: 50;
+    }
+    .dark thead {
+      background: #333;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .dark th, .dark td {
+      border-color: #666;
+    }
+
+    th:nth-child(2) {
+      white-space: nowrap;
+    }
+
+    td:nth-child(2) {
+      min-width: 140px;
+      max-width: 180px;
+      word-break: break-word;
+    }
+
+    td.name-cell .meta {
+      margin-top: 4px;
+      padding: 4px;
+      border-top: 1px dashed #ccc;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+    }
+    .dark td.name-cell .meta {
+      border-top: 1px dashed #666;
+      color: #aaa;
+    }
+
+    td:nth-child(8), th:nth-child(8) {
+      word-break: break-word;
+      min-width: 320px;
+    }
+
+    input[type="number"] {
+      width: 40px;
+      background-color: #fff !important;
+      color: #000;
+      border: 1px solid #ccc;
+    }
+    .dark input[type="number"] {
+      background-color: #444 !important;
+      color: #eee;
+      border-color: #666;
+    }
+
+    img {
+      width: 60px;
+      border-radius: 4px;
+      cursor: zoom-in;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
+
+    select {
+      font-size: 14px;
+      padding: 6px;
+      max-width: 200px;
+    }
+
+    input[type="text"] {
+      font-size: 14px;
+      padding: 6px;
+      width: 200px;
+    }
+
+    img.skill-icon {
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border: 1px solid #aaa;
+      border-radius: 16px;
+      background: #f0f0f0;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+      transition: 0.2s;
+    }
+
+    .chip:hover {
+      background: #ddd;
+    }
+
+    .chip.selected {
+      background: #0095ff;
+      color: #fff;
+      border-color: #007acc;
+    }
+
+    .chip.all-chip {
+      font-weight: bold;
+    }
+
+    /* ダークモード時のチップスタイル */
+    .dark .chip {
+      background: #444;
+      color: #eee;
+      border-color: #666;
+    }
+
+    .dark .chip:hover {
+      background: #555;
+    }
+
+    .dark .chip.selected {
+      background: #007acc;
+      color: #fff;
+      border-color: #005999;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: 80px; /* モバイルでは更に余白を増やす */
+      }
+
+      .container {
+        padding: 5px 5px 50px 5px; /* モバイルでコンパクトに、但し下部余白は確保 */
+      }
+
+      table {
+        margin-bottom: 50px; /* モバイルでテーブル下部余白を増やす */
+      }
+
+      th, td {
+        padding: 6px 4px; /* モバイルでセル内の余白を調整 */
+        font-size: 13px;
+      }
+
+      input[type="text"] {
+        width: 160px; /* モバイルで入力フィールドを短く */
+      }
+
+      select {
+        max-width: 160px; /* モバイルでセレクトボックスを短く */
+      }
+
+      .top-bar .nav-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+      }
+
+      .top-bar .nav-row:nth-child(2) {
+        justify-content: flex-start; /* 検索・ソート行は左寄せ */
+      }
+
+      .top-bar .nav-row > div {
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 3px;
+      }
+
+      .top-bar .nav-row h2 {
+        font-size: 16px; /* モバイルでタイトルを小さく */
+        text-align: center;
+        flex: 1;
+        margin: 0 5px;
+      }
+
+      .top-bar .nav-row h2 span {
+        font-size: 9px; /* バージョン表示をさらに小さく */
+      }
+
+      .top-bar button {
+        font-size: 11px;
+        padding: 4px 6px;
+        margin-right: 0;
+      }
+
+      .controls {
+        flex-direction: row;
+        gap: 5px;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .controls input,
+      .controls select,
+      .controls button {
+        width: auto;
+        box-sizing: border-box;
+        flex: none;
+      }
+
+      .controls input[type="text"] {
+        width: 140px; /* 検索ボックスを少し小さく */
+        font-size: 12px;
+      }
+
+      .controls select {
+        max-width: 100px; /* ソート選択を小さく */
+        font-size: 12px;
+      }
+
+      .controls button {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+    }
+
+    /* モバイル用のJS制御クラス */
+    .mobile-layout .top-bar {
+      padding: 5px;
+    }
+
+    .mobile-layout .container {
+      padding: 5px;
+    }
