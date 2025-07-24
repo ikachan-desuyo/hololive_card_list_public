@@ -1,39 +1,37 @@
 // Version Management Configuration
 // このファイルはバージョンアップ時に更新されます
 
-const APP_VERSION = '4.6.0';
-const VERSION_DESCRIPTION = 'バインダー設定機能追加＆レイアウト管理＆メタデータ編集';
+const APP_VERSION = "4.9.0";
+const VERSION_DESCRIPTION = "バインダーレイアウト変更修正＆リアルタイム名前同期機能";
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  'index.html': '4.5.0-BINDER-COLLECTION-UPDATE',  // バインダーコレクション管理システム＆モジュラー構造
-  'card_list.html': '4.5.0-SEARCH-NORMALIZATION',  // 検索機能改善 - ひらがな/カタカナ統一
-  'collection_binder.html': '4.6.0-BINDER-SETTINGS',  // バインダー設定機能＆レイアウト管理
-  'binder_collection.html': '4.2.0-CREATE-IMPROVEMENTS',  // バインダー作成機能改善 - 画像処理＆エラーハンドリング
-  'holoca_skill_page.html': '4.5.0-SEARCH-NORMALIZATION',  // 検索機能改善 - ひらがな/カタカナ統一
-  'deck_builder.html': '4.5.0-SEARCH-NORMALIZATION'  // 検索機能改善 - ひらがな/カタカナ統一
+  "index.html": "4.5.0-BINDER-COLLECTION-UPDATE",  // バインダーコレクション管理システム＆モジュラー構造
+  "card_list.html": "4.5.0-SEARCH-NORMALIZATION",  // 検索機能改善 - ひらがな/カタカナ統一
+  "collection_binder.html": "4.9.0-REALTIME-SYNC",  // リアルタイム名前同期＆レイアウト修正
+  "binder_collection.html": "4.5.0-LAYOUT-FIX",  // レイアウト変更時の構造統一修正
+  "holoca_skill_page.html": "4.5.0-SEARCH-NORMALIZATION",  // 検索機能改善 - ひらがな/カタカナ統一
+  "deck_builder.html": "4.5.0-SEARCH-NORMALIZATION"  // 検索機能改善 - ひらがな/カタカナ統一
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: '🎯 バインダー設定機能追加 v4.6.0',
-  description: 'バインダーの詳細設定とレイアウト管理機能を追加しました',
+  title: "🔄 レイアウト修正＆リアルタイム同期 v4.9.0",
+  description: "バインダーレイアウト変更時の問題修正とリアルタイム名前同期機能を追加しました",
   changes: [
-    '⚙️ バインダー設定モーダル追加（名前・説明・表紙画像）',
-    '📐 レイアウト変更機能（3×3, 4×3, 4×4, 5×4）',
-    '🎨 カード詳細表示のレイアウト改善',
-    '� 公開設定機能追加',
-    '💾 設定の永続化とタイトル更新',
-    '📱 モバイル対応の設定画面',
-    '🔄 レイアウト変更時の自動カード再配置',
-    '⚡ バインダータイトルの動的更新',
-    '🎴 表紙画像プレビュー機能',
-    '✅ 設定保存時の確認機能'
+    "🔧 バインダーレイアウト変更時の構造統一修正",
+    "🔄 リアルタイムバインダー名同期機能",
+    "📱 BroadcastChannelとlocalStorageイベントによる通信",
+    "🎯 バインダー編集→即座に他タブに反映",
+    "💾 レイアウト変更時のデータ整合性確保",
+    "🏷️ バインダー名表示の正確性向上",
+    "✨ 編集完了後の自動リロード機能",
+    "🔄 設定変更の即座な反映システム"
   ]
 };
 
 // Export for Service Worker (using global assignment for compatibility)
-if (typeof self !== 'undefined') {
+if (typeof self !== "undefined") {
   self.APP_VERSION = APP_VERSION;
   self.VERSION_DESCRIPTION = VERSION_DESCRIPTION;
   self.PAGE_VERSIONS = PAGE_VERSIONS;

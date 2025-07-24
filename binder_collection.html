@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.2.0-CREATE-IMPROVEMENTS - Binder creation functionality improvements with image processing and error handling -->
+<!-- Version: 4.3.0-BINDER-EDIT-IMPROVEMENTS - Enhanced binder editing modal with improved layout selection, image upload, and mobile responsiveness -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -46,7 +46,7 @@
 
         <div class="form-group">
           <label class="form-label" for="binderDescription">説明（任意）</label>
-          <textarea id="binderDescription" class="form-input form-textarea" placeholder="このバインダーについての説明を入力してください"></textarea>
+          <textarea id="binderDescription" class="form-input form-textarea" placeholder="このバインダーについての説明を入力してください" rows="5" style="min-height: 120px; resize: vertical;"></textarea>
         </div>
 
         <div class="form-group">
@@ -129,7 +129,7 @@
 
         <div class="form-group">
           <label class="form-label">説明（任意）</label>
-          <textarea id="editBinderDescription" class="form-textarea" placeholder="バインダーの説明を入力（任意）" rows="4" style="min-height: 100px; resize: vertical;"></textarea>
+          <textarea id="editBinderDescription" class="form-textarea" placeholder="バインダーの説明を入力（任意）" rows="5" style="min-height: 120px; resize: vertical;"></textarea>
         </div>
 
         <div class="form-group">
@@ -574,27 +574,26 @@
       binder.description = description;
       
       // レイアウトが変更された場合の処理
-      if (binder.layout !== layout) {
+      if (binder.layout.type !== layout) {
         const layoutConfigs = {
-          '3x3': { cols: 3, rows: 3, slots: 9 },
-          '4x3': { cols: 4, rows: 3, slots: 12 },
-          '3x4': { cols: 3, rows: 4, slots: 12 },
-          '2x3': { cols: 2, rows: 3, slots: 6 }
+          '3x3': { type: '3x3', cols: 3, rows: 3, slotsPerPage: 9 },
+          '4x3': { type: '4x3', cols: 4, rows: 3, slotsPerPage: 12 },
+          '3x4': { type: '3x4', cols: 3, rows: 4, slotsPerPage: 12 },
+          '2x3': { type: '2x3', cols: 2, rows: 3, slotsPerPage: 6 }
         };
         
         const newConfig = layoutConfigs[layout];
         if (newConfig) {
-          binder.layout = layout;
-          binder.layoutConfig = newConfig;
+          binder.layout = newConfig;
           
           // 既存ページのスロット数を調整
           binder.pages.forEach(page => {
-            if (page.slots.length > newConfig.slots) {
+            if (page.slots.length > newConfig.slotsPerPage) {
               // スロット数が減る場合：はみ出したカードを削除
-              page.slots = page.slots.slice(0, newConfig.slots);
-            } else if (page.slots.length < newConfig.slots) {
+              page.slots = page.slots.slice(0, newConfig.slotsPerPage);
+            } else if (page.slots.length < newConfig.slotsPerPage) {
               // スロット数が増える場合：null で埋める
-              while (page.slots.length < newConfig.slots) {
+              while (page.slots.length < newConfig.slotsPerPage) {
                 page.slots.push(null);
               }
             }
@@ -674,6 +673,32 @@
         saveBinderCollection();
         closeEditBinderModal();
         renderBinders();
+        
+        // 現在開いているバインダーと同じIDの場合、ブラウザにメッセージを送信
+        const editedBinder = binderCollection.binders[window.currentEditingIndex];
+        if (editedBinder) {
+          // 他のタブ/ウィンドウにメッセージを送信してバインダー情報を更新
+          const message = {
+            type: 'BINDER_UPDATED',
+            binderId: editedBinder.id,
+            binderData: editedBinder
+          };
+          
+          // BroadcastChannelがサポートされている場合
+          if (typeof BroadcastChannel !== 'undefined') {
+            const channel = new BroadcastChannel('binder-updates');
+            channel.postMessage(message);
+            channel.close();
+          }
+          
+          // localStorage イベントでも通知
+          localStorage.setItem('binderUpdateNotification', JSON.stringify({
+            ...message,
+            timestamp: Date.now()
+          }));
+          localStorage.removeItem('binderUpdateNotification');
+        }
+        
         alert('バインダー設定を更新しました！');
       } catch (error) {
         console.error('Binder edit error:', error);
@@ -691,10 +716,13 @@
       // フォームに現在の値を設定
       document.getElementById('editBinderName').value = binder.name;
       document.getElementById('editBinderDescription').value = binder.description || '';
-      document.getElementById('editSelectedLayout').value = binder.layout || '3x3';
+      
+      // レイアウト情報を正しく取得
+      const currentLayout = binder.layout?.type || binder.layout || '3x3';
+      document.getElementById('editSelectedLayout').value = currentLayout;
       
       // レイアウト選択の表示を更新
-      updateEditLayoutSelection(binder.layout || '3x3');
+      updateEditLayoutSelection(currentLayout);
       
       // 表紙画像の設定
       if (binder.coverImage) {
@@ -820,7 +848,7 @@
     function exportBinderCollection() {
       try {
         const exportData = {
-          version: "4.1.1",
+          version: "4.3.0",
           exportDate: new Date().toISOString(),
           binderCollection: binderCollection
         };
