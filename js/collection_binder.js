@@ -1,4 +1,4 @@
-    // バインダーの状態管理
+// バインダーの状態管理
     let binderState = {
       binderId: null,
       binderData: null,
@@ -430,8 +430,12 @@
       // 保存されたviewModeに基づいてボタンの表示を設定
       updateViewModeButton();
 
-      // バインダーデータが既に読み込まれているので、直接レンダリング
+      // バインダーデータが既に読み込まれているので、ページ・ページ番号をリセットしてレンダリング
+      binderState.currentPage = 0;
       renderBinder();
+      if (typeof updatePageNumberInput === 'function') {
+        updatePageNumberInput();
+      }
     }
 
     // ViewModeボタンの表示を更新
@@ -466,7 +470,7 @@
       const slotsPerPage = binderState.binderData?.layout?.slotsPerPage || 9;
       return {
         id: Date.now(),
-        name: `ページ ${binderState.pages.length + 1}`,
+        name: 'ページ 1',
         slots: Array(slotsPerPage).fill(null)
       };
     }
@@ -1345,19 +1349,17 @@
 
       // 空スロット保持モードの場合
       if (preserveEmptySlots) {
-        // 持っているカードのみに絞り込み
-        const ownedCards = sortedCards.filter(card => userCollection[card.id] > 0);
-
-        // 元のソート順を保持したまま、持っていないカードの位置に null を挿入
-        const finalCards = [];
-        for (const card of sortedCards) {
-          if (userCollection[card.id] > 0) {
-            finalCards.push(card);
-          } else {
-            finalCards.push(null); // 空スロット
-          }
+        // 収録商品フィルターが有効なら、その商品内のカード順でnull挿入
+        let baseList;
+        if (productFilter) {
+          baseList = applySortingLogic(
+            cardsData.filter(card => card.product && card.product.includes(productFilter)),
+            mode, secondarySort, isAscending
+          );
+        } else {
+          baseList = applySortingLogic([...cardsData], mode, secondarySort, isAscending);
         }
-        sortedCards = finalCards;
+        sortedCards = baseList.map(card => userCollection[card.id] > 0 ? card : null);
       } else {
         // 通常モード：持っているカードのみ
         sortedCards = sortedCards.filter(card => userCollection[card.id] > 0);
@@ -1377,20 +1379,22 @@
 
       // 必要なページ数を計算
       const requiredPages = Math.ceil(sortedCards.length / slotsPerPage);
-
-      // ページを追加/調整
+      // ページ数を正確に調整
+      if (binderState.pages.length > requiredPages) {
+        binderState.pages = binderState.pages.slice(0, requiredPages);
+      }
       while (binderState.pages.length < requiredPages) {
         binderState.pages.push(createEmptyPage());
       }
 
       // カードを配置
-      let cardIndex = 0;
-      for (let pageIndex = 0; pageIndex < requiredPages && cardIndex < sortedCards.length; pageIndex++) {
+      for (let pageIndex = 0; pageIndex < requiredPages; pageIndex++) {
         const page = binderState.pages[pageIndex];
         page.slots = Array(slotsPerPage).fill(null);
-
-        for (let slotIndex = 0; slotIndex < slotsPerPage && cardIndex < sortedCards.length; slotIndex++) {
-          const card = sortedCards[cardIndex];
+        for (let slotIndex = 0; slotIndex < slotsPerPage; slotIndex++) {
+          const globalIndex = pageIndex * slotsPerPage + slotIndex;
+          if (globalIndex >= sortedCards.length) break;
+          const card = sortedCards[globalIndex];
           if (card) {
             page.slots[slotIndex] = {
               cardId: card.id,
@@ -1400,7 +1404,6 @@
           } else {
             page.slots[slotIndex] = null; // 空スロット保持
           }
-          cardIndex++;
         }
       }
 
@@ -1798,7 +1801,7 @@
           slot.style.border = '3px solid #007bff';
         }
         
-        showMobileAlert('交換する2つ目のカードを選択してください', '🔄');
+        // showMobileAlert('交換する2つ目のカードを選択してください', '🔄'); // モバイルメッセージ非表示化
       } else if (firstSwapSlot === slotIndex) {
         // 同じスロットを選択した場合：キャンセル
         cancelSwapMode();
@@ -1822,7 +1825,7 @@
       renderBinder();
       updateCurrentPageCards();
       cancelSwapMode();
-      showMobileAlert('カードを交換しました', '✅');
+      // showMobileAlert('カードを交換しました', '✅'); // モバイルメッセージ非表示化
     }
 
     // スワップモードキャンセル
@@ -1840,10 +1843,11 @@
     }
 
     // スワップモードトグル
+   
     function toggleSwapMode() {
       if (swapMode) {
         cancelSwapMode();
-        showMobileAlert('スワップモードをキャンセルしました', '❌');
+        // showMobileAlert('スワップモードをキャンセルしました', '❌'); // モバイルメッセージ非表示化
       } else {
         swapMode = true;
         firstSwapSlot = null;
@@ -2544,16 +2548,17 @@
       const confirmMessage = `${totalCards}枚の配置されたカードをすべて削除します。\nこの操作は取り消せません。\n\n実行しますか？`;
 
       if (confirm(confirmMessage)) {
-        // 全ページのスロットを初期化
-        binderState.pages.forEach(page => {
-          const slotsPerPage = page.slots.length;
-          page.slots = Array(slotsPerPage).fill(null);
-        });
+        // ページ数も1枚に戻して全スロット初期化
+        binderState.pages = [createEmptyPage()];
+        binderState.currentPage = 0;
+        binderState.binderData.pages = binderState.pages;
 
         saveBinder();
         renderBinder();
+        if (typeof updatePageNumberInput === 'function') {
+          updatePageNumberInput();
+        }
         updateCurrentPageCards();
-
         if (isMobile) {
           showMobileAlert(`${totalCards}枚のカードを削除しました`, '✅');
         } else {
