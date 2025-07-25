@@ -328,18 +328,191 @@
       window.location.href = url;
     }
 
-    // バインダーの編集
+    // バインダーの編集（リッチUI対応）
+    let editingBinderIndex = null;
     function editBinder(index) {
+      editingBinderIndex = index;
       const binder = binderCollection.binders[index];
 
-      // 編集モーダルを開く（今回は簡易的にpromptを使用）
-      const newName = prompt('バインダー名を編集:', binder.name);
-      if (newName && newName.trim()) {
-        binder.name = newName.trim();
-        binder.updatedAt = new Date().toISOString();
-        saveBinderCollection();
-        renderBinders();
+      // モーダルを開く
+      document.getElementById('editBinderModal').classList.add('show');
+
+      // 値をセット
+      document.getElementById('editBinderName').value = binder.name;
+      document.getElementById('editBinderDescription').value = binder.description || '';
+      document.getElementById('editSelectedLayout').value = binder.layout?.type || '3x3';
+
+      // レイアウト選択UIを反映
+      document.querySelectorAll('#editBinderModal .layout-option').forEach(option => {
+        option.classList.remove('selected');
+        if (option.getAttribute('data-layout') === (binder.layout?.type || '3x3')) {
+          option.classList.add('selected');
+        }
+      });
+
+      // 表紙画像プレビュー
+      const preview = document.getElementById('editCoverPreview');
+      const previewImg = document.getElementById('editCoverPreviewImage');
+      const placeholder = document.getElementById('editCoverPlaceholder');
+      const removeBtn = document.getElementById('editRemoveCoverBtn');
+      if (binder.coverImage) {
+        preview.style.display = 'block';
+        previewImg.src = binder.coverImage;
+        placeholder.style.display = 'none';
+        removeBtn.style.display = 'inline-block';
+      } else {
+        preview.style.display = 'none';
+        previewImg.src = '';
+        placeholder.style.display = 'block';
+        removeBtn.style.display = 'none';
       }
+      document.getElementById('editCoverImageInput').value = '';
+    }
+
+    // レイアウト選択（編集用）
+    function selectEditLayout(layout) {
+      document.querySelectorAll('#editBinderModal .layout-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      document.querySelector(`#editBinderModal .layout-option[data-layout="${layout}"]`).classList.add('selected');
+      document.getElementById('editSelectedLayout').value = layout;
+    }
+
+    // 表紙画像アップロード（編集用）
+    function handleEditCoverImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const previewImage = document.getElementById('editCoverPreviewImage');
+          const preview = document.getElementById('editCoverPreview');
+          const placeholder = document.getElementById('editCoverPlaceholder');
+          previewImage.src = e.target.result;
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          document.getElementById('editRemoveCoverBtn').style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 表紙画像削除（編集用）
+    function removeEditCover() {
+      const preview = document.getElementById('editCoverPreview');
+      const previewImg = document.getElementById('editCoverPreviewImage');
+      const placeholder = document.getElementById('editCoverPlaceholder');
+      preview.style.display = 'none';
+      previewImg.src = '';
+      placeholder.style.display = 'block';
+      document.getElementById('editRemoveCoverBtn').style.display = 'none';
+      document.getElementById('editCoverImageInput').value = '';
+    }
+
+    // 編集モーダルを閉じる
+    function closeEditBinderModal() {
+      document.getElementById('editBinderModal').classList.remove('show');
+      document.getElementById('editBinderForm').reset();
+      removeEditCover();
+      editingBinderIndex = null;
+    }
+
+    // 編集フォーム送信
+    document.getElementById('editBinderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (editingBinderIndex === null) return;
+      const binder = binderCollection.binders[editingBinderIndex];
+      const name = document.getElementById('editBinderName').value.trim();
+      const description = document.getElementById('editBinderDescription').value.trim();
+      const selectedLayout = document.getElementById('editSelectedLayout').value;
+      const coverImageInput = document.getElementById('editCoverImageInput');
+
+      if (!name) {
+        alert('バインダー名を入力してください');
+        return;
+      }
+
+      // レイアウト情報
+      const layoutConfig = {
+        '3x3': { slots: 9, rows: 3, cols: 3 },
+        '4x3': { slots: 12, rows: 3, cols: 4 },
+        '3x4': { slots: 12, rows: 4, cols: 3 },
+        '2x3': { slots: 6, rows: 3, cols: 2 }
+      };
+      const config = layoutConfig[selectedLayout] || layoutConfig['3x3'];
+
+      binder.name = name;
+      binder.description = description;
+      binder.layout = {
+        type: selectedLayout,
+        rows: config.rows,
+        cols: config.cols,
+        slotsPerPage: config.slots
+      };
+      binder.updatedAt = new Date().toISOString();
+
+      // 表紙画像の処理
+      if (coverImageInput.files[0]) {
+        const file = coverImageInput.files[0];
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          alert('画像ファイルサイズが大きすぎます。5MB以下の画像を選択してください。');
+          return;
+        }
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          alert('サポートされていない画像形式です。JPEG、PNG、GIF、WebPのいずれかを選択してください。');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onerror = function() {
+          alert('画像の読み込みに失敗しました。別の画像を選択してください。');
+        };
+        reader.onload = function(e) {
+          try {
+            const img = new Image();
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const maxWidth = 800;
+              const maxHeight = 600;
+              let { width, height } = img;
+              if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              binder.coverImage = compressedDataUrl;
+              finalizeEditBinder();
+            };
+            img.onerror = function() {
+              alert('画像の処理に失敗しました。');
+            };
+            img.src = e.target.result;
+          } catch (error) {
+            alert('画像の処理中にエラーが発生しました。');
+          }
+        };
+        reader.readAsDataURL(file);
+      } else if (document.getElementById('editCoverPreviewImage').src && document.getElementById('editCoverPreview').style.display === 'block') {
+        // 既存画像をそのまま使う
+        binder.coverImage = document.getElementById('editCoverPreviewImage').src;
+        finalizeEditBinder();
+      } else {
+        // 画像なし
+        binder.coverImage = null;
+        finalizeEditBinder();
+      }
+    });
+
+    function finalizeEditBinder() {
+      saveBinderCollection();
+      renderBinders();
+      closeEditBinderModal();
+      alert('バインダー情報を更新しました！');
     }
 
     // バインダーの削除
