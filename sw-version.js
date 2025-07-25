@@ -6,12 +6,12 @@ const VERSION_DESCRIPTION = "バインダーレイアウト変更修正＆リア
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  "index.html": "4.5.0-BINDER-COLLECTION-UPDATE",  // バインダーコレクション管理システム＆モジュラー構造
-  "card_list.html": "4.5.0-SEARCH-NORMALIZATION",  // 検索機能改善 - ひらがな/カタカナ統一
-  "collection_binder.html": "4.9.0-REALTIME-SYNC",  // リアルタイム名前同期＆レイアウト修正
-  "binder_collection.html": "4.5.0-LAYOUT-FIX",  // レイアウト変更時の構造統一修正
-  "holoca_skill_page.html": "4.5.0-SEARCH-NORMALIZATION",  // 検索機能改善 - ひらがな/カタカナ統一
-  "deck_builder.html": "4.5.0-SEARCH-NORMALIZATION"  // 検索機能改善 - ひらがな/カタカナ統一
+  "index.html": "4.9.0-BINDER-COLLECTION-UPDATE",  // 最新: Binder collection management system, modular structure, event notification, and mobile improvements
+  "binder_collection.html": "4.9.0-BINDER-EDIT-IMPROVEMENTS",  // 最新: Enhanced binder editing modal, layout selection, image upload, mobile responsiveness, and event notification.
+  "collection_binder.html": "4.9.0-BINDER-SETTINGS",  // 最新: Comprehensive binder settings, layout management, metadata editing, event notification, and mobile improvements
+  "card_list.html": "4.9.0-SEARCH-NORMALIZATION",  // 最新: Search improvements, normalization, event notification, and mobile support
+  "holoca_skill_page.html": "4.9.0-SEARCH-NORMALIZATION",  // 最新: Search improvements, normalization, event notification, and mobile support
+  "deck_builder.html": "4.9.0-SEARCH-NORMALIZATION"  // 最新: Search improvements, normalization, event notification, and mobile support
 };
 
 // ✅ 更新内容の詳細情報
