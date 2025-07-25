@@ -862,6 +862,7 @@
 
       saveBinder();
       renderBinder();
+      updateCurrentPageCards();
     }
 
     // 商品フィルターのオプションを生成（自動配置エリア用）
@@ -1103,6 +1104,7 @@
         currentPage.slots[currentSlotIndex] = null;
         saveBinder();
         renderBinder();
+        updateCurrentPageCards();
         closeCardSelector();
       }
     }
@@ -1405,6 +1407,7 @@
       binderState.currentPage = 0;
       saveBinder();
       renderBinder();
+      updateCurrentPageCards();
       hideAutoArrangePanel();
 
       const modeNames = {
@@ -1672,6 +1675,7 @@
       // バインダーを保存して再描画
       saveBinder();
       renderBinder();
+      updateCurrentPageCards();
 
       // クリーンアップ
       draggedCardData = null;
@@ -1774,6 +1778,7 @@
         pageData.slots[slotIndex] = null;
         saveBinderData();
         renderBinder();
+        updateCurrentPageCards();
         showMobileAlert('カードを削除しました', '🗑️');
       } else {
         // カードがない場合：カード選択画面を開く
@@ -1815,6 +1820,7 @@
       
       saveBinderData();
       renderBinder();
+      updateCurrentPageCards();
       cancelSwapMode();
       showMobileAlert('カードを交換しました', '✅');
     }
@@ -2546,6 +2552,7 @@
 
         saveBinder();
         renderBinder();
+        updateCurrentPageCards();
 
         if (isMobile) {
           showMobileAlert(`${totalCards}枚のカードを削除しました`, '✅');
