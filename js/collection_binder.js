@@ -2155,7 +2155,7 @@
       const currentPageData = binderState.pages[binderState.currentPage];
       if (currentPageData && currentPageData.slots) {
         currentPageData.slots.forEach(slot => {
-          if (slot.cardId) {
+          if (slot && slot.cardId) {
             const card = cardsData.find(c => c.id === slot.cardId);
             if (card) {
               currentPageCards.push(card);
