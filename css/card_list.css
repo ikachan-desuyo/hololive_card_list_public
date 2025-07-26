@@ -703,3 +703,68 @@
         box-sizing: border-box;
       }
     }
+
+    /* Mobile zoom prevention fixes */
+    /* Reset button appearance to remove browser-specific styles */
+    button {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      border: none;
+      background: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Ensure search button and input elements have minimum 16px font-size to prevent mobile zoom */
+    button.search-button, 
+    input,
+    input[type="text"],
+    input[type="search"],
+    #nameSearch,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+
+    /* Specific fixes for mobile to prevent zoom while maintaining usability */
+    @media (max-width: 540px) {
+      /* Override smaller font sizes for critical interactive elements */
+      input[type="text"],
+      input[type="search"],
+      #nameSearch,
+      select,
+      button {
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      /* Maintain button functionality while preventing zoom */
+      .sticky-controls button,
+      .top-controls-row button,
+      .csv-button {
+        font-size: 16px !important;
+        padding: 8px 12px !important;
+        min-height: 44px; /* Apple's recommended minimum touch target */
+        min-width: 44px;
+      }
+
+      /* Search input specific fixes */
+      .sticky-controls input[type="text"],
+      #nameSearch {
+        font-size: 16px !important;
+        padding: 8px !important;
+        min-height: 44px;
+        box-sizing: border-box;
+      }
+
+      /* Select dropdowns */
+      .sticky-controls select,
+      #sortMethod,
+      #productFilter,
+      #tagsFilter {
+        font-size: 16px !important;
+        padding: 8px !important;
+        min-height: 44px;
+      }
+    }
