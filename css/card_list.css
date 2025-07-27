@@ -1,9 +1,11 @@
-    body {
+body {
       font-family: sans-serif;
       margin: 0;
       font-size: 15px;
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden;
+      background: linear-gradient(135deg, #eaf6ff 0%, #f7fbff 60%, #e0f3ff 100%);
+      color: #22334a;
     }
 
     .dark { background: #222; color: #eee; }
@@ -22,11 +24,12 @@
 
       /* CSV機能パネルのベーススタイル */
       #csvPanel {
-        border: 2px solid #667eea;
-        border-radius: 10px;
+        border: 2px solid #00bfff;
+        border-radius: 12px;
         padding: 15px;
         margin: 10px 0;
-        background: #f8f9ff;
+        background: #f7fbff;
+        box-shadow: 0 2px 8px 0 #00bfff11;
       }
 
       #csvPanel h4 {
@@ -57,11 +60,21 @@
         border-radius: 5px;
         cursor: pointer;
         color: white;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 15px;
+        box-shadow: 0 2px 8px 0 #00bfff22;
+        transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
       }
 
-      #csvPanel .import-btn { background: #4CAF50; }
-      #csvPanel .export-btn { background: #2196F3; }
-      #csvPanel .clear-btn { background: #f44336; }    .container {
+      #csvPanel .import-btn { background: linear-gradient(90deg, #00bfff 0%, #4fc3f7 100%); }
+      #csvPanel .export-btn { background: linear-gradient(90deg, #007acc 0%, #00bfff 100%); }
+      #csvPanel .clear-btn { background: linear-gradient(90deg, #ffb6c1 0%, #ff69b4 100%); }
+      #csvPanel .csv-button:hover {
+        filter: brightness(1.08);
+        box-shadow: 0 4px 16px 0 #00bfff33;
+        transform: translateY(-2px) scale(1.03);
+      }    .container {
       max-width: none;
       width: fit-content;
       margin: 0 auto;
@@ -69,8 +82,9 @@
     }
 
     .container-top {
-      background: #fff;
-      border-bottom: 1px solid #ccc;
+      background: linear-gradient(90deg, #eaf6ff 0%, #f7fbff 60%, #e0f3ff 100%);
+      border-bottom: 2px solid #00bfff33;
+      box-shadow: 0 2px 8px 0 #00bfff11;
       padding: 10px;
     }
 
@@ -78,9 +92,9 @@
     .sticky-controls {
       position: sticky;
       top: 0;
-      background: #fff;
-      z-index: 100;
-      border-bottom: 1px solid #ddd;
+      background: #f7fbff;
+      border-bottom: 1.5px solid #00bfff33;
+      z-index: 10;
       padding: 8px 0;
       margin-bottom: 10px;
     }
@@ -152,7 +166,7 @@
     }
 
     .mobile-layout .top-controls button {
-      font-size: 12px;
+      font-size: 16px;
       padding: 4px 6px;
       flex: 1;
       min-width: 0;
@@ -162,7 +176,7 @@
     .mobile-layout .top-controls-row button {
       display: block !important;
       visibility: visible !important;
-      font-size: 12px;
+      font-size: 16px;
       padding: 4px 8px;
       margin: 2px;
       flex: 1;
@@ -171,7 +185,7 @@
 
     .mobile-layout .top-controls input,
     .mobile-layout .top-controls select {
-      font-size: 12px;
+      font-size: 16px;
       padding: 4px;
       flex: 1;
       min-width: 0;
@@ -355,13 +369,16 @@
     }
 
     .chip.selected {
-      background: #0095ff;
-      color: #fff;
-      border-color: #007acc;
+      background: linear-gradient(90deg, #fffde4 0%, #00bfff 100%);
+      color: #007acc;
+      border: 2px solid #00bfff;
+      font-weight: bold;
     }
 
     .chip.all-chip {
-      font-weight: bold;
+      background: linear-gradient(90deg, #fffde4 0%, #ffe4fa 100%);
+      color: #ff69b4;
+      border: 2px solid #ffb6c1;
     }
 
     /* ダークモード時のチップスタイル */
@@ -687,21 +704,37 @@
 
       #csvPanel textarea {
         font-size: 11px !important;
-        padding: 6px !important;
-        margin-bottom: 6px !important;
-      }
 
-      #csvPanel .button-group {
-        flex-direction: column !important;
-        gap: 4px !important;
-      }
 
-      #csvPanel .csv-button {
-        font-size: 11px !important;
-        padding: 6px 8px !important;
-        width: 100% !important;
-        box-sizing: border-box;
-      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    } /* Close the previous block properly */
+
+    #csvPanel .csv-button {
+      box-sizing: border-box;
+      width: 100% !important;
+      padding: 6px 8px !important;
+      font-size: 11px !important;
+    }
+
+    #csvPanel .button-group {
+      gap: 4px !important;
+      flex-direction: column !important;
+      margin-bottom: 6px !important;
+      padding: 6px !important;
     }
 
     /* Mobile zoom prevention fixes */

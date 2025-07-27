@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 4.9.0-SEARCH-NORMALIZATION - Search improvements, normalization, event notification, and mobile support -->
+<!-- Version: 4.10.0-VERSION-SYNC-UPDATE - Version synchronization, Service Worker optimization, cache management, and mobile improvements -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -31,8 +31,7 @@
 
         <!-- その他のコントロール -->
         <div class="top-controls-row">
-          <button onclick="setViewMode('table')">🧾 表モード</button>
-          <button onclick="setViewMode('compact')">🖼️ 簡易表示</button>
+          <button id="toggleViewModeBtn" onclick="toggleViewMode()">🖼️ 簡易表示</button>
           <button onclick="toggleDarkMode()">🌗</button>
         </div>
       </div>

@@ -6,6 +6,19 @@ async function handleMessage(event) {
   const { type, data } = event.data || {};
   
   switch (type) {
+    case 'DELETE_PAGE_CACHE':
+      // data.page で指定されたページのキャッシュだけ削除
+      try {
+        const pageUrl = data?.page;
+        if (!pageUrl) throw new Error('No page specified');
+        const cache = await caches.open(CACHE_NAME);
+        await cache.delete(`./${pageUrl}`);
+        event.ports[0]?.postMessage({ type: 'DELETE_PAGE_CACHE_DONE', page: pageUrl });
+        console.log('Deleted cache for page:', pageUrl);
+      } catch (err) {
+        event.ports[0]?.postMessage({ type: 'DELETE_PAGE_CACHE_ERROR', error: err.message });
+      }
+      break;
     case 'SKIP_WAITING':
       console.log('Received SKIP_WAITING message, taking control');
       self.skipWaiting();
