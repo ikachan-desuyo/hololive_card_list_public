@@ -1,3 +1,27 @@
+// トグルボタンで簡易表示・表モードを切り替え
+function toggleViewMode() {
+  console.log('[toggleViewMode] before:', viewMode);
+  if (viewMode === "table") {
+    setViewMode("compact");
+  } else {
+    setViewMode("table");
+  }
+  console.log('[toggleViewMode] after:', viewMode);
+  updateViewModeButton();
+}
+
+// ボタンのラベル・アイコンを現在のモードに合わせて更新
+function updateViewModeButton() {
+  const btn = document.getElementById("toggleViewModeBtn");
+  if (!btn) return;
+  if (viewMode === "table") {
+    btn.textContent = "🖼️ 簡易表示";
+    btn.title = "簡易表示に切り替えますわ";
+  } else {
+    btn.textContent = "🧾 表モード";
+    btn.title = "表モードに切り替えますわ";
+  }
+}
       let cards = [];
       let releaseMap = {};
       let viewMode = "compact";
@@ -143,12 +167,15 @@
         return selected;
       }
 
-      function setViewMode(mode) {
-        viewMode = mode;
-        renderLimit = 100;
-        localStorage.setItem("viewMode", mode); // ビューモードを保存
-        renderTable();
-      }
+function setViewMode(mode) {
+  console.log('[setViewMode] called with:', mode, 'current:', viewMode);
+  viewMode = mode;
+  renderLimit = 100;
+  localStorage.setItem("viewMode", mode); // ビューモードを保存
+  renderTable();
+  updateViewModeButton();
+  console.log('[setViewMode] new viewMode:', viewMode);
+}
 
       // フィルター状態を保存する関数
       function saveFilterState() {
@@ -869,7 +896,7 @@
     }
   });
 
-  window.onload = async () => {
+window.onload = async () => {
     if (localStorage.getItem("darkMode") === "true") {
       document.body.classList.add("dark");
     }
@@ -880,7 +907,9 @@
       viewMode = savedViewMode;
     }
 
+
     updateMobileLayout();
+    updateViewModeButton();
 
     // フィルターを確実にデフォルト非表示に設定
     const filtersWrapper = document.getElementById('filtersWrapper');
@@ -1159,40 +1188,24 @@
 
           setTimeout(() => {
             if (confirm(detailMessage + 'このページを更新してアプリケーションを再読み込みしますか？')) {
-              // より強力なキャッシュクリア処理
-              console.log('Starting forced cache clear and update...');
-
-              // Service Workerに強制更新を要求
+              // ページ単体キャッシュ削除＆リロード
               if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ type: 'FORCE_UPDATE' });
-              }
-
-              // ブラウザレベルでのキャッシュクリア
-              if ('caches' in window) {
-                caches.keys().then(cacheNames => {
-                  return Promise.all(cacheNames.map(cacheName => {
-                    console.log('Deleting cache:', cacheName);
-                    return caches.delete(cacheName);
-                  }));
-                }).then(() => {
-                  console.log('All browser caches cleared');
-                  // Service Workerの更新を待つ
-                  return new Promise(resolve => setTimeout(resolve, 1000));
-                }).then(() => {
-                  // より強力なリロード
-                  console.log('Performing hard reload...');
-                  if (window.location.reload) {
-                    window.location.reload(true); // 強制リロード
-                  } else {
-                    window.location.href = window.location.href + '?t=' + Date.now();
+                const messageChannel = new MessageChannel();
+                messageChannel.port1.onmessage = (event) => {
+                  if (event.data.type === 'DELETE_PAGE_CACHE_DONE') {
+                    window.location.reload(true);
+                  } else if (event.data.type === 'DELETE_PAGE_CACHE_ERROR') {
+                    alert('キャッシュ削除に失敗しました: ' + event.data.error);
+                    window.location.reload(true);
                   }
-                }).catch(error => {
-                  console.error('Cache clear failed, forcing reload anyway:', error);
-                  window.location.href = window.location.href + '?t=' + Date.now();
-                });
+                };
+                navigator.serviceWorker.controller.postMessage(
+                  { type: 'DELETE_PAGE_CACHE', data: { page: 'card_list.html' } },
+                  [messageChannel.port2]
+                );
               } else {
-                // キャッシュAPIが使えない場合のフォールバック
-                window.location.href = window.location.href + '?t=' + Date.now();
+                // Service Worker未利用時は従来通り
+                window.location.reload(true);
               }
             } else {
               // バージョン情報を再表示
@@ -1249,3 +1262,21 @@
       statusEl.textContent = '[v4.1.0-CENTRALIZED]';
     }
   }
+
+// --- グローバル公開は必ず一番最後で ---
+window.toggleViewMode = toggleViewMode;
+window.updateViewModeButton = updateViewModeButton;
+
+// 戻る・進む時もlocalStorageのviewModeを再反映
+window.addEventListener("pageshow", () => {
+  const savedViewMode = localStorage.getItem("viewMode");
+  if (
+    savedViewMode &&
+    (savedViewMode === "table" || savedViewMode === "compact") &&
+    savedViewMode !== viewMode
+  ) {
+    setViewMode(savedViewMode);
+  } else {
+    updateViewModeButton();
+  }
+});
