@@ -721,7 +721,23 @@ body {
 
 
 
-    }      }        box-sizing: border-box;        width: 100% !important;        padding: 6px 8px !important;        font-size: 11px !important;      #csvPanel .csv-button {      }        gap: 4px !important;        flex-direction: column !important;      #csvPanel .button-group {      }        margin-bottom: 6px !important;        padding: 6px !important;    /* Mobile zoom prevention fixes */
+    } /* Close the previous block properly */
+
+    #csvPanel .csv-button {
+      box-sizing: border-box;
+      width: 100% !important;
+      padding: 6px 8px !important;
+      font-size: 11px !important;
+    }
+
+    #csvPanel .button-group {
+      gap: 4px !important;
+      flex-direction: column !important;
+      margin-bottom: 6px !important;
+      padding: 6px !important;
+    }
+
+    /* Mobile zoom prevention fixes */
     /* Reset button appearance to remove browser-specific styles */
     button {
       appearance: none;
