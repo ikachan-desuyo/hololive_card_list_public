@@ -1255,11 +1255,11 @@ window.onload = async () => {
           [messageChannel.port2]
         );
       } else {
-        statusEl.textContent = '[v4.1.0-CENTRALIZED]';
+        statusEl.textContent = '[4.10.0-VERSION-SYNC-UPDATE]';
       }
     } catch (error) {
       console.warn('Version display error:', error);
-      statusEl.textContent = '[v4.1.0-CENTRALIZED]';
+      statusEl.textContent = '[4.10.0-VERSION-SYNC-UPDATE]';
     }
   }
 
