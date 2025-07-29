@@ -2,6 +2,15 @@
    モバイル版レイアウト (max-width: 540px)
    =============================== */
 @media (max-width: 540px) {
+  /* モバイル時: body/html階層も含めて全画面ダーク背景を徹底 */
+  .dark.mobile-layout,
+  .dark .mobile-layout,
+  .dark.mobile-layout body,
+  .dark .mobile-layout body,
+  .dark.mobile-layout html,
+  .dark .mobile-layout html {
+    background: #222 !important;
+  }
   /* --- モバイル時のfilter-group, chip-groupもダーク背景に --- */
   .dark .mobile-layout .sticky-controls .filter-group {
     background: #333 !important;
@@ -10,7 +19,13 @@
   .dark .mobile-layout .sticky-controls .chip-group {
     background: #333 !important;
   }
-  /* モバイル時: タイトル・検索・ソート行の背景色もダークに */
+  /* モバイル時: 全体背景・タイトル・検索・ソート行の背景色もダークに */
+  .dark .mobile-layout {
+    background: #222 !important;
+  }
+  .dark .mobile-layout .container {
+    background: #222 !important;
+  }
   .dark .mobile-layout .container-top {
     background: #222 !important;
     border-bottom: 2px solid #444 !important;
