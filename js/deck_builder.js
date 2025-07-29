@@ -80,14 +80,44 @@
           document.getElementById("currentDeckName").textContent = "未選択";
         }
 
-        function addCardToDeck(cardId) {
-          if (!currentDeck) {
-            alert("先にデッキを選択してください");
-            return;
-          }
-          decks[currentDeck].push(cardId);
-          updateDeckUI();
-        }
+function addCardToDeck(cardId) {
+  if (!currentDeck) {
+    alert("先にデッキを選択してください");
+    return;
+  }
+  // 上限チェック
+  const deck = decks[currentDeck];
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+  // 現在の構成をカウント
+  const typeCounts = { oshi: 0, cheer: 0, other: 0 };
+  deck.forEach(id => {
+    const c = cards.find(x => x.id === id);
+    if (!c) return;
+    if (c.card_type === "推しホロメン") typeCounts.oshi += 1;
+    else if (c.card_type === "エール") typeCounts.cheer += 1;
+    else typeCounts.other += 1;
+  });
+  // 追加後の仮カウント
+  if (card.card_type === "推しホロメン") typeCounts.oshi += 1;
+  else if (card.card_type === "エール") typeCounts.cheer += 1;
+  else typeCounts.other += 1;
+  // 上限判定
+  if (typeCounts.oshi > 1) {
+    alert("推しホロメンは1枚までです");
+    return;
+  }
+  if (typeCounts.cheer > 20) {
+    alert("エールカードは最大20枚までです");
+    return;
+  }
+  if (typeCounts.other > 40) {
+    alert("その他カードは最大40枚までです");
+    return;
+  }
+  deck.push(cardId);
+  updateDeckUI();
+}
 
         function openExportDeckModal() {
           const modal = document.getElementById("exportModal");

@@ -468,11 +468,11 @@
     // 空のページを作成
     function createEmptyPage() {
       const slotsPerPage = binderState.binderData?.layout?.slotsPerPage || 9;
-      return {
-        id: Date.now(),
-        name: 'ページ 1',
-        slots: Array(slotsPerPage).fill(null)
-      };
+  return {
+    id: Date.now(),
+    name: '', // nameは使わず空に
+    slots: Array(slotsPerPage).fill(null)
+  };
     }
 
     // バインダーのレンダリング
@@ -583,7 +583,7 @@
       return `
         <div class="binder-page">
           <div class="page-header">
-            <div class="page-title">${pageData.name}</div>
+            <div class="page-title">ページ ${pageIndex + 1}</div>
             <div class="page-info">
               <span>ページ ${pageIndex + 1} / ${binderState.pages.length}</span>
               <span>配置済み: ${pageData.slots.filter(slot => slot !== null).length}/${slotsPerPage}</span>
@@ -1747,11 +1747,9 @@
         if (diffX > 0) {
           // 左スワイプ - 次のページ
           nextPage();
-          showSwipeIndicator('次のページ →');
         } else {
           // 右スワイプ - 前のページ
           previousPage();
-          showSwipeIndicator('← 前のページ');
         }
       }
 
@@ -1759,15 +1757,7 @@
       touchStartY = 0;
     }
 
-    // スワイプインジケーター表示
-    function showSwipeIndicator(message) {
-      const indicator = document.getElementById('swipeIndicator');
-      indicator.textContent = message;
-      indicator.classList.add('show');
-      setTimeout(() => {
-        indicator.classList.remove('show');
-      }, 1500);
-    }
+    // スワイプインジケーター表示機能は削除
 
     // ダブルタップ処理
     function handleDoubleTap(slotIndex) {
