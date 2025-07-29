@@ -1,3 +1,31 @@
+/* --- モバイル時: sticky-controls幅を画面幅に合わせる --- */
+@media (max-width: 540px) {
+  .mobile-layout .sticky-controls {
+    width: 100vw !important;
+    box-sizing: border-box !important;
+    margin-left: calc(-1 * (100vw - 100%) / 2) !important;
+    margin-right: calc(-1 * (100vw - 100%) / 2) !important;
+  }
+  .mobile-layout .sticky-controls .top-controls-row {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+  .mobile-layout .sticky-controls .top-controls-row > input,
+  .mobile-layout .sticky-controls .top-controls-row > select,
+  .mobile-layout .sticky-controls .top-controls-row > button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 2px 1.5px 3px 1.5px !important;
+  }
+  .mobile-layout .sticky-controls #filterToggleBtn {
+    flex-shrink: 1 !important;
+    min-width: 44px !important;
+    white-space: normal !important;
+    word-break: break-all !important;
+  }
+}
 body {
   font-family: sans-serif;
   margin: 0;
@@ -522,13 +550,34 @@ button {
   letter-spacing: 0.02em;
 }
 button:hover, button:active {
-  background: linear-gradient(90deg, #b6e0fe 0%, #00bfff 100%);
+  background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%);
   color: #007acc;
+  border-color: #00bfff;
   box-shadow: 0 4px 16px 0 #00bfff33;
   transform: translateY(-2px) scale(1.03);
-    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%);
-    color: #007acc;
-    border-color: #00bfff;
+}
+/* --- モバイル用: sticky-controls/filter-groupボタンのhover/active色変化を強制 --- */
+@media (max-width: 540px) {
+  .mobile-layout .sticky-controls .filter-group button:hover,
+  .mobile-layout .sticky-controls .filter-group button:active,
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
+    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%) !important;
+    color: #007acc !important;
+    border-color: #00bfff !important;
+    box-shadow: 0 4px 16px 0 #00bfff33 !important;
+    transform: translateY(-2px) scale(1.03) !important;
+  }
+  .dark .mobile-layout .sticky-controls .filter-group button:hover,
+  .dark .mobile-layout .sticky-controls .filter-group button:active,
+  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
+  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
+    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
+    color: #fff !important;
+    border-color: #00bfff !important;
+    box-shadow: 0 4px 16px 0 #00bfff99 !important;
+    transform: translateY(-2px) scale(1.03) !important;
+  }
 }
 button:focus {
   outline: 2px solid #00bfff;
