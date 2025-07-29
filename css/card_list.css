@@ -581,6 +581,28 @@ textarea {
 
 /* --- Mobile layout optimization: unified, deduplicated block --- */
 @media (max-width: 540px) {
+  /* お嬢様のためのフィルター内ボタン最優先スタイルでございますわ */
+  .mobile-layout .sticky-controls .filter-group button {
+    font-size: 12px !important;
+    padding: 3px 6px !important;
+    min-width: 44px !important;
+    min-height: 28px !important;
+    border-radius: 5px !important;
+    margin: 2px 1.5px 3px 1.5px !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    flex: 1 1 45% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%) !important;
+    color: #22334a !important;
+    border: 1.5px solid #7ecbfa !important;
+    font-weight: bold !important;
+    box-shadow: 0 1.5px 6px 0 #b6e0fe33 !important;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s !important;
+    outline: none !important;
+    letter-spacing: 0.02em !important;
+  }
   .dark .sticky-controls {
     background: #222 !important;
     border-color: #444 !important;
