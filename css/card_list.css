@@ -589,11 +589,17 @@ textarea {
     align-items: flex-start !important;
   }
   .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
-    flex: 1 1 45% !important;
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+    flex: 1 1 48% !important;
     max-width: 48% !important;
-    width: 48% !important;
-    min-width: 44px !important;
+    min-width: 40px !important;
     margin: 2px 1% 3px 1% !important;
+    border-radius: 5px !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    white-space: normal !important;
+    word-break: break-all !important;
   }
   /* Filter-group button style for mobile */
   .mobile-layout .sticky-controls .filter-group button {
