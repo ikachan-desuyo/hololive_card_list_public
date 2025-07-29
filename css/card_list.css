@@ -589,6 +589,12 @@ textarea {
     background: #222 !important;
     border-color: #444 !important;
   }
+  .sticky-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    align-items: flex-start;
+  }
   .sticky-controls button {
     font-size: 12px !important;
     padding: 3px 6px !important;
@@ -597,9 +603,10 @@ textarea {
     border-radius: 5px !important;
     margin: 2px 1.5px 3px 1.5px !important;
     box-sizing: border-box;
-    display: inline-block;
-    flex: 1 1 40%;
-    max-width: 48vw;
+    display: block;
+    flex: 1 1 45%;
+    max-width: 100%;
+    width: 100%;
   }
   .top-controls-row button,
   .csv-button {
