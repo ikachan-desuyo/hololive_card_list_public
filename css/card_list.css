@@ -361,11 +361,14 @@ body {
 }
 
 
+/* ダークモード時のcontainer, container-top, sticky-controls背景色 */
+.dark .container {
+  background: #222 !important;
+}
 .dark .container-top {
   background: #222;
   border-color: #444;
 }
-
 .dark .sticky-controls {
   background: #222 !important;
   border-color: #444 !important;
