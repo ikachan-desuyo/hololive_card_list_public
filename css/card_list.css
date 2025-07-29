@@ -2,6 +2,34 @@
    モバイル版レイアウト (max-width: 540px)
    =============================== */
 @media (max-width: 540px) {
+  /* --- モバイル時のみのダークモード配色 --- */
+  .dark .sticky-controls {
+    background: #222 !important;
+    border-bottom: 1px solid #444 !important;
+  }
+  .dark .sticky-controls .filter-group {
+    background: #333 !important;
+    border: 1px solid #444 !important;
+  }
+  .dark .sticky-controls .chip-group {
+    background: #333 !important;
+  }
+  .dark .sticky-controls .chip {
+    background: #444 !important;
+    color: #eee !important;
+    border-color: #666 !important;
+  }
+  .dark .sticky-controls .filter-group button {
+    background: linear-gradient(90deg, #22334a 0%, #334e68 100%) !important;
+    color: #eaf6ff !important;
+    border: 1.5px solid #4fc3f7 !important;
+  }
+  .dark .sticky-controls .filter-group button:hover,
+  .dark .sticky-controls .filter-group button:active {
+    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
+    color: #fff !important;
+    border-color: #00bfff !important;
+  }
   /* container全体を画面幅いっぱいに */
   .container {
     width: 100vw !important;
@@ -27,8 +55,8 @@
     width: 100vw !important;
     max-width: 100vw !important;
     min-width: 0 !important;
-    margin: 0 !important;
-    padding: 6px 2vw 6px 2vw !important;
+    margin: 0 auto !important;
+    padding: 6px 0 6px 0 !important;
     box-sizing: border-box !important;
     background: #fff !important;
     border-bottom: 1px solid #ddd !important;
@@ -61,7 +89,11 @@
     background: #f8f9fa !important;
     border: 1px solid #dee2e6 !important;
     box-sizing: border-box !important;
-    overflow-x: auto !important;
+    overflow-x: visible !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px 4px !important;
+    align-items: flex-start !important;
   }
   .sticky-controls .filter-group legend {
     font-size: 11px !important;
@@ -76,8 +108,8 @@
   }
   .sticky-controls .chip-group {
     display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
     gap: 4px !important;
     padding-bottom: 2px !important;
     margin-bottom: 2px !important;
@@ -100,17 +132,17 @@
     display: inline-block !important;
   }
   .sticky-controls .filter-group button {
-    font-size: 12px !important;
-    padding: 3px 6px !important;
+    font-size: 13px !important;
+    padding: 4px 8px !important;
     min-width: 44px !important;
     min-height: 28px !important;
     border-radius: 5px !important;
     margin: 2px 1.5px 3px 1.5px !important;
     box-sizing: border-box !important;
-    display: block !important;
+    display: inline-block !important;
     flex: 1 1 45% !important;
     max-width: 100% !important;
-    width: 100% !important;
+    width: auto !important;
     background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%) !important;
     color: #22334a !important;
     border: 1.5px solid #7ecbfa !important;
@@ -119,6 +151,9 @@
     transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s !important;
     outline: none !important;
     letter-spacing: 0.02em !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center !important;
   }
   .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) {
     display: flex !important;
@@ -127,17 +162,18 @@
     align-items: flex-start !important;
   }
   .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
-    font-size: 11px !important;
-    padding: 2px 4px !important;
+    font-size: 13px !important;
+    padding: 4px 8px !important;
     flex: 1 1 48% !important;
     max-width: 48% !important;
     min-width: 40px !important;
     margin: 2px 1% 3px 1% !important;
     border-radius: 5px !important;
     box-sizing: border-box !important;
-    display: block !important;
+    display: inline-block !important;
     white-space: normal !important;
-    word-break: break-all !important;
+    word-break: break-word !important;
+    text-align: center !important;
   }
   .sticky-controls .top-controls-row {
     margin-bottom: 0 !important;
@@ -145,6 +181,7 @@
     gap: 4px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    justify-content: flex-start !important;
   }
   .top-controls-row button,
   .csv-button {
@@ -153,6 +190,9 @@
     min-height: 36px;
     min-width: 44px;
     box-sizing: border-box;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center !important;
   }
   .sticky-controls select {
     width: 100% !important;
@@ -165,6 +205,8 @@
     margin-top: 4px !important;
     min-height: 32px;
     box-sizing: border-box;
+    white-space: normal !important;
+    word-break: break-word !important;
   }
   .sticky-controls input[type="text"] {
     font-size: 13px !important;
@@ -176,6 +218,8 @@
     border: 1px solid #ced4da !important;
     min-height: 32px;
     box-sizing: border-box;
+    white-space: normal !important;
+    word-break: break-word !important;
   }
   .mobile-layout #cardPreviewArea > div {
     display: flex !important;
@@ -186,6 +230,34 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 2vw !important;
+  }
+  /* ダークモード: sticky-controls/filter-group/chip-group背景色・ボーダー色修正 */
+  .dark .sticky-controls {
+    background: #222 !important;
+    border-bottom: 1px solid #444 !important;
+  }
+  .dark .sticky-controls .filter-group {
+    background: #333 !important;
+    border: 1px solid #444 !important;
+  }
+  .dark .sticky-controls .chip-group {
+    background: #333 !important;
+  }
+  .dark .sticky-controls .chip {
+    background: #444 !important;
+    color: #eee !important;
+    border-color: #666 !important;
+  }
+  .dark .sticky-controls .filter-group button {
+    background: linear-gradient(90deg, #22334a 0%, #334e68 100%) !important;
+    color: #eaf6ff !important;
+    border: 1.5px solid #4fc3f7 !important;
+  }
+  .dark .sticky-controls .filter-group button:hover,
+  .dark .sticky-controls .filter-group button:active {
+    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
+    color: #fff !important;
+    border-color: #00bfff !important;
   }
 }
 body {
@@ -717,56 +789,6 @@ button:hover, button:active {
   border-color: #00bfff;
   box-shadow: 0 4px 16px 0 #00bfff33;
   transform: translateY(-2px) scale(1.03);
-}
-/* --- モバイル用: sticky-controls/filter-groupボタンのhover/active色変化を強制 --- */
-@media (max-width: 540px) {
-  .mobile-layout .sticky-controls .filter-group button:hover,
-  .mobile-layout .sticky-controls .filter-group button:active,
-  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
-  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
-    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%) !important;
-    color: #007acc !important;
-    border-color: #00bfff !important;
-    box-shadow: 0 4px 16px 0 #00bfff33 !important;
-    transform: translateY(-2px) scale(1.03) !important;
-  }
-  .dark .mobile-layout .sticky-controls .filter-group button:hover,
-  .dark .mobile-layout .sticky-controls .filter-group button:active,
-  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
-  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
-    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
-    color: #fff !important;
-    border-color: #00bfff !important;
-    box-shadow: 0 4px 16px 0 #00bfff99 !important;
-    transform: translateY(-2px) scale(1.03) !important;
-  }
-  /* ...existing code for other mobile rules... */
-}
-button:focus {
-  outline: 2px solid #00bfff;
-  outline-offset: 2px;
-}
-/* ダークモードでもお上品に */
-.dark button {
-  background: linear-gradient(90deg, #22334a 0%, #334e68 100%);
-  color: #eaf6ff;
-  box-shadow: 0 2px 8px 0 #22334a55;
-}
-.dark button:hover, .dark button:active {
-    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%);
-    color: #fff;
-    border-color: #00bfff;
-    box-shadow: 0 4px 16px 0 #00bfff99;
-}
-.dark button:focus {
-  outline: 2px solid #b6e0fe;
-  outline-offset: 2px;
-}
-.dark button {
-    background: linear-gradient(90deg, #2a3448 0%, #22334a 100%);
-    color: #eaf6ff;
-    border: 1.5px solid #4fc3f7;
-    box-shadow: 0 2px 8px 0 #22334a99;
 }
 
 /* Ensure search button and input elements have minimum 16px font-size to prevent mobile zoom */
