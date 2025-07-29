@@ -1,3 +1,8 @@
+/*
+ * Version: 4.6.1-SwipeIndicator-Remove
+ * スワイプインジケーター削除・関連UI整理
+ * 2025-07-29
+ */
 /* Collection Binder Styles */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -656,26 +661,6 @@ body {
   }
 }
 
-/* スワイプジェスチャー用スタイル */
-.swipe-indicator {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.8em;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 1001;
-}
-
-.swipe-indicator.show {
-  opacity: 1;
-}
 
 /* モバイル用フローティングボタン */
 .mobile-fab {
@@ -1328,39 +1313,10 @@ body {
   font-size: 13px !important;
 }
 
-/* スワイプインジケーター */
-.swipe-indicator {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px 25px;
-  border-radius: 25px;
-  font-size: 1.1em;
-  font-weight: bold;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.swipe-indicator.show {
-  opacity: 1;
-}
 
 /* モバイル版でのスキルフォントサイズ統一 */
 @media (max-width: 768px) {
   .skill-text, .skill-description {
     font-size: 12px !important;
-  }
-  
-  .swipe-indicator {
-    font-size: 1em;
-    padding: 12px 20px;
   }
 }

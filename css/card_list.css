@@ -1,4 +1,8 @@
 /* ===============================
+ * Version: 4.11.2-MobileDarkBG-Fix
+ * モバイルダークモード時の検索・ソート・フィルター背景修正
+ * 2025-07-29
+ *
    モバイル版レイアウト (max-width: 540px)
    =============================== */
 @media (max-width: 540px) {
@@ -6,7 +10,7 @@
   .dark.mobile-layout .container,
   .dark.mobile-layout .container-top,
   .dark.mobile-layout .sticky-controls {
-    background: transparent !important;
+    background: #222 !important;
   }
   /* body, html のみ全画面ダーク背景を徹底 */
   body.dark.mobile-layout,
