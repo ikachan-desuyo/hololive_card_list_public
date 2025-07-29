@@ -1,29 +1,215 @@
-/* --- モバイル時: sticky-controls幅を画面幅に合わせる --- */
+/* ===============================
+   モバイル版レイアウト (max-width: 540px)
+   =============================== */
 @media (max-width: 540px) {
-  .mobile-layout .sticky-controls {
-    width: 100vw !important;
-    box-sizing: border-box !important;
-    margin-left: calc(-1 * (100vw - 100%) / 2) !important;
-    margin-right: calc(-1 * (100vw - 100%) / 2) !important;
+  /* フィルター枠の余白・サイズを最小化・モバイル最適化全般 */
+  .mobile-layout .sticky-controls .filter-group {
+    padding: 2px 3px !important;
+    margin-bottom: 2px !important;
+    border-radius: 5px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    box-sizing: border-box;
   }
-  .mobile-layout .sticky-controls .top-controls-row {
+  .sticky-controls .filter-group legend {
+    font-size: 11px !important;
+    padding: 0 2px !important;
+    margin-bottom: 1px !important;
+  }
+  .sticky-controls .filter-group fieldset {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  .sticky-controls select {
     width: 100% !important;
+    font-size: 13px !important;
+    padding: 4px 6px !important;
+    background: #fff !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    margin-top: 4px !important;
+    min-height: 32px;
+    box-sizing: border-box;
+  }
+  .sticky-controls input[type="text"] {
+    font-size: 13px !important;
+    padding: 4px 6px !important;
+    flex: 2 !important;
+    min-width: 80px !important;
+    background: #fff !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+    min-height: 32px;
+    box-sizing: border-box;
+  }
+  /* --- モバイル用: sticky-controls/filter-groupボタンのhover/active色変化を強制 --- */
+  .mobile-layout .sticky-controls .filter-group button:hover,
+  .mobile-layout .sticky-controls .filter-group button:active,
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
+    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%) !important;
+    color: #007acc !important;
+    border-color: #00bfff !important;
+    box-shadow: 0 4px 16px 0 #00bfff33 !important;
+    transform: translateY(-2px) scale(1.03) !important;
+  }
+  .dark .mobile-layout .sticky-controls .filter-group button:hover,
+  .dark .mobile-layout .sticky-controls .filter-group button:active,
+  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:hover,
+  .dark .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button:active {
+    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
+    color: #fff !important;
+    border-color: #00bfff !important;
+    box-shadow: 0 4px 16px 0 #00bfff99 !important;
+    transform: translateY(-2px) scale(1.03) !important;
+  }
+  /* Filter-group button wrapping for mobile */
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) {
+    display: flex !important;
     flex-wrap: wrap !important;
-    gap: 4px !important;
+    gap: 4px 0 !important;
+    align-items: flex-start !important;
   }
-  .mobile-layout .sticky-controls .top-controls-row > input,
-  .mobile-layout .sticky-controls .top-controls-row > select,
-  .mobile-layout .sticky-controls .top-controls-row > button {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+    flex: 1 1 48% !important;
+    max-width: 48% !important;
+    min-width: 40px !important;
+    margin: 2px 1% 3px 1% !important;
+    border-radius: 5px !important;
     box-sizing: border-box !important;
-    margin: 2px 1.5px 3px 1.5px !important;
-  }
-  .mobile-layout .sticky-controls #filterToggleBtn {
-    flex-shrink: 1 !important;
-    min-width: 44px !important;
+    display: block !important;
     white-space: normal !important;
     word-break: break-all !important;
+  }
+  /* Filter-group button style for mobile */
+  .mobile-layout .sticky-controls .filter-group button {
+    font-size: 12px !important;
+    padding: 3px 6px !important;
+    min-width: 44px !important;
+    min-height: 28px !important;
+    border-radius: 5px !important;
+    margin: 2px 1.5px 3px 1.5px !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    flex: 1 1 45% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%) !important;
+    color: #22334a !important;
+    border: 1.5px solid #7ecbfa !important;
+    font-weight: bold !important;
+    box-shadow: 0 1.5px 6px 0 #b6e0fe33 !important;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s !important;
+    outline: none !important;
+    letter-spacing: 0.02em !important;
+  }
+  .dark .sticky-controls {
+    background: #222 !important;
+    border-color: #444 !important;
+  }
+  .dark .sticky-controls .filter-group {
+    background: #222 !important;
+    border-color: #444 !important;
+  }
+  .sticky-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    align-items: flex-start;
+  }
+  .sticky-controls .filter-group button {
+    font-size: 12px !important;
+    padding: 3px 6px !important;
+    min-width: 44px !important;
+    min-height: 28px !important;
+    border-radius: 5px !important;
+    margin: 2px 1.5px 3px 1.5px !important;
+    box-sizing: border-box;
+    display: block;
+    flex: 1 1 45%;
+    max-width: 100%;
+    width: 100%;
+  }
+  .top-controls-row button,
+  .csv-button {
+    font-size: 13px !important;
+    padding: 4px 8px !important;
+    min-height: 36px;
+    min-width: 44px;
+    box-sizing: border-box;
+  }
+  .sticky-controls .chip {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    border-radius: 10px !important;
+    background: #e9ecef !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    margin: 1.5px 1.5px 1.5px 0 !important;
+    min-width: 32px;
+    min-height: 22px;
+    box-sizing: border-box;
+    display: inline-block;
+  }
+  .sticky-controls .chip-group {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+    padding-bottom: 2px;
+    margin-bottom: 2px;
+  }
+  .sticky-controls .filter-group {
+    background: #f8f9fa !important;
+    margin-bottom: 2px !important;
+    padding: 2px 3px !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 5px !important;
+    box-sizing: border-box;
+  }
+  .sticky-controls .filter-group legend {
+    font-size: 11px !important;
+    padding: 0 2px !important;
+    margin-bottom: 1px !important;
+  }
+  .sticky-controls .filter-group fieldset {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  .sticky-controls select {
+    width: 100% !important;
+    font-size: 13px !important;
+    padding: 4px 6px !important;
+    background: #fff !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    margin-top: 4px !important;
+    min-height: 32px;
+    box-sizing: border-box;
+  }
+  .sticky-controls input[type="text"] {
+    font-size: 13px !important;
+    padding: 4px 6px !important;
+    flex: 2 !important;
+    min-width: 80px !important;
+    background: #fff !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+    min-height: 32px;
+    box-sizing: border-box;
+  }
+  .sticky-controls .top-controls-row {
+    margin-bottom: 0 !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
   }
 }
 body {
@@ -578,6 +764,7 @@ button:hover, button:active {
     box-shadow: 0 4px 16px 0 #00bfff99 !important;
     transform: translateY(-2px) scale(1.03) !important;
   }
+  /* ...existing code for other mobile rules... */
 }
 button:focus {
   outline: 2px solid #00bfff;
@@ -632,156 +819,3 @@ textarea {
     order: 1; /* 最後に配置 */
   }
 }
-
-/* --- Mobile layout optimization: unified, deduplicated block --- */
-@media (max-width: 540px) {
-  /* Filter-group button wrapping for mobile */
-  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px 0 !important;
-    align-items: flex-start !important;
-  }
-  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
-    font-size: 11px !important;
-    padding: 2px 4px !important;
-    flex: 1 1 48% !important;
-    max-width: 48% !important;
-    min-width: 40px !important;
-    margin: 2px 1% 3px 1% !important;
-    border-radius: 5px !important;
-    box-sizing: border-box !important;
-    display: block !important;
-    white-space: normal !important;
-    word-break: break-all !important;
-  }
-  /* Filter-group button style for mobile */
-  .mobile-layout .sticky-controls .filter-group button {
-    font-size: 12px !important;
-    padding: 3px 6px !important;
-    min-width: 44px !important;
-    min-height: 28px !important;
-    border-radius: 5px !important;
-    margin: 2px 1.5px 3px 1.5px !important;
-    box-sizing: border-box !important;
-    display: block !important;
-    flex: 1 1 45% !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%) !important;
-    color: #22334a !important;
-    border: 1.5px solid #7ecbfa !important;
-    font-weight: bold !important;
-    box-shadow: 0 1.5px 6px 0 #b6e0fe33 !important;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s !important;
-    outline: none !important;
-    letter-spacing: 0.02em !important;
-  }
-  .dark .sticky-controls {
-    background: #222 !important;
-    border-color: #444 !important;
-  }
-  .dark .sticky-controls .filter-group {
-    background: #222 !important;
-    border-color: #444 !important;
-  }
-  .sticky-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 0;
-    align-items: flex-start;
-  }
-  .sticky-controls .filter-group button {
-    font-size: 12px !important;
-    padding: 3px 6px !important;
-    min-width: 44px !important;
-    min-height: 28px !important;
-    border-radius: 5px !important;
-    margin: 2px 1.5px 3px 1.5px !important;
-    box-sizing: border-box;
-    display: block;
-    flex: 1 1 45%;
-    max-width: 100%;
-    width: 100%;
-  }
-  .top-controls-row button,
-  .csv-button {
-    font-size: 13px !important;
-    padding: 4px 8px !important;
-    min-height: 36px;
-    min-width: 44px;
-    box-sizing: border-box;
-  }
-  .sticky-controls .chip {
-    font-size: 10px !important;
-    padding: 2px 6px !important;
-    border-radius: 10px !important;
-    background: #e9ecef !important;
-    color: #495057 !important;
-    border: 1px solid #ced4da !important;
-    cursor: pointer !important;
-    white-space: nowrap !important;
-    margin: 1.5px 1.5px 1.5px 0 !important;
-    min-width: 32px;
-    min-height: 22px;
-    box-sizing: border-box;
-    display: inline-block;
-  }
-  .sticky-controls .chip-group {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 4px;
-    padding-bottom: 2px;
-    margin-bottom: 2px;
-  }
-  .sticky-controls .filter-group {
-    background: #f8f9fa !important;
-    margin-bottom: 2px !important;
-    padding: 2px 3px !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 5px !important;
-    box-sizing: border-box;
-  }
-  .sticky-controls .filter-group legend {
-    font-size: 11px !important;
-    padding: 0 2px !important;
-    margin-bottom: 1px !important;
-  }
-  .sticky-controls .filter-group fieldset {
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-  }
-  .sticky-controls select {
-    width: 100% !important;
-    font-size: 13px !important;
-    padding: 4px 6px !important;
-    background: #fff !important;
-    color: #495057 !important;
-    border: 1px solid #ced4da !important;
-    border-radius: 4px !important;
-    margin-top: 4px !important;
-    min-height: 32px;
-    box-sizing: border-box;
-  }
-  .sticky-controls input[type="text"] {
-    font-size: 13px !important;
-    padding: 4px 6px !important;
-    flex: 2 !important;
-    min-width: 80px !important;
-    background: #fff !important;
-    color: #495057 !important;
-    border: 1px solid #ced4da !important;
-    min-height: 32px;
-    box-sizing: border-box;
-  }
-  .sticky-controls .top-controls-row {
-    margin-bottom: 0 !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-  }
-}
-/* --- End mobile layout optimization --- */
-/* --- CSS update check: force pink background for sticky-controls button (highest priority) --- */
-/* --- CSS update check marker removed: restoring original button appearance --- */
