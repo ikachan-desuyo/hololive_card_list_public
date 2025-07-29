@@ -490,6 +490,79 @@ input:focus, select:focus, textarea:focus {
   justify-content: flex-start;
 }
 
+/* Reset button appearance to remove browser-specific styles */
+/*
+ * ------------------------------------------------------------
+ * お嬢様のためのホロライブカード一覧ページ・共通ボタンデザイン
+ * きらめくグラデーションと上品な角丸、ふんわりシャドウでございますわ。
+ * ------------------------------------------------------------
+ */
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+    border: none;
+    background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%);
+    color: #22334a;
+    border: 1.5px solid #7ecbfa;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 5px 13px;
+  border-radius: 8px;
+  box-shadow: 0 1.5px 6px 0 #b6e0fe33;
+  margin: 1.5px 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+  outline: none;
+  letter-spacing: 0.02em;
+}
+button:hover, button:active {
+  background: linear-gradient(90deg, #b6e0fe 0%, #00bfff 100%);
+  color: #007acc;
+  box-shadow: 0 4px 16px 0 #00bfff33;
+  transform: translateY(-2px) scale(1.03);
+    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%);
+    color: #007acc;
+    border-color: #00bfff;
+}
+button:focus {
+  outline: 2px solid #00bfff;
+  outline-offset: 2px;
+}
+/* ダークモードでもお上品に */
+.dark button {
+  background: linear-gradient(90deg, #22334a 0%, #334e68 100%);
+  color: #eaf6ff;
+  box-shadow: 0 2px 8px 0 #22334a55;
+}
+.dark button:hover, .dark button:active {
+    background: linear-gradient(90deg, #334e68 0%, #00bfff 100%);
+    color: #fff;
+    border-color: #00bfff;
+    box-shadow: 0 4px 16px 0 #00bfff99;
+}
+.dark button:focus {
+  outline: 2px solid #b6e0fe;
+  outline-offset: 2px;
+}
+.dark button {
+    background: linear-gradient(90deg, #2a3448 0%, #22334a 100%);
+    color: #eaf6ff;
+    border: 1.5px solid #4fc3f7;
+    box-shadow: 0 2px 8px 0 #22334a99;
+}
+
+/* Ensure search button and input elements have minimum 16px font-size to prevent mobile zoom */
+button.search-button, 
+input,
+input[type="text"],
+input[type="search"],
+#nameSearch,
+select,
+textarea {
+  font-size: 16px;
+}
+
 /* デスクトップ版では通常の配置を維持 */
 @media (min-width: 541px) {
   .top-controls-row {
@@ -506,280 +579,82 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-/* モバイル版での確実な表示 - 統合版 */
+/* --- Mobile layout optimization: unified, deduplicated block --- */
 @media (max-width: 540px) {
-  .top-controls-row {
-    display: flex !important;
-    width: 100%;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 4px;
-  }
-
-  .top-controls-row button {
-    flex: 1;
-    font-size: 11px;
-    padding: 4px 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* sticky-controls のモバイル固定を強化 */
-  .sticky-controls {
-    position: sticky !important;
-    top: 0 !important;
-    background: #fff !important;
-    z-index: 100 !important;
-    border-bottom: 1px solid #ddd !important;
-    padding: 8px !important;
-    margin: 0 0 10px 0 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-  }
-
-  .dark .sticky-controls {
-    background: #222 !important;
-    border-color: #444 !important;
-    box-shadow: 0 2px 4px rgba(255,255,255,0.1) !important;
-  }
-
-  /* フィルター表示の改善 */
-  .sticky-controls #filtersWrapper {
-    background: transparent !important;
-    margin-top: 8px !important;
-    border: none !important;
-    padding: 0 !important;
-  }
-
-  .dark .sticky-controls #filtersWrapper {
-    background: transparent !important;
-  }
-
-  /* フィルターグループのモバイル最適化 */
-  .sticky-controls .filter-group {
-    background: #f8f9fa !important;
-    margin-bottom: 8px !important;
-    padding: 8px !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 6px !important;
-  }
-
-  .dark .sticky-controls .filter-group {
-    background: #333 !important;
-    border-color: #555 !important;
-  }
-
-  .sticky-controls .filter-group legend {
-    background: #fff !important;
-    color: #495057 !important;
-    padding: 2px 8px !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-  }
-
-  .dark .sticky-controls .filter-group legend {
-    background: #222 !important;
-    color: #adb5bd !important;
-  }
-
-  /* チップグループのモバイル最適化 */
-  .sticky-controls .chip-group {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-    margin-top: 6px !important;
-  }
-
-  .sticky-controls .chip {
-    font-size: 10px !important;
+  .sticky-controls button {
+    /* --- CSS update check: pink background (desktop/mobile) --- */
+    background: #ff69b4 !important;
+    outline: 2px solid #ff69b4 !important;
+    font-size: 13px !important;
     padding: 4px 8px !important;
+    flex: 1 1 48%;
+    min-width: 60px !important;
+    color: #fff !important;
+    border: 1px solid #0056b3 !important;
+    border-radius: 6px !important;
+    margin: 2px 2px 4px 2px !important;
+    box-sizing: border-box;
+    display: inline-block;
+  }
+  .top-controls-row button,
+  .csv-button {
+    font-size: 13px !important;
+    padding: 4px 8px !important;
+    min-height: 36px;
+    min-width: 44px;
+    box-sizing: border-box;
+  }
+  .sticky-controls .chip {
+    font-size: 11px !important;
+    padding: 3px 8px !important;
     border-radius: 12px !important;
     background: #e9ecef !important;
     color: #495057 !important;
     border: 1px solid #ced4da !important;
     cursor: pointer !important;
     white-space: nowrap !important;
+    margin: 2px 2px 2px 0 !important;
+    min-width: 44px;
+    min-height: 32px;
+    box-sizing: border-box;
   }
-
-  .sticky-controls .chip.selected {
-    background: #007bff !important;
-    color: #fff !important;
-    border-color: #0056b3 !important;
+  .sticky-controls .filter-group {
+    background: #f8f9fa !important;
+    margin-bottom: 4px !important;
+    padding: 4px 6px !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 6px !important;
+    box-sizing: border-box;
   }
-
-  .dark .sticky-controls .chip {
-    background: #495057 !important;
-    color: #adb5bd !important;
-    border-color: #6c757d !important;
-  }
-
-  .dark .sticky-controls .chip.selected {
-    background: #0056b3 !important;
-    color: #fff !important;
-    border-color: #004085 !important;
-  }
-
-  /* セレクトボックスのモバイル最適化 */
   .sticky-controls select {
     width: 100% !important;
-    font-size: 12px !important;
-    padding: 6px !important;
+    font-size: 13px !important;
+    padding: 4px 6px !important;
     background: #fff !important;
     color: #495057 !important;
     border: 1px solid #ced4da !important;
     border-radius: 4px !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
+    min-height: 32px;
+    box-sizing: border-box;
   }
-
-  .dark .sticky-controls select {
-    background: #444 !important;
-    color: #adb5bd !important;
-    border-color: #6c757d !important;
-  }
-
-  /* 入力フィールドの基本設定 */
   .sticky-controls input[type="text"] {
-    font-size: 12px !important;
-    padding: 6px !important;
+    font-size: 13px !important;
+    padding: 4px 6px !important;
     flex: 2 !important;
-    min-width: 100px !important;
+    min-width: 80px !important;
     background: #fff !important;
     color: #495057 !important;
     border: 1px solid #ced4da !important;
+    min-height: 32px;
+    box-sizing: border-box;
   }
-
-  .dark .sticky-controls input[type="text"] {
-    background: #444 !important;
-    color: #adb5bd !important;
-    border-color: #6c757d !important;
-  }
-
-  .sticky-controls select {
-    font-size: 12px !important;
-    padding: 6px !important;
-    flex: 1.5 !important;
-    min-width: 80px !important;
-  }
-
-  .sticky-controls button {
-    font-size: 11px !important;
-    padding: 6px 8px !important;
-    flex: 1 !important;
-    min-width: 70px !important;
-    background: #007bff !important;
-    color: #fff !important;
-    border: 1px solid #0056b3 !important;
-    border-radius: 4px !important;
-  }
-
-  .dark .sticky-controls button {
-    background: #0056b3 !important;
-    border-color: #004085 !important;
-  }
-
   .sticky-controls .top-controls-row {
     margin-bottom: 0 !important;
-  }
-  /* CSV機能のモバイル対応 */
-  .csv-row {
-    order: -1; /* CSV機能を最上部に表示 */
-    margin-bottom: 8px;
-  }
-
-  #csvPanel {
-    margin: 5px 0 !important;
-    padding: 10px !important;
-    border-radius: 8px !important;
-  }
-
-  #csvPanel h4 {
-    font-size: 14px !important;
-    margin-bottom: 8px !important;
-  }
-
-  #csvPanel textarea {
-    font-size: 11px !important;
-  }
-
-  #csvPanel .csv-button {
-    box-sizing: border-box;
-    width: 100% !important;
-    padding: 6px 8px !important;
-    font-size: 11px !important;
-  }
-
-  #csvPanel .button-group {
+    flex-wrap: wrap !important;
     gap: 4px !important;
-    flex-direction: column !important;
-  }
-
-  #csvPanel .button-group {
-    margin-bottom: 6px !important;
-    padding: 6px !important;
-  }
-}    /* Mobile zoom prevention fixes */
-/* Reset button appearance to remove browser-specific styles */
-button {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* Ensure search button and input elements have minimum 16px font-size to prevent mobile zoom */
-button.search-button, 
-input,
-input[type="text"],
-input[type="search"],
-#nameSearch,
-select,
-textarea {
-  font-size: 16px;
-}
-
-/* Specific fixes for mobile to prevent zoom while maintaining usability */
-@media (max-width: 540px) {
-  /* Override smaller font sizes for critical interactive elements */
-  input[type="text"],
-  input[type="search"],
-  #nameSearch,
-  select,
-  button {
-    font-size: 16px !important;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  /* Maintain button functionality while preventing zoom */
-  .sticky-controls button,
-  .top-controls-row button,
-  .csv-button {
-    font-size: 16px !important;
-    padding: 8px 12px !important;
-    min-height: 44px; /* Apple's recommended minimum touch target */
-    min-width: 44px;
-  }
-
-  /* Search input specific fixes */
-  .sticky-controls input[type="text"],
-  #nameSearch {
-    font-size: 16px !important;
-    padding: 8px !important;
-    min-height: 44px;
-    box-sizing: border-box;
-  }
-
-  /* Select dropdowns */
-  .sticky-controls select,
-  #sortMethod,
-  #productFilter,
-  #tagsFilter {
-    font-size: 16px !important;
-    padding: 8px !important;
-    min-height: 44px;
   }
 }
+/* --- End mobile layout optimization --- */
+/* --- CSS update check: force pink background for sticky-controls button (highest priority) --- */
+/* --- CSS update check marker removed: restoring original button appearance --- */
