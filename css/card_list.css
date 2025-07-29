@@ -595,7 +595,7 @@ textarea {
     gap: 4px 0;
     align-items: flex-start;
   }
-  .sticky-controls button {
+  .sticky-controls .filter-group button {
     font-size: 12px !important;
     padding: 3px 6px !important;
     min-width: 44px !important;
