@@ -582,9 +582,9 @@ textarea {
 /* --- Mobile layout optimization: unified, deduplicated block --- */
 @media (max-width: 540px) {
   .sticky-controls button {
-    /* --- CSS update check: pink background (desktop/mobile) --- */
-    background: #ff69b4 !important;
-    outline: 2px solid #ff69b4 !important;
+    /* --- Restored original button appearance for production --- */
+    background: #0056b3 !important; /* Default button background */
+    outline: none !important;
     font-size: 13px !important;
     padding: 4px 8px !important;
     flex: 1 1 48%;
