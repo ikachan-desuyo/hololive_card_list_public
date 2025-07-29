@@ -1,32 +1,26 @@
 // Version Management Configuration
 // このファイルはバージョンアップ時に更新されます
 
-const APP_VERSION = "4.10.0";
-const VERSION_DESCRIPTION = "Version-Sync-SW-Optimization";
+const APP_VERSION = "4.11.1";
+const VERSION_DESCRIPTION = "DarkMode-Button-Color-Fix";
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  "index.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
-  "binder_collection.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
-  "collection_binder.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
-  "card_list.html": "4.10.0-camelCase-id-unify",  // id属性camelCase統一
-  "holoca_skill_page.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
-  "deck_builder.html": "4.10.0-VERSION-SYNC-UPDATE"  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
+  "index.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
+  "binder_collection.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
+  "collection_binder.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
+  "card_list.html": "4.11.1-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
+  "holoca_skill_page.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
+  "deck_builder.html": "4.10.0-DarkMode-Button-Color-Fix"  // ダークモードボタン配色修正
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: "🔄 バージョン同期＆SW最適化 v4.10.0",
-  description: "全ページとService Workerのバージョン同期を実施し、キャッシュ戦略を最適化しました",
+  title: "🎨 ダークモードボタン配色修正 v4.11.0",
+  description: "ダークモード時の全ボタン配色を明示的に上書き（背景・文字色・ボーダー色・ホバー時も明示）",
   changes: [
-    "🔧 Service Workerバージョンの統一・最適化",
-    "🔄 全HTMLページのバージョン同期",
-    "📱 キャッシュ戦略の改善と最適化",
-    "🎯 ページ間でのバージョン整合性確保",
-    "💾 新バージョン配信の確実性向上",
-    "🏷️ バージョン管理システムの統一",
-    "✨ キャッシュクリア機能の強化",
-    "🔄 最新コンテンツ配信の改善"
+    "� ダークモード時の全ボタン配色を明示的に上書き（背景・文字色・ボーダー色・ホバー時も明示）",
+    "� その他UI/UX改善"
   ]
 };
 

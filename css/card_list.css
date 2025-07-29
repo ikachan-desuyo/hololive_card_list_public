@@ -884,7 +884,7 @@ textarea {
 }
 
 /* =============================== */
-/* ダークモード時の全ボタン配色を明示的に上書き */
+/* ダークモード時の全ボタン配色を明示的に上書き（v4.11.1） */
 .dark button {
   background: linear-gradient(90deg, #22334a 0%, #334e68 100%) !important;
   color: #eaf6ff !important;
