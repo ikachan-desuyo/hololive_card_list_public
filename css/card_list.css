@@ -543,12 +543,6 @@ button:focus {
   outline: 2px solid #b6e0fe;
   outline-offset: 2px;
 }
-.dark button {
-    background: linear-gradient(90deg, #2a3448 0%, #22334a 100%);
-    color: #eaf6ff;
-    border: 1.5px solid #4fc3f7;
-    box-shadow: 0 2px 8px 0 #22334a99;
-}
 
 /* Ensure search button and input elements have minimum 16px font-size to prevent mobile zoom */
 button.search-button, 
