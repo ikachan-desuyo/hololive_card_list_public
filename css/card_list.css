@@ -581,7 +581,21 @@ textarea {
 
 /* --- Mobile layout optimization: unified, deduplicated block --- */
 @media (max-width: 540px) {
-  /* お嬢様のためのフィルター内ボタン最優先スタイルでございますわ */
+  /* Filter-group button wrapping for mobile */
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px 0 !important;
+    align-items: flex-start !important;
+  }
+  .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
+    flex: 1 1 45% !important;
+    max-width: 48% !important;
+    width: 48% !important;
+    min-width: 44px !important;
+    margin: 2px 1% 3px 1% !important;
+  }
+  /* Filter-group button style for mobile */
   .mobile-layout .sticky-controls .filter-group button {
     font-size: 12px !important;
     padding: 3px 6px !important;
