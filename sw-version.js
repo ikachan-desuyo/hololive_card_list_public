@@ -9,7 +9,7 @@ const PAGE_VERSIONS = {
   "index.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
   "binder_collection.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
   "collection_binder.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
-  "card_list.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
+  "card_list.html": "4.10.0-camelCase-id-unify",  // id属性camelCase統一
   "holoca_skill_page.html": "4.10.0-VERSION-SYNC-UPDATE",  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
   "deck_builder.html": "4.10.0-VERSION-SYNC-UPDATE"  // 最新: Version synchronization, Service Worker optimization, cache management, and mobile improvements
 };
