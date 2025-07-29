@@ -581,6 +581,10 @@ textarea {
 
 /* --- Mobile layout optimization: unified, deduplicated block --- */
 @media (max-width: 540px) {
+  .dark .sticky-controls {
+    background: #222 !important;
+    border-color: #444 !important;
+  }
   .dark .sticky-controls .filter-group {
     background: #222 !important;
     border-color: #444 !important;
