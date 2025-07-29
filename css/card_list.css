@@ -10,6 +10,16 @@
   .dark .mobile-layout .sticky-controls .chip-group {
     background: #333 !important;
   }
+  /* モバイル時: タイトル・検索・ソート行の背景色もダークに */
+  .dark .mobile-layout .container-top {
+    background: #222 !important;
+    border-bottom: 2px solid #444 !important;
+    box-shadow: 0 2px 8px 0 #000a !important;
+  }
+  .dark .mobile-layout .sticky-controls {
+    background: #222 !important;
+    border-bottom: 1px solid #444 !important;
+  }
   /* --- モバイル時のみのダークモード配色 --- */
   .dark .sticky-controls {
     background: #222 !important;
@@ -122,6 +132,31 @@
     padding: 0 2px !important;
     margin-bottom: 1px !important;
     line-height: 1.1 !important;
+  }
+  /* 検索・ソート・フィルター表示/非表示を横並びに */
+  .sticky-controls .top-controls-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 0 !important;
+    justify-content: stretch !important;
+  }
+  .sticky-controls .top-controls-row > input[type="text"],
+  .sticky-controls .top-controls-row > select {
+    flex: 2 1 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .sticky-controls .top-controls-row > button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 13px !important;
+    padding: 4px 6px !important;
+    margin: 0 !important;
   }
   .sticky-controls .filter-group fieldset {
     padding: 0 !important;
