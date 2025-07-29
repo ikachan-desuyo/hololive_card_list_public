@@ -2,6 +2,12 @@
    モバイル版レイアウト (max-width: 540px)
    =============================== */
 @media (max-width: 540px) {
+  /* ダーク時はcontainer, container-top, sticky-controlsの背景を透過にしてbody背景を見せる */
+  .dark.mobile-layout .container,
+  .dark.mobile-layout .container-top,
+  .dark.mobile-layout .sticky-controls {
+    background: transparent !important;
+  }
   /* body, html のみ全画面ダーク背景を徹底 */
   body.dark.mobile-layout,
   html.dark.mobile-layout {
@@ -875,6 +881,22 @@ input[type="search"],
 select,
 textarea {
   font-size: 16px;
+}
+
+/* =============================== */
+/* ダークモード時の全ボタン配色を明示的に上書き */
+.dark button {
+  background: linear-gradient(90deg, #22334a 0%, #334e68 100%) !important;
+  color: #eaf6ff !important;
+  border: 1.5px solid #4fc3f7 !important;
+  box-shadow: 0 1.5px 6px 0 #22334a55 !important;
+}
+.dark button:hover, .dark button:active {
+  background: linear-gradient(90deg, #334e68 0%, #00bfff 100%) !important;
+  color: #fff !important;
+  border-color: #00bfff !important;
+  box-shadow: 0 4px 16px 0 #00bfff33 !important;
+  transform: translateY(-2px) scale(1.03) !important;
 }
 
 /* デスクトップ版では通常の配置を維持 */
