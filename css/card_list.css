@@ -8,14 +8,14 @@
     border-bottom: 1px solid #444 !important;
   }
   .dark .sticky-controls .filter-group {
-    background: #333 !important;
+    background: #222 !important;
     border: 1px solid #444 !important;
   }
   .dark .sticky-controls .chip-group {
-    background: #333 !important;
+    background: #222 !important;
   }
   .dark .sticky-controls .chip {
-    background: #444 !important;
+    background: #333 !important;
     color: #eee !important;
     border-color: #666 !important;
   }
@@ -132,17 +132,14 @@
     display: inline-block !important;
   }
   .sticky-controls .filter-group button {
-    font-size: 13px !important;
-    padding: 4px 8px !important;
-    min-width: 44px !important;
-    min-height: 28px !important;
+    font-size: 11px !important;
+    padding: 3px 8px !important;
+    min-width: 40px !important;
+    min-height: 24px !important;
     border-radius: 5px !important;
-    margin: 2px 1.5px 3px 1.5px !important;
+    margin: 2px 2px 3px 2px !important;
     box-sizing: border-box !important;
     display: inline-block !important;
-    flex: 1 1 45% !important;
-    max-width: 100% !important;
-    width: auto !important;
     background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%) !important;
     color: #22334a !important;
     border: 1.5px solid #7ecbfa !important;
@@ -162,12 +159,10 @@
     align-items: flex-start !important;
   }
   .mobile-layout .sticky-controls .filter-group:not(:has(.chip-group)) button {
-    font-size: 13px !important;
-    padding: 4px 8px !important;
-    flex: 1 1 48% !important;
-    max-width: 48% !important;
+    font-size: 11px !important;
+    padding: 3px 8px !important;
     min-width: 40px !important;
-    margin: 2px 1% 3px 1% !important;
+    margin: 2px 2px 3px 2px !important;
     border-radius: 5px !important;
     box-sizing: border-box !important;
     display: inline-block !important;
