@@ -2,6 +2,13 @@
    モバイル版レイアウト (max-width: 540px)
    =============================== */
 @media (max-width: 540px) {
+  /* body, html, その下層すべてにダーク背景を強制 */
+  body.dark.mobile-layout,
+  html.dark.mobile-layout,
+  body.dark.mobile-layout *,
+  html.dark.mobile-layout * {
+    background: #222 !important;
+  }
   /* モバイル時: body/html階層も含めて全画面ダーク背景を徹底 */
   .dark.mobile-layout,
   .dark .mobile-layout,
