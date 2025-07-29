@@ -501,7 +501,6 @@ button {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-    border: none;
     background: linear-gradient(90deg, #fff 0%, #b6e0fe 100%);
     color: #22334a;
     border: 1.5px solid #7ecbfa;
