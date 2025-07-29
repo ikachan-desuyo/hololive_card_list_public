@@ -517,13 +517,11 @@ button {
   letter-spacing: 0.02em;
 }
 button:hover, button:active {
-  background: linear-gradient(90deg, #b6e0fe 0%, #00bfff 100%);
   color: #007acc;
   box-shadow: 0 4px 16px 0 #00bfff33;
   transform: translateY(-2px) scale(1.03);
-    background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%);
-    color: #007acc;
-    border-color: #00bfff;
+  background: linear-gradient(90deg, #eaf6ff 0%, #00bfff 100%);
+  border-color: #00bfff;
 }
 button:focus {
   outline: 2px solid #00bfff;
