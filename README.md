@@ -1,1 +1,0 @@
-# hololive_card_list_public
