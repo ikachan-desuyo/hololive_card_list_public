@@ -1,26 +1,30 @@
 // Version Management Configuration
 // このファイルはバージョンアップ時に更新されます
 
-const APP_VERSION = "4.11.1";
-const VERSION_DESCRIPTION = "DarkMode-Button-Color-Fix";
+const APP_VERSION = "1.0.0";
+const VERSION_DESCRIPTION = "Initial-Release";
 
 // ✅ 各ページのバージョン情報を一元管理
 const PAGE_VERSIONS = {
-  "index.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
-  "binder_collection.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
-  "collection_binder.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
-  "card_list.html": "4.11.1-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
-  "holoca_skill_page.html": "4.10.0-DarkMode-Button-Color-Fix",  // ダークモードボタン配色修正
-  "deck_builder.html": "4.10.0-DarkMode-Button-Color-Fix"  // ダークモードボタン配色修正
+  "index.html": "1.0.0-Initial-Release",  // 初回リリース
+  "binder_collection.html": "1.0.0-Initial-Release",  // 初回リリース
+  "collection_binder.html": "1.0.0-Initial-Release",  // 初回リリース
+  "card_list.html": "1.0.0-Initial-Release",  // 初回リリース
+  "holoca_skill_page.html": "1.0.0-Initial-Release",  // 初回リリース
+  "deck_builder.html": "1.0.0-Initial-Release"  // 初回リリース
 };
 
 // ✅ 更新内容の詳細情報
 const UPDATE_DETAILS = {
-  title: "🎨 ダークモードボタン配色修正 v4.11.0",
-  description: "ダークモード時の全ボタン配色を明示的に上書き（背景・文字色・ボーダー色・ホバー時も明示）",
+  title: "� 初回リリース v1.0.0",
+  description: "Hololive Official Card Game Collection Manager の正式リリース",
   changes: [
-    "� ダークモード時の全ボタン配色を明示的に上書き（背景・文字色・ボーダー色・ホバー時も明示）",
-    "� その他UI/UX改善"
+    "🎯 カードリスト管理機能",
+    "📚 バインダーコレクション機能", 
+    "🔧 デッキビルダー機能",
+    "🎨 ダークモード対応",
+    "📱 レスポンシブデザイン",
+    "💾 データ保存・読み込み機能"
   ]
 };
 

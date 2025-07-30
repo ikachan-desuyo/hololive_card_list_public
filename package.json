@@ -1,4 +1,27 @@
 {
+  "name": "hololive-card-list",
+  "version": "1.0.0",
+  "description": "Hololive Official Card Game Collection Manager",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikachan-desuyo/hololive_card_list_public.git"
+  },
+  "keywords": [
+    "hololive",
+    "card-game",
+    "collection",
+    "tcg"
+  ],
+  "author": "ikachan-desuyo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ikachan-desuyo/hololive_card_list_public/issues"
+  },
+  "homepage": "https://github.com/ikachan-desuyo/hololive_card_list_public#readme",
   "devDependencies": {
     "stylelint": "^16.22.0",
     "stylelint-config-standard": "^38.0.0"
