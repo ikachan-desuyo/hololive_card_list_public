@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 1.0.0-Initial-Release - Initial official release of Hololive Card Game Collection Manager -->
+<!-- Version: 4.11.3 -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -16,15 +16,14 @@
     <!-- ✅ 1段目：ナビゲーションバー的配置 -->
     <div class="deck-nav-row">
       <div>
-        <button onclick="location.href='index.html'">🏠 ホーム</button>
-        <button onclick="location.href='card_list.html'">🃏 カード一覧</button>
-        <button onclick="location.href='collection_binder.html'">🎴 バインダー</button>
-        <button onclick="location.href='holoca_skill_page.html'">🗂 カード詳細検索</button>
+        <button onclick="navigateToPage('index.html')">🏠 ホーム</button>
+        <button onclick="navigateToPage('card_list.html')">🃏 カード一覧</button>
+        <button onclick="navigateToPage('binder_collection.html')">🎴 バインダー</button>
+        <button onclick="navigateToPage('holoca_skill_page.html')">🗂 カード詳細検索</button>
       </div>
-      <h2 class="deck-title">デッキ作成
-        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v4.11.2-DeckBuilder-UI-Update]</span>
-        <button onclick="checkForUpdates()" style="font-size: 10px; margin-left: 5px; padding: 2px 6px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer;">更新確認</button>
-      </h2>
+            <h1>⚔️ デッキ作成
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v4.11.3]</span>
+      </h1>
       <button onclick="toggleDarkMode()">🌗</button>
     </div>
 
@@ -120,13 +119,11 @@
       <div id="cardGallery" class="card-gallery"></div>
     </div>
 
-<!-- オンライン/オフライン状態表示 -->
-<div id="offline-status" style="position: fixed; bottom: 10px; right: 10px; font-size: 12px; padding: 5px 10px; border-radius: 5px; background: rgba(255,255,255,0.9); z-index: 1000;"></div>
-
 <div style="margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.05); border-top: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 0.85em; color: #666;">
   <p><strong>権利表記・免責事項</strong></p>
   <p>「ホロライブ」「hololive」は株式会社カバーの商標です。</p>
-  <p>このツールは株式会社カバーとは無関係の非公式ファンメイドツールです。</p>
+  <p>「ホロライブオフィシャルカードゲーム」は株式会社ブシロードの商標です。</p>
+  <p>このツールは株式会社カバー・株式会社ブシロードとは無関係の非公式ファンメイドツールです。</p>
   <p>カードデータの著作権は各権利者に帰属します。</p>
   <p>このツールの使用により生じた損害について、作成者は一切の責任を負いません。</p>
   <p style="margin-top: 10px;">© 2025 ikachan-desuyo - Hololive Card Game Management Tool (非公式)</p>
@@ -134,5 +131,33 @@
 
 
   <script src="js/deck_builder.js"></script>
+  <!-- オフライン状態管理 -->
+  <script src="js/offline-utils.js"></script>
+  
+  <script>
+    // セーフナビゲーション関数（フォールバック付き）
+    function safeNavigate(url) {
+      console.log('Deck Builder: Attempting to navigate to:', url);
+      
+      // offline-utils.js が読み込まれているかチェック
+      if (typeof window.navigateToPage === 'function') {
+        console.log('Using offline-aware navigation');
+        window.navigateToPage(url);
+      } else {
+        console.log('offline-utils.js not loaded, using fallback navigation');
+        // フォールバック: 通常のナビゲーション
+        if (navigator.onLine) {
+          window.location.href = url;
+        } else {
+          // オフライン時の簡易チェック
+          if (confirm('オフライン状態です。このページが利用できない可能性があります。\n移動しますか？')) {
+            window.location.href = url;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html></script>
 </body>
 </html>

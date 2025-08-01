@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Version: 1.0.0-Initial-Release - Initial official release of Hololive Card Game Collection Manager -->
+<!-- Version: 4.11.3 -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -13,7 +13,9 @@
 <body>
   <div class="header">
     <div class="header-content">
-      <h1>📚 バインダーコレクション</h1>
+      <h1>📚 バインダーコレクション
+        <span style="font-size: 12px; color: #999; font-weight: normal; margin-left: 10px;" id="versionDisplay">[v4.11.3]</span>
+      </h1>
       <div class="header-controls">
         <button class="control-btn" onclick="exportBinderCollection()">📤 エクスポート</button>
         <button class="control-btn" onclick="openImportModal()">📥 インポート</button>
@@ -546,7 +548,7 @@
     function openBinder(binderId) {
       // バインダーIDをURLパラメータとして渡して、collection_binder.htmlを開く
       const url = `collection_binder.html?binderId=${binderId}`;
-      window.location.href = url;
+      navigateToPage(url);
     }
 
     // バインダー編集フォームの送信
@@ -953,7 +955,7 @@
     }
 
     function goHome() {
-      window.location.href = 'index.html';
+      navigateToPage('index.html');
     }
 
     function formatDate(dateString) {
@@ -984,5 +986,7 @@
     });
   </script>
   <script src="js/binder_collection.js"></script>
+  <!-- オフライン状態管理 -->
+  <script src="js/offline-utils.js"></script>
 </body>
 </html>

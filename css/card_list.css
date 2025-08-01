@@ -1,10 +1,6 @@
-/* ===============================
- * Version: 4.11.2-MobileDarkBG-Fix
- * モバイルダークモード時の検索・ソート・フィルター背景修正
- * 2025-07-29
- *
-   モバイル版レイアウト (max-width: 540px)
-   =============================== */
+/*
+ * Version: 4.11.3
+ */
 @media (max-width: 540px) {
   /* ダーク時はcontainer, container-top, sticky-controlsの背景を透過にしてbody背景を見せる */
   .dark.mobile-layout .container,
@@ -845,8 +841,8 @@ input:focus, select:focus, textarea:focus {
 /* Reset button appearance to remove browser-specific styles */
 /*
  * ------------------------------------------------------------
- * お嬢様のためのホロライブカード一覧ページ・共通ボタンデザイン
- * きらめくグラデーションと上品な角丸、ふんわりシャドウでございますわ。
+ * ホロライブカード一覧ページ・共通ボタンデザイン
+ * グラデーションと角丸、シャドウを適用したボタンスタイル
  * ------------------------------------------------------------
  */
 button {
@@ -888,7 +884,7 @@ textarea {
 }
 
 /* =============================== */
-/* ダークモード時の全ボタン配色を明示的に上書き（v4.11.1） */
+/* ダークモード時の全ボタン配色を明示的に上書き（v4.11.3） */
 .dark button {
   background: linear-gradient(90deg, #22334a 0%, #334e68 100%) !important;
   color: #eaf6ff !important;
@@ -901,6 +897,172 @@ textarea {
   border-color: #00bfff !important;
   box-shadow: 0 4px 16px 0 #00bfff33 !important;
   transform: translateY(-2px) scale(1.03) !important;
+}
+
+/* ===============================
+ * 画像一括ダウンロード機能のスタイル（モバイル版のみ）
+ * =============================== */
+
+/* デスクトップ版では画像一括DLボタンを非表示 */
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* モバイル版のみで画像一括DLボタンを表示 */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: inline-block !important;
+  }
+  
+  /* 画像一括DLボタンのスタイル */
+  #imageBulkDownloadBtn {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    border: 1.5px solid #28a745 !important;
+    transition: all 0.3s ease !important;
+  }
+
+  #imageBulkDownloadBtn:hover {
+    background: linear-gradient(90deg, #218838 0%, #17a2b8 100%) !important;
+    border-color: #218838 !important;
+    box-shadow: 0 4px 16px 0 #28a74533 !important;
+    transform: translateY(-2px) scale(1.03) !important;
+  }
+
+  /* ダークモード時の画像一括DLボタン */
+  .dark #imageBulkDownloadBtn {
+    background: linear-gradient(90deg, #20c997 0%, #28a745 100%) !important;
+    color: white !important;
+    border: 1.5px solid #20c997 !important;
+  }
+
+  .dark #imageBulkDownloadBtn:hover {
+    background: linear-gradient(90deg, #17a2b8 0%, #218838 100%) !important;
+    border-color: #17a2b8 !important;
+    box-shadow: 0 4px 16px 0 #20c99733 !important;
+  }
+}
+
+/* 画像ダウンロードモーダルのスタイル */
+#imageDownloadModal {
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+#imageDownloadModal > div {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* ダークモード用のモーダルスタイル */
+.dark #imageDownloadModal > div {
+  background: #333 !important;
+  color: #eee !important;
+  border: 1px solid #555 !important;
+}
+
+.dark #imageDownloadModal h3 {
+  color: #eee !important;
+  border-bottom: 1px solid #555;
+}
+
+.dark #imageDownloadModal p {
+  color: #ccc !important;
+}
+
+.dark #imageDownloadModal > div > div > div {
+  background: #444 !important;
+  border: 1px solid #555 !important;
+}
+
+.dark #imageDownloadModal > div > div > div:nth-child(4) {
+  background: #3d3d3d !important;
+  border: 1px solid #6c5d00 !important;
+  color: #ffc107 !important;
+}
+
+.dark #imageDownloadModal #progressText {
+  color: #eee !important;
+  white-space: pre-line; /* 改行を有効にする */
+}
+
+.dark #imageDownloadModal #downloadProgress {
+  background: #444 !important;
+  border: 1px solid #555 !important;
+  border-radius: 5px !important;
+  padding: 10px !important;
+}
+
+.dark #imageDownloadModal button {
+  background: #444 !important;
+  color: #eee !important;
+  border: 1px solid #666 !important;
+}
+
+.dark #imageDownloadModal button:hover {
+  background: #555 !important;
+  border-color: #777 !important;
+}
+
+.dark #imageDownloadModal #startDownloadBtn {
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%) !important;
+  color: white !important;
+}
+
+.dark #imageDownloadModal #startDownloadBtn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #0056b3 0%, #007bff 100%) !important;
+}
+
+.dark #imageDownloadModal #cancelDownloadBtn {
+  background: #6c757d !important;
+  color: white !important;
+}
+
+.dark #imageDownloadModal #cancelDownloadBtn:hover {
+  background: #5a6268 !important;
+}
+
+.dark #imageDownloadModal #clearCacheBtn {
+  background: #dc3545 !important;
+  color: white !important;
+}
+
+.dark #imageDownloadModal #clearCacheBtn:hover:not(:disabled) {
+  background: #c82333 !important;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* プログレスバーのスタイル */
+#progressBar {
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
+}
+
+/* ダウンロードボタンのスタイル */
+#startDownloadBtn {
+  transition: all 0.3s ease;
+}
+
+#startDownloadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+#startDownloadBtn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* デスクトップ版では通常の配置を維持 */

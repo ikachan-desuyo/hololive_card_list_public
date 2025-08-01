@@ -82,8 +82,8 @@ async function handleMessage(event) {
             
             if (response.ok) {
               const htmlText = await response.text();
-              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-              const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
+              const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Za-z-]*)/);
+              const displayVersionMatch = htmlText.match(/\[v([\d\.]+-?[A-Za-z-]*)\]/);
               
               if (versionMatch) {
                 actualVersion = versionMatch[1];
@@ -154,8 +154,8 @@ async function handleMessage(event) {
         } else {
           const htmlText = await response.text();
           // より柔軟なバージョン検出
-          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-          const displayVersionMatch = htmlText.match(/\[v([\d\.]+)-/);
+          const versionMatch = htmlText.match(/<!-- Version: ([\d\.]+-?[A-Za-z-]*)/);
+          const displayVersionMatch = htmlText.match(/\[v([\d\.]+-?[A-Za-z-]*)\]/);
           
           let actualVersion = null;
           if (versionMatch) {
@@ -171,8 +171,8 @@ async function handleMessage(event) {
           
           if (cachedResponse) {
             const cachedText = await cachedResponse.text();
-            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Z-]*)/);
-            const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+)-/);
+            const cachedVersionMatch = cachedText.match(/<!-- Version: ([\d\.]+-?[A-Za-z-]*)/);
+            const cachedDisplayVersionMatch = cachedText.match(/\[v([\d\.]+-?[A-Za-z-]*)\]/);
             
             if (cachedVersionMatch) {
               cachedVersion = cachedVersionMatch[1]; // サフィックスを削除しない
@@ -236,6 +236,14 @@ async function handleMessage(event) {
           error: error.message
         });
       }
+      break;
+      
+    case 'GET_CACHE_NAME':
+      // 現在のキャッシュ名を返す
+      event.ports[0]?.postMessage({
+        type: 'CACHE_NAME_RESPONSE',
+        cacheName: CACHE_NAME
+      });
       break;
       
     default:

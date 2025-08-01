@@ -1,7 +1,7 @@
-# 📚 Hololive Card Web Tools v4.5.2
-# 📚 ホロライブカードWebツール v4.5.2
+# 📚 Hololive Card Web Tools v2.0.0
+# 📚 ホロライブカードWebツール v2.0.0
 
-[![Version](https://img.shields.io/badge/version-4.5.0-blue.svg)](https://github.com/ikachan-desuyo/hololive_card_list_check)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ikachan-desuyo/hololive_card_list_check)
 [![PWA](https://img.shields.io/badge/PWA-ready-green.svg)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 [![Offline](https://img.shields.io/badge/offline-support-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
 
@@ -11,7 +11,7 @@
 
 # Japanese
 
-## 🚀 最新アップデート v4.5.2
+## 🚀 最新アップデート v2.0.0
 
 **カード詳細モーダル大幅改善 (2025/07/24)**
 - **🎯 UI改善**: カード詳細タイトルを削除し、画像右上に直感的なクローズボタンを配置
@@ -35,7 +35,7 @@
 - 🔄 メッセージハンドラーの分離
 - ⚡ コードの可読性と保守性向上
 
-## 🏠 メインページ (`index.html`) v4.5.0
+## 🏠 メインページ (`index.html`) v2.0.0
 
 すべての利用可能なツールへのナビゲーションを備えたランディングページ：
 - **カードリスト**: 高度な検索機能付きカードコレクション管理
@@ -44,7 +44,7 @@
 - **コレクションバインダー**: ドラッグ&ドロップ機能付き仮想バインダー管理
 - **バインダーコレクション**: カスタムカバー付き複数バインダー管理
 
-## 🗂 ホロライブカードリスト (`card_list.html`) v4.5.0
+## 🗂 ホロライブカードリスト (`card_list.html`) v2.0.0
 
 検索機能が大幅に強化された、ホロライブカードの閲覧・フィルタリング・管理のためのレスポンシブカードリストツール。
 
@@ -91,7 +91,7 @@
 
 ---
 
-## 🔍 ホロライブカード詳細検索 (`holoca_skill_page.html`) v4.5.0
+## 🔍 ホロライブカード詳細検索 (`holoca_skill_page.html`) v2.0.0
 
 検索正規化が強化された、カード能力での高度フィルタリングのためのスキルベース検索ツール。
 
@@ -126,7 +126,7 @@
 
 ---
 
-## 🃏 デッキビルダー (`deck_builder.html`) v4.5.0
+## 🃏 デッキビルダー (`deck_builder.html`) v2.0.0
 
 強化された検索とフィルタリング機能でカードデッキを作成・管理。
 
@@ -147,7 +147,7 @@
 
 ---
 
-## 📚 コレクションバインダー (`collection_binder.html`) v4.5.2
+## 📚 コレクションバインダー (`collection_binder.html`) v2.0.0
 
 高度機能でカードコレクションを整理するための仮想バインダー。
 
@@ -275,7 +275,8 @@
 
 ### 商標・権利表記
 - 「ホロライブ」「hololive」は株式会社カバーの商標です
-- このツールは株式会社カバーとは無関係の非公式ファンメイドツールです
+- 「ホロライブオフィシャルカードゲーム」は株式会社ブシロードの商標です
+- このツールは株式会社カバー・株式会社ブシロードとは無関係の非公式ファンメイドツールです
 - カードデータの著作権は各権利者に帰属します
 
 ### 免責事項
@@ -295,7 +296,7 @@
 
 # English
 
-## 🚀 Latest Update v4.5.2
+## 🚀 Latest Update v2.0.0
 
 **Card Detail Modal Major Improvements (2025/07/24)**
 - **🎯 UI Enhancement**: Removed card detail title and added intuitive close button in top-right of image area
@@ -313,7 +314,7 @@ Landing page with navigation to all available tools:
 - **Collection Binder**: Virtual binder management with drag & drop functionality
 - **Binder Collection**: Manage multiple binders with custom covers
 
-## 🗂 Hololive Card List (`card_list.html`) v4.5.0
+## 🗂 Hololive Card List (`card_list.html`) v2.0.0
 
 A responsive card list tool for browsing, filtering, and managing your Hololive cards with enhanced search capabilities.
 
@@ -360,7 +361,7 @@ A responsive card list tool for browsing, filtering, and managing your Hololive 
 
 ---
 
-## 🔍 Hololive Card Detail Search (`holoca_skill_page.html`) v4.5.0
+## 🔍 Hololive Card Detail Search (`holoca_skill_page.html`) v2.0.0
 
 A skill-based search tool for advanced filtering across card abilities with enhanced search normalization.
 
@@ -395,7 +396,7 @@ A skill-based search tool for advanced filtering across card abilities with enha
 
 ---
 
-## 🃏 Deck Builder (`deck_builder.html`) v4.5.0
+## 🃏 Deck Builder (`deck_builder.html`) v2.0.0
 
 Create and manage card decks with enhanced search and filtering capabilities.
 
@@ -416,7 +417,7 @@ Create and manage card decks with enhanced search and filtering capabilities.
 
 ---
 
-## 📚 Collection Binder (`collection_binder.html`) v4.5.2
+## 📚 Collection Binder (`collection_binder.html`) v2.0.0
 
 Virtual binder for organizing your card collection with advanced features.
 
@@ -544,7 +545,8 @@ This project is licensed under the MIT License.
 
 ### Trademark & Copyright Notice
 - "Hololive" and "hololive" are trademarks of Cover Corporation
-- This tool is an unofficial fan-made tool unrelated to Cover Corporation
+- "ホロライブオフィシャルカードゲーム" (Hololive Official Card Game) is a trademark of Bushiroad Inc.
+- This tool is an unofficial fan-made tool unrelated to Cover Corporation or Bushiroad Inc.
 - Copyright of card data belongs to respective rights holders
 
 ### Disclaimer
@@ -564,7 +566,7 @@ For questions or issues, please open an issue on GitHub.
 
 # English
 
-## 🚀 Latest Update v4.5.0
+## 🚀 Latest Update v2.0.0
 
 **Major Search Improvements & Modular Structure**
 - 🔤 Hiragana/Katakana unified search functionality
@@ -578,4 +580,4 @@ For questions or issues, please open an issue on GitHub.
 - 🔄 Message handler separation
 - ⚡ Code readability and maintainability improvements
 
-## 🏠 Main Page (`index.html`) v4.5.0
+## 🏠 Main Page (`index.html`) v2.0.0
